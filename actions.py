@@ -132,6 +132,7 @@ class GetValue(FindNode):
 		    self.table.insertNode(n)
 	elif l.has_key('values'):
 	    def x(y, z=self.results):
+		y = y.data
 		if not z.has_key(y):
 		    z[y] = 1
 		    return y

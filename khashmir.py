@@ -21,7 +21,7 @@ threadable.init()
 from bsddb3 import db ## find this at http://pybsddb.sf.net/
 from bsddb3._db import DBNotFoundError
 
-from base64 import decodestring as decode
+from xmlrpclib import Binary
 
 # don't ping unless it's been at least this many seconds since we've heard from a peer
 MAX_PING_INTERVAL = 60 * 15 # fifteen minutes
@@ -93,11 +93,8 @@ class Khashmir(xmlrpc.XMLRPC):
 	""" returns the values found for key in global table """
 	nodes = self.table.findNodes(key)
 	# decode values, they will be base64 encoded
-	def cbwrap(values, cb=callback):
-	    values = map(lambda x: decode(x), values)
-	    callback(values)
 	# create our search state
-	state = GetValue(self, key, cbwrap)
+	state = GetValue(self, key, callback)
 	reactor.callFromThread(state.goWithNodes, nodes)
 
 
@@ -222,11 +219,11 @@ class Khashmir(xmlrpc.XMLRPC):
 	return nodes, self.node.senderDict()
     
     def xmlrpc_store_value(self, key, value, sender):
-	key = decode(key)
-	h1 = sha(key+value).digest()
+	key = key.data
+	h1 = sha(key+value.data).digest()
 	t = `time.time()`
 	if not self.store.has_key(h1):
-	    v = dumps((key, value, t))
+	    v = dumps((key, value.data, t))
 	    self.store.put(h1, v)
 	    self.itime.put(t, h1)
 	    self.kw.put(key, h1)
@@ -244,7 +241,7 @@ class Khashmir(xmlrpc.XMLRPC):
 	
     def xmlrpc_find_value(self, key, sender):
     	ip = self.crequest.getClientIP()
-	key = decode(key)
+	key = key.data
 	sender['host'] = ip
 	n = Node().initWithDict(sender)
 	self.insertNode(n)
@@ -258,6 +255,7 @@ class Khashmir(xmlrpc.XMLRPC):
 		v = loads(self.store[h1])[1]
 		l.append(v)
 		tup = c.next()
+	    l = map(lambda v: Binary(v), l)
 	    return {'values' : l}, self.node.senderDict()
 	else:
 	    nodes = self.table.findNodes(key)
