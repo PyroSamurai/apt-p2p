@@ -290,6 +290,7 @@ def test_build_net(quiet=0, peers=24, host='localhost',  pause=0):
 	from whrandom import randrange
 	import threading
 	import thread
+	import sys
 	port = 2001
 	l = []
 		
@@ -305,19 +306,20 @@ def test_build_net(quiet=0, peers=24, host='localhost',  pause=0):
 	time.sleep(1)
 	for peer in l[1:]:
 		peer.app.run()
-	time.sleep(10)
+	time.sleep(3)
 	
 	print "adding contacts...."
 	
-	for peer in l[1:]:
+	for peer in l:
 		n = l[randrange(0, len(l))].node
 		peer.addContact(host, n.port)
 		n = l[randrange(0, len(l))].node
 		peer.addContact(host, n.port)
 		n = l[randrange(0, len(l))].node
 		peer.addContact(host, n.port)
-	if pause:
-		time.sleep(.33)
+		if pause:
+			time.sleep(.33)
+		sys.stdout.flush()
 	
 	time.sleep(10)
 	print "finding close nodes...."
@@ -328,7 +330,7 @@ def test_build_net(quiet=0, peers=24, host='localhost',  pause=0):
 			f.set()
 		peer.findCloseNodes(cb)
 		flag.wait()
-	
+		sys.stdout.flush()
 	#    for peer in l:
 	#	peer.refreshTable()
 	return l
