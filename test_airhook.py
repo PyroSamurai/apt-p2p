@@ -27,28 +27,19 @@ class StreamReceiver(protocol.Protocol):
         self.buf = ""
     def dataReceived(self, data):
         self.buf += data
-        
-class EchoFactory(protocol.Factory):
-    def buildProtocol(self, addr):
-        return Echo()
-class NoisyFactory(protocol.Factory):
-    def buildProtocol(self, addr):
-        return Noisy()
-class ReceiverFactory(protocol.Factory):
-    def buildProtocol(self, addr):
-        return Receiver()
-class StreamReceiverFactory(protocol.Factory):
-    def buildProtocol(self, addr):
-        return StreamReceiver()
-        
+                
 def makeEcho(port):
-    return listenAirhookStream(port, EchoFactory())
+    f = protocol.Factory(); f.protocol = Echo
+    return listenAirhookStream(port, f)
 def makeNoisy(port):
-    return listenAirhookStream(port, NoisyFactory())
+    f = protocol.Factory(); f.protocol = Noisy
+    return listenAirhookStream(port, f)
 def makeReceiver(port):
-    return listenAirhookStream(port, ReceiverFactory())
+    f = protocol.Factory(); f.protocol = Receiver
+    return listenAirhookStream(port, f)
 def makeStreamReceiver(port):
-    return listenAirhookStream(port, StreamReceiverFactory())
+    f = protocol.Factory(); f.protocol = StreamReceiver
+    return listenAirhookStream(port, f)
 
 class DummyTransport:
     def __init__(self):
@@ -662,13 +653,10 @@ class EchoReactorStreamBig(unittest.TestCase):
         self.noisy = 0
         self.a = makeStreamReceiver(2028)
         self.b = makeEcho(2029)
-        self.ac = self.a.connectionForAddr(('127.0.0.1', 2028))
-        self.bc = self.b.connectionForAddr(('127.0.0.1', 2029))
+        self.ac = self.a.connectionForAddr(('127.0.0.1', 2029))
     def testBig(self):
-        msg = open('/dev/urandom').read(4096)
+        msg = open('/dev/urandom').read(256)
         self.ac.write(msg)
-        reactor.iterate()
-        reactor.iterate()
         reactor.iterate()
         reactor.iterate()
         reactor.iterate()

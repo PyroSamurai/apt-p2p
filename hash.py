@@ -3,6 +3,8 @@
 from sha import sha
 import whrandom
 
+random = open('/dev/urandom', 'r') # sucks for windoze
+
 def intify(hstr):
     """20 bit hash, big-endian -> long python integer"""
     assert len(hstr) == 20
@@ -26,8 +28,7 @@ def distance(a, b):
 def newID():
     """returns a new pseudorandom globally unique ID string"""
     h = sha()
-    for i in range(20):
-        h.update(chr(whrandom.randrange(0,256)))
+    h.update(random.read(20))
     return h.digest()
 
 def newIDInRange(min, max):
@@ -35,7 +36,7 @@ def newIDInRange(min, max):
     
 def randRange(min, max):
     return min + intify(newID()) % (max - min)
-
+    
 
 ### Test Cases ###
 import unittest
@@ -49,7 +50,7 @@ class NewID(unittest.TestCase):
 
 class Intify(unittest.TestCase):
     known = [('\0' * 20, 0),
-             ('\xff' * 20, 2L**160 - 1),
+            ('\xff' * 20, 2L**160 - 1),
             ]
     def testKnown(self):
         for str, value in self.known: 

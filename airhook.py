@@ -36,6 +36,8 @@ class Airhook(protocol.DatagramProtocol):
         self.connections = {}
         
     def datagramReceived(self, datagram, addr):
+        #print `addr`, `datagram`
+        #if addr != self.addr:
         self.connectionForAddr(addr).datagramReceived(datagram)
 
     def connectionForAddr(self, addr):
@@ -49,7 +51,11 @@ class Airhook(protocol.DatagramProtocol):
         else:
             conn = self.connections[addr]
         return conn
-    
+#    def makeConnection(self, transport):
+#        protocol.DatagramProtocol.makeConnection(self, transport)
+#        tup = transport.getHost()
+#        self.addr = (tup[1], tup[2])
+        
 class AirhookPacket:
     def __init__(self, msg):
         self.datagram = msg
@@ -92,7 +98,7 @@ class AirhookConnection(protocol.ConnectedDatagramProtocol, interfaces.IUDPConne
         self.observed = None  # their session id
         self.sessionID = long(rand(0, 2**32))  # our session id
         
-        self.lastTransmit = -1  # time we last sent a packet with messages
+        self.lastTransmit = 0  # time we last sent a packet with messages
         self.lastReceieved = 0 # time we last received a packet with messages
         self.lastTransmitSeq = -1 # last sequence we sent a packet
         self.state = pending
@@ -103,6 +109,7 @@ class AirhookConnection(protocol.ConnectedDatagramProtocol, interfaces.IUDPConne
         self.sendSession = None  # send session/observed fields until obSeq > sendSession
         self.response = 0 # if we know we have a response now (like resending missed packets)
         self.noisy = 0
+        self.scheduled = 0 # a sendNext is scheduled, don't schedule another
         self.resetMessages()
     
     def resetMessages(self):
@@ -146,14 +153,12 @@ class AirhookConnection(protocol.ConnectedDatagramProtocol, interfaces.IUDPConne
                     self.state = pending
                     self.resetMessages()
                     self.inSeq = p.seq
-            self.response = 1
         elif self.state == confirmed:
             if p.session != None or p.observed != None :
-                if p.session != self.observed or p.observed != self.sessionID:
+                if (p.session != None and p.session != self.observed) or (p.observed != None and p.observed != self.sessionID):
                     self.state = pending
-                    if seq == 0:
-                        self.resetMessages()
-                        self.inSeq = p.seq
+                    self.resetMessages()
+                    self.inSeq = p.seq
     
         if self.state != pending:	
             msgs = []		
@@ -262,28 +267,31 @@ class AirhookConnection(protocol.ConnectedDatagramProtocol, interfaces.IUDPConne
         self.lastTransmit = time()
         self.transport.write(packet, self.addr)
         
+        self.scheduled = 0
         self.schedule()
         
     def timeToSend(self):
         # any outstanding messages and are we not too far ahead of our counterparty?
-        if self.omsgq and (self.next + 1) % 256 != self.outMsgNums[self.obSeq % 256] and (self.outSeq - self.obSeq) % 2**16 < 256:
-            return 1
+        if len(self.omsgq) > 0 and self.state != sent and (self.next + 1) % 256 != self.outMsgNums[self.obSeq % 256] and (self.outSeq - self.obSeq) % 2**16 < 256:
+            return (1, 0)
         # do we explicitly need to send a response?
         elif self.response:
             self.response = 0
-            return 1
+            return (1, 0)
         # have we not sent anything in a while?
         elif time() - self.lastTransmit > 1.0:
-            return 1
-        
+            return (1, 1)
+        elif self.state == pending:
+            return (1, 1)
+            
         # nothing to send
-        return 0
+        return (0, 0)
 
     def schedule(self):
-        if self.timeToSend():
-            reactor.callLater(0, self.sendNext)
-        else:
-            reactor.callLater(1, self.sendNext)
+        tts, t = self.timeToSend()
+        if tts and not self.scheduled:
+            self.scheduled = 1
+            reactor.callLater(t, self.sendNext)
         
     def write(self, data):
         # micropackets can only be 255 bytes or less
