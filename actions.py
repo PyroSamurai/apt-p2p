@@ -158,7 +158,7 @@ class GetValue(FindNode):
 	    ## all done, didn't find it!!
 	    self.finished=1
 	    reactor.callFromThread(self.callback,[])
-    
+
     ## get value
     def goWithNodes(self, nodes, found=None):
 	self.results = {}
@@ -188,6 +188,5 @@ class KeyExpirer:
 	c = self.store.cursor()
 	s = "delete from kv where time < '%s';" % self.cut
 	c.execute(s)
-	self.store.commit()
 	reactor.callLater(const.KE_DELAY, self.doExpire)
 	

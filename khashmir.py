@@ -49,12 +49,14 @@ class Khashmir(xmlrpc.XMLRPC):
     def loadDB(self, db):
 	try:
 	    self.store = sqlite.connect(db=db)
+            self.store.autocommit = 1
 	except:
 	    import traceback
 	    raise KhashmirDBExcept, "Couldn't open DB", traceback.exc_traceback
 	    
     def createNewDB(self, db):
 	self.store = sqlite.connect(db=db)
+        self.store.autocommit = 1
 	s = """
 	    create table kv (key text, value text, time timestamp, primary key (key, value));
 	    create index kv_key on kv(key);
@@ -64,7 +66,6 @@ class Khashmir(xmlrpc.XMLRPC):
 	    """
 	c = self.store.cursor()
 	c.execute(s)
-	self.store.commit()
 		
     def render(self, request):
 	"""
@@ -265,7 +266,6 @@ class Khashmir(xmlrpc.XMLRPC):
 	    # update last insert time
 	    s = "update kv set time = '%s' where key = '%s' and value = '%s';" % (t, key, value)
 	    c.execute(s)
-	self.store.commit()
 	ip = self.crequest.getClientIP()
 	sender['host'] = ip
 	n = Node().initWithDict(sender)
