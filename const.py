@@ -7,11 +7,14 @@ main.installReactor(reactor)
 # magic id to use before we know a peer's id
 NULL_ID =  20 * '\0'
 
-# Kademlia "K" constant
+# Kademlia "K" constant, this should be an even number
 K = 8
 
 # SHA1 is 160 bits long
 HASH_LENGTH = 160
+
+# checkpoint every this many seconds
+CHECKPOINT_INTERVAL = 60 * 15 # fifteen minutes
 
 
 ### SEARCHING/STORING
