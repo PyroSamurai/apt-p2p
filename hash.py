@@ -56,7 +56,7 @@ class NewID(unittest.TestCase):
 
 class Intify(unittest.TestCase):
     known = [('\0' * 20, 0),
-	     ('\xff' * 20, 2**160 - 1),
+	     ('\xff' * 20, 2L**160 - 1),
 	    ]
     def testKnown(self):
 	for str, value in self.known: 
