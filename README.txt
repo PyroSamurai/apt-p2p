@@ -1,9 +1,16 @@
 quick example:
 
-import khashmir, thread
-k = khashmir.Khashmir('127.0.0.1', 4444)
-thread.start_new_thread(k.dispatcher.run, ())
-k.addContact('127.0.0.1', 8080)  # right now we don't do gethostbyname
-k.findCloseNodes()
+>>> import khashmir
+>>> k = khashmir.test_one(4444)  # choose any port
 
-alternatively, you can call k.dispatcher.runOnce() periodically from whatever thread you choose
+If you want to make another peer in the same session, use peer = khashmir.Khashmir(host, port) then do peer.app.run() to register with the already running thread.
+
+
+>>> k.addContact('127.0.0.1', 8080)  # locate another peer
+>>> k.findCloseNodes()  # query the network to bootstrap our table
+
+Keys are always 20-character strings (sha1 hashes)
+
+>>> k.storeKeyForValue(key, value)  # no callback right now
+>>> k.valueForKey(key, callback)
+
