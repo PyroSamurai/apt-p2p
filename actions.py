@@ -165,8 +165,11 @@ class GetValue(FindNode):
 	    reactor.callFromThread(self.callback,[])
     
     ## get value
-    def goWithNodes(self, nodes):
+    def goWithNodes(self, nodes, found=None):
 	self.results = {}
+	if found:
+	    for n in found:
+		self.results[n] = 1
 	for node in nodes:
 	    if node.id == self.table.node.id:
 		continue

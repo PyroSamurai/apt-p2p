@@ -92,14 +92,16 @@ class Khashmir(xmlrpc.XMLRPC):
     def valueForKey(self, key, callback):
 	""" returns the values found for key in global table """
 	nodes = self.table.findNodes(key)
-	# create our search state
-	state = GetValue(self, key, callback)
-	reactor.callFromThread(state.goWithNodes, nodes)
-	
+
 	# get locals
 	l = self.retrieveValues(key)
 	if len(l) > 0:
 	    reactor.callFromThread(callback, l)
+
+	# create our search state
+	state = GetValue(self, key, callback)
+	reactor.callFromThread(state.goWithNodes, nodes, {'found' : l})
+	
 
 
     ## async, but in the current implementation there is no guarantee a store does anything so there is no callback right now
