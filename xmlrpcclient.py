@@ -23,7 +23,11 @@ class XMLRPCClient(HTTPClient):
 	    print "response decode error: " + `e`
 	    self.d.errback()
 	else:
-	    apply(self.d.callback, args)
+	    l = []
+	    for i in args:
+		l.append(i)
+	    l.append({'host' : self.transport.getHost()[1]})
+	    apply(self.d.callback, (l,))
 
 class XMLRPCClientFactory(ClientFactory):
     def __init__(self, method, args, callback=None, errback=None):
