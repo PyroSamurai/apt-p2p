@@ -11,6 +11,6 @@ If you want to make another peer in the same session, use peer = khashmir.Khashm
 
 Keys are always 20-character strings (sha1 hashes)
 
->>> k.storeKeyForValue(key, value)  # no callback right now
+>>> k.storeValueForKey(key, value)  # no callback right now
 >>> k.valueForKey(key, callback)
 
