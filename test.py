@@ -1,9 +1,9 @@
 import unittest
 
-import hash, node, messages
-import ktable, transactions, khashmir
-import protocol
+import ktable, khashmir
+import hash, node, knode
+import actions, xmlrpcclient
 import bencode, btemplate
 
-tests = unittest.defaultTestLoader.loadTestsFromNames(['hash', 'node', 'bencode', 'btemplate', 'messages', 'transactions', 'ktable', 'protocol'])
+tests = unittest.defaultTestLoader.loadTestsFromNames(['hash', 'node', 'knode', 'bencode', 'btemplate', 'actions',  'ktable', 'xmlrpcclient'])
 result = unittest.TextTestRunner().run(tests)
