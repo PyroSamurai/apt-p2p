@@ -1,6 +1,4 @@
 from time import time
-from bencode import bdecode as loads
-from bencode import bencode as dumps
 
 from const import reactor
 import const
@@ -14,7 +12,7 @@ class ActionBase:
     def __init__(self, table, target, callback):
 	self.table = table
 	self.target = target
-	self.int = intify(target)
+	self.num = intify(target)
 	self.found = {}
 	self.queried = {}
 	self.answered = {}
@@ -22,9 +20,9 @@ class ActionBase:
 	self.outstanding = 0
 	self.finished = 0
 	
-	def sort(a, b, int=self.int):
+	def sort(a, b, num=self.num):
 	    """ this function is for sorting nodes relative to the ID we are looking for """
-	    x, y = int ^ a.int, int ^ b.int
+	    x, y = num ^ a.num, num ^ b.num
 	    if x > y:
 		return 1
 	    elif x < y:

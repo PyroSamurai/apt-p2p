@@ -7,6 +7,12 @@ main.installReactor(reactor)
 # magic id to use before we know a peer's id
 NULL_ID =  20 * '\0'
 
+# Kademlia "K" constant
+K = 8
+
+# SHA1 is 160 bits long
+HASH_LENGTH = 160
+
 
 ### SEARCHING/STORING
 # concurrent xmlrpc calls per find node/value request!

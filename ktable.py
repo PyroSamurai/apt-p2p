@@ -17,9 +17,9 @@ class KTable:
         self.buckets = [KBucket([], 0L, 2L**HASH_LENGTH)]
         self.insertNode(node)
         
-    def _bucketIndexForInt(self, int):
+    def _bucketIndexForInt(self, num):
         """the index of the bucket that should hold int"""
-        return bisect_left(self.buckets, int)
+        return bisect_left(self.buckets, num)
     
     def findNodes(self, id):
         """k nodes in our own local table closest to the ID.
@@ -28,20 +28,20 @@ class KTable:
         to not send messages to yourself if it matters."""
         
         if isinstance(id, str):
-            int = hash.intify(id)
+            num = hash.intify(id)
         elif isinstance(id, Node):
-            int = id.int
+            num = id.num
         elif isinstance(id, int) or isinstance(id, long):
-            int = id
+            num = id
         else:
             raise TypeError, "findNodes requires an int, string, or Node"
             
         nodes = []
-        i = self._bucketIndexForInt(int)
+        i = self._bucketIndexForInt(num)
         
         # if this node is already in our table then return it
         try:
-            index = self.buckets[i].l.index(int)
+            index = self.buckets[i].l.index(num)
         except ValueError:
             pass
         else:
@@ -60,7 +60,7 @@ class KTable:
                 min = min - 1
                 max = max + 1
 
-        nodes.sort(lambda a, b, int=int: cmp(int ^ a.int, int ^ b.int))
+        nodes.sort(lambda a, b, num=num: cmp(num ^ a.num, num ^ b.num))
         return nodes[:K]
         
     def _splitBucket(self, a):
@@ -70,16 +70,16 @@ class KTable:
         a.max = a.max - diff
         # transfer nodes to new bucket
         for anode in a.l[:]:
-            if anode.int >= a.max:
+            if anode.num >= a.max:
                 a.l.remove(anode)
                 b.l.append(anode)
 
     def replaceStaleNode(self, stale, new):
         """this is used by clients to replace a node returned by insertNode after
         it fails to respond to a Pong message"""
-        i = self._bucketIndexForInt(stale.int)
+        i = self._bucketIndexForInt(stale.num)
         try:
-            it = self.buckets[i].l.index(stale.int)
+            it = self.buckets[i].l.index(stale.num)
         except ValueError:
             return
 
@@ -96,10 +96,10 @@ class KTable:
         assert node.id != " "*20
         if node.id == self.node.id: return
         # get the bucket for this node
-        i = self. _bucketIndexForInt(node.int)
+        i = self. _bucketIndexForInt(node.num)
         # check to see if node is in the bucket already
         try:
-            it = self.buckets[i].l.index(node.int)
+            it = self.buckets[i].l.index(node.num)
         except ValueError:
             # no
             pass
@@ -143,7 +143,7 @@ class KTable:
         """call this any time you get a message from a node
         it will update it in the table if it's there """
         try:
-            n = self.findNodes(node.int)[0]
+            n = self.findNodes(node.num)[0]
         except IndexError:
             return None
         else:
@@ -154,7 +154,7 @@ class KTable:
     def nodeFailed(self, node):
         """ call this when a node fails to respond to a message, to invalidate that node """
         try:
-            n = self.findNodes(node.int)[0]
+            n = self.findNodes(node.num)[0]
         except IndexError:
             return None
         else:
@@ -172,8 +172,8 @@ class KBucket:
     def touch(self):
         self.lastAccessed = time.time()
 
-    def getNodeWithInt(self, int):
-        if int in self.l: return int
+    def getNodeWithInt(self, num):
+        if num in self.l: return num
         else: raise ValueError
         
     def __repr__(self):
@@ -183,22 +183,22 @@ class KBucket:
     # necessary for bisecting list of buckets with a hash expressed as an integer or a distance
     # compares integer or node object with the bucket's range
     def __lt__(self, a):
-        if isinstance(a, Node): a = a.int
+        if isinstance(a, Node): a = a.num
         return self.max <= a
     def __le__(self, a):
-        if isinstance(a, Node): a = a.int
+        if isinstance(a, Node): a = a.num
         return self.min < a
     def __gt__(self, a):
-        if isinstance(a, Node): a = a.int
+        if isinstance(a, Node): a = a.num
         return self.min > a
     def __ge__(self, a):
-        if isinstance(a, Node): a = a.int
+        if isinstance(a, Node): a = a.num
         return self.max >= a
     def __eq__(self, a):
-        if isinstance(a, Node): a = a.int
+        if isinstance(a, Node): a = a.num
         return self.min <= a and self.max > a
     def __ne__(self, a):
-        if isinstance(a, Node): a = a.int
+        if isinstance(a, Node): a = a.num
         return self.min >= a or self.max < a
 
 

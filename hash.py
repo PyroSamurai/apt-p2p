@@ -8,9 +8,9 @@ def intify(hstr):
     assert len(hstr) == 20
     return long(hstr.encode('hex'), 16)
 
-def stringify(int):
+def stringify(num):
     """long int -> 20-character string"""
-    str = hex(int)[2:]
+    str = hex(num)[2:]
     if str[-1] == 'L':
         str = str[:-1]
     if len(str) % 2 != 0:
