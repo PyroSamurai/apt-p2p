@@ -595,7 +595,7 @@ class BasicTests(unittest.TestCase):
     def testRecipientReset(self):
         self.testTwoWayBlast()
         self.b.protocol.q = []
-        self.noisy = 1
+        self.noisy = 0
         a = self.a
         b = self.b
         msg = swap(a, noisy=self.noisy)

@@ -30,7 +30,7 @@ confirmed = 2
 
 
 
-class Airhook(protocol.DatagramProtocol):       
+class Airhook:       
     def __init__(self):
         self.noisy = None
         # this should be changed to storage that drops old entries
@@ -46,19 +46,24 @@ class Airhook(protocol.DatagramProtocol):
             raise Exception
         if not self.connections.has_key(addr):
             conn = self.connection()
+            conn.addr = addr
+            conn.makeConnection(self.transport)
             conn.protocol = self.factory.buildProtocol(addr)
             conn.protocol.makeConnection(conn)
-            conn.makeConnection(self.transport)
-            conn.addr = addr
             self.connections[addr] = conn
         else:
             conn = self.connections[addr]
         return conn
     def makeConnection(self, transport):
-        protocol.DatagramProtocol.makeConnection(self, transport)
-        tup = transport.getHost()
-        self.addr = (tup[1], tup[2])
-        
+        self.transport = transport
+        addr = transport.getHost()
+        self.addr = (addr.host, addr.port)
+
+    def doStart(self):
+        pass
+    def doStop(self):
+        pass
+    
 class AirhookPacket:
     def __init__(self, msg):
         self.datagram = msg
@@ -93,7 +98,7 @@ class AirhookPacket:
                 self.msgs.append( msg[skip:skip+n])
                 skip += n
 
-class AirhookConnection(protocol.ConnectedDatagramProtocol, interfaces.IUDPConnectedTransport):
+class AirhookConnection:
     def __init__(self):        
         self.outSeq = 0  # highest sequence we have sent, can't be 255 more than obSeq
         self.observed = None  # their session id
@@ -108,7 +113,10 @@ class AirhookConnection(protocol.ConnectedDatagramProtocol, interfaces.IUDPConne
         self.response = 0 # if we know we have a response now (like resending missed packets)
         self.noisy = 0
         self.resetConnection()
-    
+
+    def makeConnection(self, transport):
+        self.transport = transport
+        
     def resetConnection(self):
         self.weMissed = []
         self.outMsgs = [None] * 256  # outgoing messages  (seq sent, message), index = message number
@@ -298,16 +306,20 @@ class AirhookConnection(protocol.ConnectedDatagramProtocol, interfaces.IUDPConne
     def timeToSend(self):
         if self.state == pending:
             return (1, 0)
+
+        outstanding = (256 + (((self.next - 1) % 256) - self.outMsgNums[self.obSeq % 256])) % 256
         # any outstanding messages and are we not too far ahead of our counterparty?
-        elif len(self.omsgq) > 0 and self.state != sent and (self.next + 1) % 256 != self.outMsgNums[self.obSeq % 256] and (self.outSeq - self.obSeq) % 2**16 < 256:
+        if len(self.omsgq) > 0 and self.state != sent and (self.next + 1) % 256 != self.outMsgNums[self.obSeq % 256] and (self.outSeq - self.obSeq) % 2**16 < 256:
+        #if len(self.omsgq) > 0 and self.state != sent and (self.next + 1) % 256 != self.outMsgNums[self.obSeq % 256] and not outstanding:
             return (1, 0)
+
         # do we explicitly need to send a response?
-        elif self.response:
+        if self.response:
             self.response = 0
             return (1, 0)
         # have we not sent anything in a while?
-        elif time() - self.lastTransmit > 1.0:
-            return (1, 1)
+        #elif time() - self.lastTransmit > 1.0:
+        #return (1, 1)
             
         # nothing to send
         return (0, 0)
@@ -398,7 +410,6 @@ class StreamConnection(AirhookConnection):
             self.omsgq.insert(0, p)
             data = data[253:]
             self.oseq = (self.oseq + 1) % 2**16
-
         self.schedule()
         
     def writeSequence(self, sequence):
