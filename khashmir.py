@@ -130,7 +130,7 @@ class Khashmir(xmlrpc.XMLRPC):
 		    def default(err, node=node, table=table):
 			table.nodeFailed(node)
 		    df = node.storeValue(key, value, self.node.senderDict())
-		    df.addCallbacks(cb, lambda: None)
+		    df.addCallbacks(cb, lambda x: None)
 	# this call is asynch
 	self.findNode(key, _storeValueForKey)
 	
