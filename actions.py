@@ -181,7 +181,7 @@ class KeyExpirer:
 	reactor.callLater(const.KEINITIAL_DELAY, self.doExpire)
 	
     def doExpire(self):
-	self.cut = `time() - const.KE_AGE`
+	self.cut = "%0.6f" % (time() - const.KE_AGE)
 	self._expire()
 	
     def _expire(self):

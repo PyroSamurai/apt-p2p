@@ -258,15 +258,15 @@ class Khashmir(xmlrpc.XMLRPC):
 	return nodes, self.node.senderDict()
     	    
     def xmlrpc_store_value(self, key, value, sender):
-	t = `time.time()`
-	s = "insert into kv values ('%s', '%s', '%s')" % (key, value, t)
+	t = "%0.6f" % time.time()
+	s = "insert into kv values ('%s', '%s', '%s');" % (key, value, t)
 	c = self.store.cursor()
 	try:
 	    c.execute(s)
 	except pysqlite_exceptions.IntegrityError, reason:
 	    if reason == 'constraint failed':
 		# update last insert time
-		s = "update kv set time = '%s' where key = '%s' and value = %s" % (key, value)
+		s = "update kv set time = '%s' where key = '%s' and value = %s; commit;" % (t, key, value)
 		c.execute(s)
 	    else:
 		raise pysqlite_exceptions.IntegrityError, reason
