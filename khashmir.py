@@ -226,7 +226,7 @@ def test_build_net(quiet=0):
     import thread
     port = 2001
     l = []
-    peers = 16
+    peers = 128
     
     if not quiet:
 	print "Building %s peer table." % peers
@@ -235,18 +235,15 @@ def test_build_net(quiet=0):
 	a = Khashmir('localhost', port + i)
 	l.append(a)
     
-    def run(l=l):
-	while(1):
-		events = 0
-		for peer in l:
-			events = events + peer.dispatcher.runOnce()
-		if events == 0:
-			time.sleep(.25)
 
     thread.start_new_thread(l[0].app.run, ())
+    time.sleep(1)
     for peer in l[1:]:
 	peer.app.run()
-	
+	#time.sleep(.25)
+
+    print "adding contacts...."
+
     for peer in l[1:]:
 	n = l[randrange(0, len(l))].node
 	peer.addContact(n.host, n.port)
@@ -254,14 +251,16 @@ def test_build_net(quiet=0):
 	peer.addContact(n.host, n.port)
 	n = l[randrange(0, len(l))].node
 	peer.addContact(n.host, n.port)
-	
-    time.sleep(5)
+	time.sleep(.30)
+
+    time.sleep(2)
+    print "finding close nodes...."
 
     for peer in l:
 	peer.findCloseNodes()
-    time.sleep(5)
-    for peer in l:
-	peer.refreshTable()
+	time.sleep(1)
+#    for peer in l:
+#	peer.refreshTable()
     return l
         
 def test_find_nodes(l, quiet=0):
