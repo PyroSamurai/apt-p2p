@@ -46,8 +46,9 @@ class FindNode(ActionBase):
         _krpc_sender = dict['_krpc_sender']
         dict = dict['rsp']
         l = dict["nodes"]
-        sender = dict["sender"]
+        sender = {'id' : dict["id"]}
         sender['port'] = _krpc_sender[1]        
+        sender['host'] = _krpc_sender[0]        
         sender = Node().initWithDict(sender)
         sender.conn = self.table.udp.connectionForAddr((sender.host, sender.port))
         self.table.table.insertNode(sender)
@@ -77,7 +78,7 @@ class FindNode(ActionBase):
                 return self.callback([node])
             if (not self.queried.has_key(node.id)) and node.id != self.table.node.id:
                 #xxxx t.timeout = time.time() + FIND_NODE_TIMEOUT
-                df = node.findNode(self.target, self.table.node.senderDict())
+                df = node.findNode(self.target, self.table.node.id)
                 df.addCallbacks(self.handleGotNodes, self.makeMsgFailed(node))
                 self.outstanding = self.outstanding + 1
                 self.queried[node.id] = 1
@@ -117,8 +118,9 @@ class GetValue(FindNode):
     def handleGotNodes(self, dict):
         _krpc_sender = dict['_krpc_sender']
         dict = dict['rsp']
-        sender = dict["sender"]
-        sender['port'] = _krpc_sender[1]        
+        sender = {'id' : dict["id"]}
+        sender['port'] = _krpc_sender[1]
+        sender['host'] = _krpc_sender[0]                
         sender = Node().initWithDict(sender)
         sender.conn = self.table.udp.connectionForAddr((sender.host, sender.port))
         self.table.table.insertNode(sender)
@@ -158,7 +160,7 @@ class GetValue(FindNode):
         for node in l[:K]:
             if (not self.queried.has_key(node.id)) and node.id != self.table.node.id:
                 #xxx t.timeout = time.time() + GET_VALUE_TIMEOUT
-                df = node.findValue(self.target, self.table.node.senderDict())
+                df = node.findValue(self.target, self.table.node.id)
                 df.addCallback(self.handleGotNodes)
                 df.addErrback(self.makeMsgFailed(node))
                 self.outstanding = self.outstanding + 1
@@ -229,7 +231,7 @@ class StoreValue(ActionBase):
             else:
                 if not node.id == self.table.node.id:
                     self.outstanding += 1
-                    df = node.storeValue(self.target, self.value, self.table.node.senderDict())
+                    df = node.storeValue(self.target, self.value, self.table.node.id)
                     df.addCallback(self.storedValue, node=node)
                     df.addErrback(self.storeFailed, node=node)
                     

@@ -117,8 +117,7 @@ class Khashmir(protocol.Factory):
         c.execute("delete from nodes where id not NULL;")
         for bucket in self.table.buckets:
             for node in bucket.l:
-                d = node.senderDict()
-                c.execute("insert into nodes values (%s, %s, %s);", (sqlite.encode(d['id']), d['host'], d['port']))
+                c.execute("insert into nodes values (%s, %s, %s);", (sqlite.encode(node.id), node.host, node.port))
         self.store.commit()
         self.store.autocommit = 1;
         
@@ -223,23 +222,22 @@ class Khashmir(protocol.Factory):
             def _notStaleNodeHandler(dict, old=old):
                 """ called when we get a pong from the old node """
                 dict = dict['rsp']
-                sender = dict['sender']
-                if sender['id'] == old.id:
+                if dict['id'] == old.id:
                     self.table.justSeenNode(old.id)
             
-            df = old.ping(self.node.senderDict())
+            df = old.ping(self.node.id)
             df.addCallbacks(_notStaleNodeHandler, _staleNodeHandler)
 
     def sendPing(self, node, callback=None):
         """
             ping a node
         """
-        df = node.ping(self.node.senderDict())
+        df = node.ping(self.node.id)
         ## these are the callbacks we use when we issue a PING
         def _pongHandler(dict, node=node, table=self.table, callback=callback):
             _krpc_sender = dict['_krpc_sender']
             dict = dict['rsp']
-            sender = dict['sender']
+            sender = {'id' : dict['id']}
             if node.id != const.NULL_ID and node.id != sender['id']:
                 # whoah, got response from different peer than we were expecting
                 self.table.invalidateNode(node)
@@ -293,29 +291,27 @@ class Khashmir(protocol.Factory):
     #####
     ##### INCOMING MESSAGE HANDLERS
     
-    def krpc_ping(self, sender, _krpc_sender):
-        """
-            takes sender dict = {'id', <id>, 'port', port} optional keys = 'ip'
-            returns sender dict
-        """
+    def krpc_ping(self, id, _krpc_sender):
+        sender = {'id' : id}
         sender['host'] = _krpc_sender[0]
         sender['port'] = _krpc_sender[1]        
         n = Node().initWithDict(sender)
         n.conn = self.udp.connectionForAddr((n.host, n.port))
         self.insertNode(n, contacted=0)
-        return {"sender" : self.node.senderDict()}
+        return {"id" : self.node.id}
         
-    def krpc_find_node(self, target, sender, _krpc_sender):
+    def krpc_find_node(self, target, id, _krpc_sender):
         nodes = self.table.findNodes(target)
         nodes = map(lambda node: node.senderDict(), nodes)
+        sender = {'id' : id}
         sender['host'] = _krpc_sender[0]
         sender['port'] = _krpc_sender[1]        
         n = Node().initWithDict(sender)
         n.conn = self.udp.connectionForAddr((n.host, n.port))
         self.insertNode(n, contacted=0)
-        return {"nodes" : nodes, "sender" : self.node.senderDict()}
+        return {"nodes" : nodes, "id" : self.node.id}
             
-    def krpc_store_value(self, key, value, sender, _krpc_sender):
+    def krpc_store_value(self, key, value, id, _krpc_sender):
         t = "%0.6f" % time.time()
         c = self.store.cursor()
         try:
@@ -323,14 +319,16 @@ class Khashmir(protocol.Factory):
         except sqlite.IntegrityError, reason:
             # update last insert time
             c.execute("update kv set time = %s where key = %s and value = %s;", (t, sqlite.encode(key), sqlite.encode(value)))
+        sender = {'id' : id}
         sender['host'] = _krpc_sender[0]
         sender['port'] = _krpc_sender[1]        
         n = Node().initWithDict(sender)
         n.conn = self.udp.connectionForAddr((n.host, n.port))
         self.insertNode(n, contacted=0)
-        return {"sender" : self.node.senderDict()}
+        return {"id" : self.node.id}
     
-    def krpc_find_value(self, key, sender, _krpc_sender):
+    def krpc_find_value(self, key, id, _krpc_sender):
+        sender = {'id' : id}
         sender['host'] = _krpc_sender[0]
         sender['port'] = _krpc_sender[1]        
         n = Node().initWithDict(sender)
@@ -339,9 +337,9 @@ class Khashmir(protocol.Factory):
     
         l = self.retrieveValues(key)
         if len(l) > 0:
-            return {'values' : l, "sender": self.node.senderDict()}
+            return {'values' : l, "id": self.node.id}
         else:
             nodes = self.table.findNodes(key)
             nodes = map(lambda node: node.senderDict(), nodes)
-            return {'nodes' : nodes, "sender": self.node.senderDict()}
+            return {'nodes' : nodes, "id": self.node.id}
 

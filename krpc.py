@@ -10,6 +10,9 @@ from twisted.internet import protocol
 from twisted.internet import reactor
 import time
 
+import sys
+from traceback import format_exception
+
 import khash as hash
 
 KRPC_TIMEOUT = 60
@@ -89,7 +92,7 @@ class KRPC:
                         ret = apply(f, (), msg[ARG])
                     except Exception, e:
                         ## send error
-                        out = bencode({TID:msg[TID], TYP:ERR, ERR :`e`})
+                        out = bencode({TID:msg[TID], TYP:ERR, ERR :`format_exception(type(e), e, sys.exc_info()[2])`})
                         olen = len(out)
                         self.transport.write(out, addr)
                     else:
@@ -121,7 +124,7 @@ class KRPC:
                     del(self.tids[msg[TID]])
                     df.callback({'rsp' : msg[RSP], '_krpc_sender': addr})
                 else:
-                    print 'timeout ' + `msg[RSP]['sender']`
+                    print 'timeout ' + `msg[RSP]['id']`
                     # no tid, this transaction timed out already...
             elif msg[TYP] == ERR:
                 # if error
