@@ -5,6 +5,7 @@ from bisect import *
 import time
 from types import *
 
+import const
 from node import Node
 
 # The all-powerful, magical Kademlia "k" constant, bucket depth
@@ -104,7 +105,8 @@ class KTable:
 	    return
 
 	del(self.buckets[i].l[it])
-	self.buckets[i].l.append(new)
+	if new:
+	    self.buckets[i].l.append(new)
 
     def insertNode(self, node):
 	""" 
@@ -163,7 +165,16 @@ class KTable:
 	    n.updateLastSeen()
 	    return tstamp
 
-
+    def nodeFailed(self, node):
+	""" call this when a node fails to respond to a message, to invalidate that node """
+    	try:
+	    n = self.findNodes(node.int)[0]
+	except IndexError:
+	    return None
+	else:
+	    if(n.msgFailed() >= const.MAX_FAILURES):
+		self.replaceStaleNode(n, None)
+	
 class KBucket:
     __slots = ['min', 'max', 'lastAccessed']
     def __init__(self, contents, min, max):

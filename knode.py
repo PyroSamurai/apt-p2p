@@ -4,7 +4,8 @@ from xmlrpcclient import XMLRPCClientFactory as factory
 from const import reactor
 from xmlrpclib import Binary
 
-class KNode(Node):
+
+class KNode(Node):	
     def ping(self, sender):
 	df = Deferred()
 	f = factory('ping', (sender,), df.callback, df.errback)

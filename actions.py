@@ -4,6 +4,7 @@ from pickle import loads, dumps
 from bsddb3 import db
 
 from const import reactor
+import const
 
 from hash import intify
 from knode import KNode as Node
@@ -47,6 +48,7 @@ class FindNode(ActionBase):
     def handleGotNodes(self, args):
 	l, sender = args
 	sender = Node().initWithDict(sender)
+	self.table.table.insertNode(sender)
 	if self.finished or self.answered.has_key(sender.id):
 	    # a day late and a dollar short
 	    return
@@ -75,7 +77,7 @@ class FindNode(ActionBase):
 	    if not self.queried.has_key(node.id) and node.id != self.table.node.id:
 		#xxxx t.timeout = time.time() + FIND_NODE_TIMEOUT
 		df = node.findNode(self.target, self.table.node.senderDict())
-		df.addCallbacks(self.handleGotNodes, self.defaultGotNodes)
+		df.addCallbacks(self.handleGotNodes, self.makeMsgFailed(node))
 		self.outstanding = self.outstanding + 1
 		self.queried[node.id] = 1
 	    if self.outstanding >= N:
@@ -86,12 +88,14 @@ class FindNode(ActionBase):
 	    self.finished=1
 	    reactor.callFromThread(self.callback, l[:K])
 	
-    def defaultGotNodes(self, t):
-	if self.finished:
-	    return
-	self.outstanding = self.outstanding - 1
-	self.schedule()
-	
+    def makeMsgFailed(self, node):
+	def defaultGotNodes(err, self=self, node=node):
+	    self.table.table.nodeFailed(node)
+	    if self.finished:
+		return
+	    self.outstanding = self.outstanding - 1
+	    self.schedule()
+	return defaultGotNodes
 	
     def goWithNodes(self, nodes):
 	"""
@@ -104,7 +108,7 @@ class FindNode(ActionBase):
 	    self.found[node.id] = node
 	    #xxx t.timeout = time.time() + FIND_NODE_TIMEOUT
 	    df = node.findNode(self.target, self.table.node.senderDict())
-	    df.addCallbacks(self.handleGotNodes, self.defaultGotNodes)
+	    df.addCallbacks(self.handleGotNodes, self.makeMsgFailed(node))
 	    self.outstanding = self.outstanding + 1
 	    self.queried[node.id] = 1
 	if self.outstanding == 0:
@@ -117,6 +121,7 @@ class GetValue(FindNode):
     def handleGotNodes(self, args):
 	l, sender = args
 	sender = Node().initWithDict(sender)
+	self.table.table.insertNode(sender)
 	if self.finished or self.answered.has_key(sender.id):
 	    # a day late and a dollar short
 	    return
@@ -136,6 +141,8 @@ class GetValue(FindNode):
 		if not z.has_key(y):
 		    z[y] = 1
 		    return y
+		else:
+		    return None
 	    v = filter(None, map(x, l['values']))
 	    if(len(v)):
 		reactor.callFromThread(self.callback, v)
@@ -153,7 +160,7 @@ class GetValue(FindNode):
 		#xxx t.timeout = time.time() + GET_VALUE_TIMEOUT
 		df = node.findValue(self.target, self.table.node.senderDict())
 		df.addCallback(self.handleGotNodes)
-		df.addErrback(self.defaultGotNodes)
+		df.addErrback(self.makeMsgFailed(node))
 		self.outstanding = self.outstanding + 1
 		self.queried[node.id] = 1
 	    if self.outstanding >= N:
@@ -177,26 +184,23 @@ class GetValue(FindNode):
 	    #xxx t.timeout = time.time() + FIND_NODE_TIMEOUT
 	    df = node.findValue(self.target, self.table.node.senderDict())
 	    df.addCallback(self.handleGotNodes)
-	    df.addErrback(self.defaultGotNodes)
+	    df.addErrback(self.makeMsgFailed(node))
 	    self.outstanding = self.outstanding + 1
 	    self.queried[node.id] = 1
 	if self.outstanding == 0:
 	    reactor.callFromThread(self.callback, [])
 
 
-KEINITIAL_DELAY = 60 * 60 * 24 # 24 hours
-KE_DELAY = 60 * 60 # 1 hour
-KE_AGE = KEINITIAL_DELAY
 
 class KeyExpirer:
     def __init__(self, store, itime, kw):
 	self.store = store
 	self.itime = itime
 	self.kw = kw
-	reactor.callLater(KEINITIAL_DELAY, self.doExpire)
+	reactor.callLater(const.KEINITIAL_DELAY, self.doExpire)
 	
     def doExpire(self):
-	self.cut = `time() - KE_AGE`
+	self.cut = `time() - const.KE_AGE`
 	self._expire()
 	
     def _expire(self):
@@ -234,7 +238,7 @@ class KeyExpirer:
 		    break
 	    irec = f()
 	    
-	reactor.callLater(KE_DELAY, self.doExpire)
+	reactor.callLater(const.KE_DELAY, self.doExpire)
 	if(i > 0):
 	    print ">>>KE: done expiring %d" % i
 	

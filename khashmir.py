@@ -100,7 +100,7 @@ class Khashmir(xmlrpc.XMLRPC):
 
 	# create our search state
 	state = GetValue(self, key, callback)
-	reactor.callFromThread(state.goWithNodes, nodes, {'found' : l})
+	reactor.callFromThread(state.goWithNodes, nodes, l)
 	
 
 
@@ -111,16 +111,22 @@ class Khashmir(xmlrpc.XMLRPC):
 	    values are stored in peers on a first-come first-served basis
 	    this will probably change so more than one value can be stored under a key
 	"""
-	def _storeValueForKey(nodes, key=key, value=value, response=callback , default= lambda t: "didn't respond"):
+	def _storeValueForKey(nodes, key=key, value=value, response=callback , table=self.table):
 	    if not callback:
 	        # default callback - this will get called for each successful store value
 		def _storedValueHandler(sender):
 		    pass
 		response=_storedValueHandler
+	
 	    for node in nodes:
+		def cb(t, table = table, node=node, resp=response):
+		    self.table.insertNode(node)
+		    response(t)
 		if node.id != self.node.id:
+		    def default(err, node=node, table=table):
+			table.nodeFailed(node)
 		    df = node.storeValue(key, value, self.node.senderDict())
-		    df.addCallbacks(response, default)
+		    df.addCallbacks(cb, default)
 	# this call is asynch
 	self.findNode(key, _storeValueForKey)
 	
@@ -144,10 +150,10 @@ class Khashmir(xmlrpc.XMLRPC):
 		self.table.replaceStaleNode(old, newnode)
 	
 	    def _notStaleNodeHandler(sender, old=old):
-		""" called when we get a ping from the remote node """
+		""" called when we get a pong from the old node """
 		sender = Node().initWithDict(sender)
 		if sender.id == old.id:
-		    self.table.insertNode(old)
+		    self.table.justSeenNode(old)
 
 	    df = old.ping(self.node.senderDict())
 	    df.addCallbacks(_notStaleNodeHandler, _staleNodeHandler)
@@ -170,9 +176,8 @@ class Khashmir(xmlrpc.XMLRPC):
 		n = Node().initWithDict(sender)
 		table.insertNode(n)
 	    return
-	def _defaultPong(err):
-	    # this should probably increment a failed message counter and dump the node if it gets over a threshold
-	    return	
+	def _defaultPong(err, node=node, table=self.table):
+	   	table.nodeFailed(node)
 
 	df.addCallbacks(_pongHandler,_defaultPong)
 

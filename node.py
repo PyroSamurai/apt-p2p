@@ -5,12 +5,16 @@ from xmlrpclib import Binary
 
 class Node:
     """encapsulate contact info"""
+    
+    def __init__(self):
+	self.fails = 0
+	self.lastSeen = time.time()
+
     def init(self, id, host, port):
 	self.id = id
 	self.int = hash.intify(id)
 	self.host = host
 	self.port = port
-	self.lastSeen = time.time()
 	self._senderDict = {'id': Binary(self.id), 'port' : self.port, 'host' : self.host}
 	return self
 	
@@ -20,12 +24,16 @@ class Node:
 	self.int = hash.intify(self.id)
 	self.port = dict['port']
 	self.host = dict['host']
-	self.lastSeen = time.time()
 	return self
 	
     def updateLastSeen(self):
 	self.lastSeen = time.time()
-
+	self.fails = 0
+	
+    def msgFailed(self):
+	self.fails = self.fails + 1
+	return self.fails
+	
     def senderDict(self):
 	return self._senderDict
 	
