@@ -219,11 +219,11 @@ import unittest
 
 class TestKTable(unittest.TestCase):
     def setUp(self):
-	self.a = Node(hash.newID(), 'localhost', 2002)
+	self.a = Node().init(hash.newID(), 'localhost', 2002)
 	self.t = KTable(self.a)
 
     def test_replace_stale_node(self):
-	self.b = Node(hash.newID(), 'localhost', 2003)
+	self.b = Node().init(hash.newID(), 'localhost', 2003)
 	self.t.replaceStaleNode(self.a, self.b)
 	assert(len(self.t.buckets[0].l) == 1)
 	assert(self.t.buckets[0].l[0].id == self.b.id)

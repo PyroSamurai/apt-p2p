@@ -63,7 +63,7 @@ import unittest
 
 class TestNode(unittest.TestCase):
     def setUp(self):
-	self.node = Node(hash.newID(), 'localhost', 2002)
+	self.node = Node().init(hash.newID(), 'localhost', 2002)
     def testUpdateLastSeen(self):
 	t = self.node.lastSeen
 	self.node.updateLastSeen()
