@@ -35,7 +35,8 @@ class XMLRPCClientFactory(ClientFactory):
 	    self.d.addCallback(callback)
 	if errback:
 	    self.d.addErrback(errback)
-	    
+        self.noisy = 0
+        
     def buildProtocol(self, addr):
         prot =  XMLRPCClient()
 	prot.method = self.method
