@@ -61,7 +61,6 @@ class KTable:
 	except ValueError:
 	    pass
 	else:
-	    self.buckets[i].touch()
 	    return [self.buckets[i].l[index]]
 	    
 	nodes = nodes + self.buckets[i].l
@@ -75,10 +74,8 @@ class KTable:
 	    while (len(nodes) < K and (min >= 0 or max < len(self.buckets))):
 		if min >= 0:
 		    nodes = nodes + self.buckets[min].l
-		    self.buckets[min].touch()
 		if max < len(self.buckets):
 		    nodes = nodes + self.buckets[max].l
-		    self.buckets[max].touch()
 		min = min - 1
 		max = max + 1
 	    nodes.sort(sort)
@@ -196,7 +193,6 @@ class KBucket:
     def getNodeWithInt(self, int):
 	try:
 	    return self.l[self.l.index(int)]
-	    self.touch()
 	except IndexError:
 	    raise ValueError
 	
