@@ -6,7 +6,7 @@ import whrandom
 def intify(hstr):
     """20 bit hash, big-endian -> long python integer"""
     assert len(hstr) == 20
-    return long(hstr.encode('hex'), 16))
+    return long(hstr.encode('hex'), 16)
 
 def stringify(int):
     """long int -> 20-character string"""
@@ -24,7 +24,7 @@ def distance(a, b):
 
 
 def newID():
-	"""returns a new pseudorandom globally unique ID string"""
+    """returns a new pseudorandom globally unique ID string"""
     h = sha()
     for i in range(20):
         h.update(chr(whrandom.randrange(0,256)))
