@@ -145,9 +145,7 @@ class KTable:
 	    return
 	    
 	# bucket is full, check to see if self.node is in the bucket
-	try:
-	    me = self.buckets[i].min <= self.node < self.buckets[i].max
-	except ValueError:
+	if not (self.buckets[i].min <= self.node < self.buckets[i].max):
 	    return self.buckets[i].l[0]
 	
 	## this bucket is full and contains our node, split the bucket

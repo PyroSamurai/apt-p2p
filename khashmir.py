@@ -199,15 +199,13 @@ class Khashmir(xmlrpc.XMLRPC):
 	df.addCallbacks(_pongHandler,_defaultPong)
 
 
-    def findCloseNodes(self):
+    def findCloseNodes(self, callback=lambda a: None):
 	"""
 	    This does a findNode on the ID one away from our own.  
 	    This will allow us to populate our table with nodes on our network closest to our own.
 	    This is called as soon as we start up with an empty table
 	"""
 	id = self.node.id[:-1] + chr((ord(self.node.id[-1]) + 1) % 256)
-	def callback(nodes):
-	    pass
 	self.findNode(id, callback)
 
     def refreshTable(self):
@@ -264,12 +262,9 @@ class Khashmir(xmlrpc.XMLRPC):
 	try:
 	    c.execute(s)
 	except pysqlite_exceptions.IntegrityError, reason:
-	    if reason == 'constraint failed':
-		# update last insert time
-		s = "update kv set time = '%s' where key = '%s' and value = %s; commit;" % (t, key, value)
-		c.execute(s)
-	    else:
-		raise pysqlite_exceptions.IntegrityError, reason
+	    # update last insert time
+	    s = "update kv set time = '%s' where key = '%s' and value = '%s';" % (t, key, value)
+	    c.execute(s)
 	self.store.commit()
 	ip = self.crequest.getClientIP()
 	sender['host'] = ip
@@ -300,6 +295,7 @@ class Khashmir(xmlrpc.XMLRPC):
 
 def test_build_net(quiet=0, peers=24, host='localhost',  pause=1):
     from whrandom import randrange
+    import threading
     import thread
     port = 2001
     l = []
@@ -316,7 +312,7 @@ def test_build_net(quiet=0, peers=24, host='localhost',  pause=1):
     time.sleep(1)
     for peer in l[1:]:
 	peer.app.run()
-	#time.sleep(.25)
+    time.sleep(10)
 
     print "adding contacts...."
 
@@ -328,17 +324,18 @@ def test_build_net(quiet=0, peers=24, host='localhost',  pause=1):
 	n = l[randrange(0, len(l))].node
 	peer.addContact(host, n.port)
 	if pause:
-	    time.sleep(.5)
-	    
-    time.sleep(1)
+	    time.sleep(.33)
+	
+    time.sleep(10)
     print "finding close nodes...."
 
     for peer in l:
-	peer.findCloseNodes()
-	if pause:
-	    time.sleep(.5)
-    if pause:
-	    time.sleep(1)
+	flag = threading.Event()
+	def cb(nodes, f=flag):
+	    f.set()
+	peer.findCloseNodes(cb)
+	flag.wait()
+
 #    for peer in l:
 #	peer.refreshTable()
     return l
