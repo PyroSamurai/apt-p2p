@@ -1,8 +1,14 @@
+from time import time
+from pickle import loads, dumps
+
+from bsddb3 import db
+
 from const import reactor
 
 from hash import intify
 from knode import KNode as Node
 from ktable import KTable, K
+
 # concurrent FIND_NODE/VALUE requests!
 N = 3
 
@@ -170,3 +176,55 @@ class GetValue(FindNode):
 	if self.outstanding == 0:
 	    reactor.callFromThread(self.callback, [])
 
+
+KEINITIAL_DELAY = 60 # 1 minute
+KE_DELAY = 60 # 1 minute
+KE_AGE = 60 * 5
+class KeyExpirer:
+    def __init__(self, store, itime, kw):
+	self.store = store
+	self.itime = itime
+	self.kw = kw
+	reactor.callLater(KEINITIAL_DELAY, self.doExpire)
+	
+    def doExpire(self):
+	self.cut = `time() - KE_AGE`
+	self._expire()
+	
+    def _expire(self):
+	ic = self.itime.cursor()
+	sc = self.store.cursor()
+	kc = self.kw.cursor()
+	irec = None
+	try:
+	    irec = ic.set_range(self.cut)
+	except db.DBNotFoundError:
+	    # everything is expired
+	    f = ic.prev
+	    irec = f()
+	else:
+	    f = ic.next
+	i = 0
+	while irec:
+	    it, h = irec
+	    try:
+		k, v, lt = loads(self.store[h])
+	    except KeyError:
+		ic.delete()
+	    else:
+		if lt < self.cut:
+		    try:
+			kc.set_both(k, h)
+		    except db.DBNotFoundError:
+			print "Database inconsistency!  No key->value entry when a store entry was found!"
+		    else:
+			kc.delete()
+		    self.store.delete(h)
+		    ic.delete()
+		    i = i + 1
+	    irec = f()
+	    
+	reactor.callLater(KE_DELAY, self.doExpire)
+	if(i > 0):
+	    print ">>>KE: done expiring %d" % i
+	
