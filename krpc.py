@@ -7,7 +7,7 @@ import time
 
 import hash
 
-KRPC_TIMEOUT = 30
+KRPC_TIMEOUT = 60
 
 KRPC_ERROR = 1
 KRPC_ERROR_METHOD_UNKNOWN = 2
@@ -19,6 +19,12 @@ class KRPC(basic.NetstringReceiver):
     def __init__(self):
         self.tids = {}
 
+
+    def dataRecieved(self, data):
+        basic.NetstringReceiver(self, data)
+        if self.brokenPeer:
+            self.resetConnection()
+            
     def resetConnection(self):
         self.brokenPeer = 0
         self._readerState = basic.LENGTH
@@ -45,26 +51,26 @@ class KRPC(basic.NetstringReceiver):
                         ret = apply(f, (), msg['arg'])
                     except Exception, e:
                         ## send error
-                        str = bencode({'tid':msg['tid'], 'typ':'err', 'err' :`e`})
-                        olen = len(str)
-                        self.sendString(str)
+                        out = bencode({'tid':msg['tid'], 'typ':'err', 'err' :`e`})
+                        olen = len(out)
+                        self.sendString(out)
                     else:
                         if ret:
                             #	make response
-                            str = bencode({'tid' : msg['tid'], 'typ' : 'rsp', 'rsp' : ret})
+                            out = bencode({'tid' : msg['tid'], 'typ' : 'rsp', 'rsp' : ret})
                         else:
-                            str = bencode({'tid' : msg['tid'], 'typ' : 'rsp', 'rsp' : {}})
+                            out = bencode({'tid' : msg['tid'], 'typ' : 'rsp', 'rsp' : {}})
                         #	send response
-                        olen = len(str)
-                        self.sendString(str)
+                        olen = len(out)
+                        self.sendString(out)
 
                 else:
                     if self.noisy:
                         print "don't know about method %s" % msg['req']
                     # unknown method
-                    str = bencode({'tid':msg['tid'], 'typ':'err', 'err' : KRPC_ERROR_METHOD_UNKNOWN})
-                    olen = len(str)
-                    self.sendString(str)
+                    out = bencode({'tid':msg['tid'], 'typ':'err', 'err' : KRPC_ERROR_METHOD_UNKNOWN})
+                    olen = len(out)
+                    self.sendString(out)
                 if self.noisy:
                     print "%s %s >>> %s - %s %s %s" % (time.asctime(), self.transport.addr, self.factory.node.port, 
                                                     ilen, msg['req'], olen)
@@ -76,7 +82,9 @@ class KRPC(basic.NetstringReceiver):
                     # 	callback
                     del(self.tids[msg['tid']])
                     df.callback({'rsp' : msg['rsp'], '_krpc_sender': self.transport.addr})
-                # no tid, this transaction timed out already...
+                else:
+                    print 'timeout ' + `msg['rsp']['sender']`
+                    # no tid, this transaction timed out already...
             elif msg['typ'] == 'err':
                 # if error
                 # 	lookup tid
@@ -85,6 +93,7 @@ class KRPC(basic.NetstringReceiver):
                 df.errback(msg['err'])
                 del(self.tids[msg['tid']])
             else:
+                print "unknown message type " + `msg`
                 # unknown message type
                 df = self.tids[msg['tid']]
                 # 	callback

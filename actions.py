@@ -88,7 +88,7 @@ class FindNode(ActionBase):
     
     def makeMsgFailed(self, node):
         def defaultGotNodes(err, self=self, node=node):
-            print ">>> find failed"
+            print ">>> find failed %s/%s" % (node.host, node.port)
             self.table.table.nodeFailed(node)
             self.outstanding = self.outstanding - 1
             self.schedule()
@@ -203,7 +203,7 @@ class StoreValue(ActionBase):
                 self.schedule()
             
     def storeFailed(self, t, node):
-        print ">>> store failed"
+        print ">>> store failed %s/%s" % (node.host, node.port)
         self.table.nodeFailed(node)
         self.outstanding -= 1
         if self.finished:

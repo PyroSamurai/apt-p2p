@@ -41,6 +41,8 @@ class Airhook(protocol.DatagramProtocol):
         self.connectionForAddr(addr).datagramReceived(datagram)
 
     def connectionForAddr(self, addr):
+        if addr == self.addr:
+            raise Exception
         if not self.connections.has_key(addr):
             conn = self.connection()
             conn.protocol = self.factory.buildProtocol(addr)
@@ -51,10 +53,10 @@ class Airhook(protocol.DatagramProtocol):
         else:
             conn = self.connections[addr]
         return conn
-#    def makeConnection(self, transport):
-#        protocol.DatagramProtocol.makeConnection(self, transport)
-#        tup = transport.getHost()
-#        self.addr = (tup[1], tup[2])
+    def makeConnection(self, transport):
+        protocol.DatagramProtocol.makeConnection(self, transport)
+        tup = transport.getHost()
+        self.addr = (tup[1], tup[2])
         
 class AirhookPacket:
     def __init__(self, msg):
@@ -93,18 +95,14 @@ class AirhookPacket:
 class AirhookConnection(protocol.ConnectedDatagramProtocol, interfaces.IUDPConnectedTransport):
     def __init__(self):        
         self.outSeq = 0  # highest sequence we have sent, can't be 255 more than obSeq
-        self.obSeq = 0   # highest sequence confirmed by remote
-        self.inSeq = 0   # last received sequence
         self.observed = None  # their session id
         self.sessionID = long(rand(0, 2**32))  # our session id
         
         self.lastTransmit = 0  # time we last sent a packet with messages
-        self.lastReceieved = 0 # time we last received a packet with messages
+        self.lastReceived = 0 # time we last received a packet with messages
         self.lastTransmitSeq = -1 # last sequence we sent a packet
         self.state = pending # one of pending, sent, confirmed
         
-        self.omsgq = [] # list of messages to go out
-        self.imsgq = [] # list of messages coming in
         self.sendSession = None  # send session/observed fields until obSeq > sendSession
         self.response = 0 # if we know we have a response now (like resending missed packets)
         self.noisy = 0
@@ -117,6 +115,10 @@ class AirhookConnection(protocol.ConnectedDatagramProtocol, interfaces.IUDPConne
         self.outMsgNums = [0] * 256 # outgoing message numbers i = outNum % 256
         self.next = 0  # next outgoing message number
         self.scheduled = 0 # a sendNext is scheduled, don't schedule another
+        self.omsgq = [] # list of messages to go out
+        self.imsgq = [] # list of messages coming in
+        self.obSeq = 0   # highest sequence confirmed by remote
+        self.inSeq = 0   # last received sequence
 
     def datagramReceived(self, datagram):
         if not datagram:
@@ -132,11 +134,14 @@ class AirhookConnection(protocol.ConnectedDatagramProtocol, interfaces.IUDPConne
                 if p.observed == self.sessionID:
                     self.observed = p.session
                     self.state = confirmed
+                    self.response = 1
                 else:
-                    # bogus packet!
-                    return
+                    self.observed = p.session
+                    self.response = 1
             elif p.session != None:
                 self.observed = p.session
+                self.response = 1
+            else:
                 self.response = 1
         elif self.state == sent:
             if p.observed != None and p.session != None:
@@ -149,8 +154,18 @@ class AirhookConnection(protocol.ConnectedDatagramProtocol, interfaces.IUDPConne
                     self.observed = p.session
                 elif self.observed != p.session:
                     self.state = pending
+                    self.observed = p.session
                     self.resetConnection()
+                    self.response = 1
+                    if hasattr(self.protocol, "resetConnection") and callable(self.protocol.resetConnection):
+                        self.protocol.resetConnection()
                     self.inSeq = p.seq
+                    self.schedule()
+                    return
+            elif p.session == None and p.observed == None:
+                self.response = 1
+                self.schedule()
+    
         elif self.state == confirmed:
             if p.session != None or p.observed != None :
                 if (p.session != None and p.session != self.observed) or (p.observed != None and p.observed != self.sessionID):
@@ -160,7 +175,8 @@ class AirhookConnection(protocol.ConnectedDatagramProtocol, interfaces.IUDPConne
                     self.inSeq = p.seq
                     if hasattr(self.protocol, "resetConnection") and callable(self.protocol.resetConnection):
                         self.protocol.resetConnection()
-
+                    self.schedule()
+                    return
         # check to make sure sequence number isn't out of order
         if (p.seq - self.inSeq) % 2**16 >= 256:
             return
@@ -357,7 +373,10 @@ class StreamConnection(AirhookConnection):
     def resetConnection(self):
         AirhookConnection.resetConnection(self)
         self.resetStream()
-        
+
+    def loseConnection(self):
+        pass
+    
     def dataCameIn(self):
         # put 'em together
         for msg in self.imsgq:

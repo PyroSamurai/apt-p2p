@@ -91,7 +91,6 @@ class EchoTest(TestCase):
         self.b = listenAirhookStream(4043, self.bf)
         
     def testEcho(self):
-        self.noisy = 1
         df = self.a.connectionForAddr(('127.0.0.1', 4043)).protocol.sendRequest('echo', {'msg' : "This is a test."})
         df.addCallback(self.gotMsg)
         reactor.iterate()
@@ -100,6 +99,39 @@ class EchoTest(TestCase):
         reactor.iterate()
         self.assertEqual(self.msg, "This is a test.")
 
+    def gotMsg(self, dict):
+        _krpc_sender = dict['_krpc_sender']
+        msg = dict['rsp']
+        self.msg = msg
+
+class ManyEchoTest(TestCase):
+    def setUp(self):
+        self.noisy = 0
+        self.msg = None
+        
+        self.af = Receiver()
+        self.bf = Receiver()        
+        self.a = listenAirhookStream(4588, self.af)
+        self.b = listenAirhookStream(4589, self.bf)
+        
+    def testManyEcho(self):
+        df = self.a.connectionForAddr(('127.0.0.1', 4589)).protocol.sendRequest('echo', {'msg' : "This is a test."})
+        df.addCallback(self.gotMsg)
+        reactor.iterate()
+        reactor.iterate()
+        reactor.iterate()
+        reactor.iterate()
+        self.assertEqual(self.msg, "This is a test.")
+        for i in xrange(100):
+            self.msg = None
+            df = self.a.connectionForAddr(('127.0.0.1', 4589)).protocol.sendRequest('echo', {'msg' : "This is a test."})
+            df.addCallback(self.gotMsg)
+            reactor.iterate()
+            reactor.iterate()
+            reactor.iterate()
+            reactor.iterate()
+            self.assertEqual(self.msg, "This is a test.")
+            
     def gotMsg(self, dict):
         _krpc_sender = dict['_krpc_sender']
         msg = dict['rsp']
@@ -174,6 +206,7 @@ class EchoResetTest(TestCase):
         reactor.iterate()
         self.assertEqual(self.msg, "This is another test.")
 
+        del(self.a.connections[('127.0.0.1', 4079)])
         df = self.a.connectionForAddr(('127.0.0.1', 4079)).protocol.sendRequest('echo', {'msg' : "This is yet another test."})
         df.addCallback(self.gotMsg)
         reactor.iterate()
@@ -182,6 +215,9 @@ class EchoResetTest(TestCase):
         reactor.iterate()
         self.assertEqual(self.msg, "This is yet another test.")
 
+    def testLotsofEchoReset(self):
+        for i in range(100):
+            self.testEchoReset()
     def gotMsg(self, dict):
         _krpc_sender = dict['_krpc_sender']
         msg = dict['rsp']

@@ -353,11 +353,11 @@ from sha import sha
 from hash import newID
 
 
-def test_net(peers=24, startport=2001, dbprefix='/tmp/test'):
+def test_net(host='127.0.0.1', peers=24, startport=2001, dbprefix='/tmp/test'):
     import thread
     l = []
     for i in xrange(peers):
-        a = Khashmir('127.0.0.1', startport + i, db = dbprefix+`i`)
+        a = Khashmir(host, startport + i, db = dbprefix+`i`)
         l.append(a)
     thread.start_new_thread(l[0].app.run, ())
     for peer in l[1:]:
@@ -479,17 +479,15 @@ def test_find_value(l, quiet=0):
             self.found = 0
             self.port = port
         def callback(self, values):
-            try:
                 if(len(values) == 0):
                     if not self.found:
-                        print "find   %s             NOT FOUND" % self.port
+                        print "find   %s           NOT FOUND" % self.port
                     else:
                         print "find   %s           FOUND" % self.port
+                    self.flag.set()
                 else:
                     if self.val in values:
                         self.found = 1
-            finally:
-                self.flag.set()
     
     b.valueForKey(key, cb(fa, port=b.port).callback, searchlocal=0)
     fa.wait()

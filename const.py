@@ -16,7 +16,7 @@ except IOError:
 NULL_ID =  20 * '\0'
 
 # Kademlia "K" constant, this should be an even number
-K = 20
+K = 8
 
 # SHA1 is 160 bits long
 HASH_LENGTH = 160

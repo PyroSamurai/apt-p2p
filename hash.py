@@ -3,7 +3,6 @@
 from sha import sha
 import whrandom
 
-random = open('/dev/urandom', 'r') # sucks for windoze
 
 def intify(hstr):
     """20 bit hash, big-endian -> long python integer"""
@@ -28,7 +27,8 @@ def distance(a, b):
 def newID():
     """returns a new pseudorandom globally unique ID string"""
     h = sha()
-    h.update(random.read(20))
+    for i in range(20):
+        h.update(chr(whrandom.randint(0,255)))
     return h.digest()
 
 def newIDInRange(min, max):
