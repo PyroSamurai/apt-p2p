@@ -362,7 +362,7 @@ def test_net(host='127.0.0.1', peers=24, startport=2001, dbprefix='/tmp/test'):
         l.append(a)
     thread.start_new_thread(l[0].app.run, ())
     for peer in l[1:]:
-        peer.app.run()	
+        peer.app.run(installSignalHandlers=0)	
     return l
     
 def test_build_net(quiet=0, peers=24, host='127.0.0.1',  pause=0, startport=2001, dbprefix='/tmp/test'):
@@ -383,7 +383,7 @@ def test_build_net(quiet=0, peers=24, host='127.0.0.1',  pause=0, startport=2001
     thread.start_new_thread(l[0].app.run, ())
     time.sleep(1)
     for peer in l[1:]:
-        peer.app.run()
+        peer.app.run(installSignalHandlers=0)
     #time.sleep(3)
     
     def spewer(frame, s, ignored):
