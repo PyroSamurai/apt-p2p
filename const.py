@@ -22,3 +22,6 @@ KE_AGE = KEINITIAL_DELAY
 
 # never ping a node more often than this
 MIN_PING_INTERVAL = 60 * 15 # fifteen minutes
+
+# refresh buckets that haven't been touched in this long
+BUCKET_STALENESS = 60 # one hour
