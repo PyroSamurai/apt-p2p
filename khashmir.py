@@ -221,13 +221,12 @@ class Khashmir(xmlrpc.XMLRPC):
 
 #------ testing
 
-def test_build_net(quiet=0):
+def test_build_net(quiet=0, peers=256, pause=1):
     from whrandom import randrange
     import thread
     port = 2001
     l = []
-    peers = 128
-    
+        
     if not quiet:
 	print "Building %s peer table." % peers
 	
@@ -251,14 +250,16 @@ def test_build_net(quiet=0):
 	peer.addContact(n.host, n.port)
 	n = l[randrange(0, len(l))].node
 	peer.addContact(n.host, n.port)
-	time.sleep(.30)
-
-    time.sleep(2)
+	if pause:
+	    time.sleep(.30)
+	    
+    time.sleep(5)
     print "finding close nodes...."
 
     for peer in l:
 	peer.findCloseNodes()
-	time.sleep(1)
+	if pause:
+	    time.sleep(1)
 #    for peer in l:
 #	peer.refreshTable()
     return l
