@@ -24,18 +24,18 @@ class KNode(Node):
         return dict
         
     def ping(self, sender):
-        df = self.conn.protocol.sendRequest('ping', {"sender":sender})
+        df = self.conn.sendRequest('ping', {"sender":sender})
         df.addCallback(self.checkSender)
         return df
     def findNode(self, target, sender):
-        df = self.conn.protocol.sendRequest('find_node', {"target" : target, "sender": sender})
+        df = self.conn.sendRequest('find_node', {"target" : target, "sender": sender})
         df.addCallback(self.checkSender)
         return df
     def storeValue(self, key, value, sender):
-        df = self.conn.protocol.sendRequest('store_value', {"key" : key, "value" : value, "sender": sender})
+        df = self.conn.sendRequest('store_value', {"key" : key, "value" : value, "sender": sender})
         df.addCallback(self.checkSender)
         return df
     def findValue(self, key, sender):
-        df =  self.conn.protocol.sendRequest('find_value', {"key" : key, "sender" : sender})
+        df =  self.conn.sendRequest('find_value', {"key" : key, "sender" : sender})
         df.addCallback(self.checkSender)
         return df

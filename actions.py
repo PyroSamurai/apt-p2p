@@ -6,7 +6,7 @@ from time import time
 from const import reactor
 import const
 
-from hash import intify
+from khash import intify
 from knode import KNode as Node
 from ktable import KTable, K
 
@@ -49,7 +49,7 @@ class FindNode(ActionBase):
         sender = dict["sender"]
         sender['port'] = _krpc_sender[1]        
         sender = Node().initWithDict(sender)
-        sender.conn = self.table.airhook.connectionForAddr((sender.host, sender.port))
+        sender.conn = self.table.udp.connectionForAddr((sender.host, sender.port))
         self.table.table.insertNode(sender)
         if self.finished or self.answered.has_key(sender.id):
             # a day late and a dollar short
@@ -58,7 +58,7 @@ class FindNode(ActionBase):
         self.answered[sender.id] = 1
         for node in l:
             n = Node().initWithDict(node)
-            n.conn = self.table.airhook.connectionForAddr((n.host, n.port))
+            n.conn = self.table.udp.connectionForAddr((n.host, n.port))
             if not self.found.has_key(n.id):
                 self.found[n.id] = n
         self.schedule()
@@ -120,7 +120,7 @@ class GetValue(FindNode):
         sender = dict["sender"]
         sender['port'] = _krpc_sender[1]        
         sender = Node().initWithDict(sender)
-        sender.conn = self.table.airhook.connectionForAddr((sender.host, sender.port))
+        sender.conn = self.table.udp.connectionForAddr((sender.host, sender.port))
         self.table.table.insertNode(sender)
         if self.finished or self.answered.has_key(sender.id):
             # a day late and a dollar short
@@ -132,7 +132,7 @@ class GetValue(FindNode):
         if dict.has_key('nodes'):
             for node in dict['nodes']:
                 n = Node().initWithDict(node)
-                n.conn = self.table.airhook.connectionForAddr((n.host, n.port))
+                n.conn = self.table.udp.connectionForAddr((n.host, n.port))
                 if not self.found.has_key(n.id):
                     self.found[n.id] = n
         elif dict.has_key('values'):

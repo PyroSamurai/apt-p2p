@@ -4,6 +4,15 @@
 from sha import sha
 import whrandom
 
+#this is ugly, hopefully os.entropy will be in 2.4
+try:
+    from entropy import entropy
+except ImportError:
+    def entropy(n):
+        s = ''
+        for i in range(n):
+            s += chr(whrandom.randint(0,255))
+        return s        
 
 def intify(hstr):
     """20 bit hash, big-endian -> long python integer"""
@@ -28,8 +37,7 @@ def distance(a, b):
 def newID():
     """returns a new pseudorandom globally unique ID string"""
     h = sha()
-    for i in range(20):
-        h.update(chr(whrandom.randint(0,255)))
+    h.update(entropy(20))
     return h.digest()
 
 def newIDInRange(min, max):
@@ -38,6 +46,8 @@ def newIDInRange(min, max):
 def randRange(min, max):
     return min + intify(newID()) % (max - min)
     
+def newTID():
+    return randRange(-2**30, 2**30)
 
 ### Test Cases ###
 import unittest

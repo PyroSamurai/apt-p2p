@@ -1,7 +1,7 @@
 ## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
-import hash
+import khash
 import time
 from types import *
 
@@ -14,7 +14,7 @@ class Node:
     
     def init(self, id, host, port):
         self.id = id
-        self.num = hash.intify(id)
+        self.num = khash.intify(id)
         self.host = host
         self.port = port
         self._senderDict = {'id': self.id, 'port' : self.port, 'host' : self.host}
@@ -23,7 +23,7 @@ class Node:
     def initWithDict(self, dict):
         self._senderDict = dict
         self.id = dict['id']
-        self.num = hash.intify(self.id)
+        self.num = khash.intify(self.id)
         self.port = dict['port']
         self.host = dict['host']
         return self
@@ -73,7 +73,7 @@ import unittest
 
 class TestNode(unittest.TestCase):
     def setUp(self):
-        self.node = Node().init(hash.newID(), 'localhost', 2002)
+        self.node = Node().init(khash.newID(), 'localhost', 2002)
     def testUpdateLastSeen(self):
         t = self.node.lastSeen
         self.node.updateLastSeen()

@@ -1,6 +1,7 @@
 ## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
+"""
 from twisted.internet.default import SelectReactor ## twistedmatrix.com
 
 reactor = SelectReactor()
@@ -14,6 +15,8 @@ try:
     reactor.installResolver(twisted.names.client.theResolver)
 except IOError:
     print "no resolv.conf!"
+"""
+from twisted.internet import reactor
 
 # magic id to use before we know a peer's id
 NULL_ID =  20 * '\0'

@@ -5,7 +5,7 @@ import time
 from bisect import *
 from types import *
 
-import hash
+import khash as hash
 import const
 from const import K, HASH_LENGTH, NULL_ID
 from node import Node
