@@ -1,5 +1,6 @@
 from time import time
-from pickle import loads, dumps
+from bencode import bdecode as loads
+from bencode import bencode as dumps
 
 from bsddb3 import db
 
