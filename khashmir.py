@@ -92,10 +92,14 @@ class Khashmir(xmlrpc.XMLRPC):
     def valueForKey(self, key, callback):
 	""" returns the values found for key in global table """
 	nodes = self.table.findNodes(key)
-	# decode values, they will be base64 encoded
 	# create our search state
 	state = GetValue(self, key, callback)
 	reactor.callFromThread(state.goWithNodes, nodes)
+	
+	# get locals
+	l = self.retrieveValues(key)
+	if len(l) > 0:
+	    callback(l)
 
 
 
@@ -196,6 +200,20 @@ class Khashmir(xmlrpc.XMLRPC):
 		self.findNode(id, callback)
 	
  
+    def retrieveValues(self, key):
+	if self.kw.has_key(key):
+	    c = self.kw.cursor()
+	    tup = c.set(key)
+	    l = []
+	    while(tup and tup[0] == key):
+		h1 = tup[1]
+		v = loads(self.store[h1])[1]
+		l.append(v)
+		tup = c.next()
+	    l = map(lambda v: Binary(v), l)
+	    return l
+	return []
+	
     #####
     ##### INCOMING MESSAGE HANDLERS
     
@@ -247,16 +265,8 @@ class Khashmir(xmlrpc.XMLRPC):
 	n = Node().initWithDict(sender)
 	self.insertNode(n)
 
-	if self.kw.has_key(key):
-	    c = self.kw.cursor()
-	    tup = c.set(key)
-	    l = []
-	    while(tup):
-		h1 = tup[1]
-		v = loads(self.store[h1])[1]
-		l.append(v)
-		tup = c.next()
-	    l = map(lambda v: Binary(v), l)
+	l = self.retrieveValues(key)
+	if len(l):
 	    return {'values' : l}, self.node.senderDict()
 	else:
 	    nodes = self.table.findNodes(key)
