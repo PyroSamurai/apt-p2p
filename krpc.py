@@ -91,10 +91,14 @@ class KRPC(basic.NetstringReceiver):
             elif msg['typ'] == 'err':
                 # if error
                 # 	lookup tid
-                df = self.tids[msg['tid']]
-                # 	callback
-                df.errback(msg['err'])
-                del(self.tids[msg['tid']])
+                if self.tids.has_key(msg['tid']):
+                    df = self.tids[msg['tid']]
+                    # 	callback
+                    df.errback(msg['err'])
+                    del(self.tids[msg['tid']])
+                else:
+                    # day late and dollar short
+                    pass
             else:
                 print "unknown message type " + `msg`
                 # unknown message type
