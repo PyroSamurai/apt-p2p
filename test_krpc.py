@@ -50,12 +50,35 @@ class SimpleTest(TestCase):
         self.b = listenAirhookStream(4051, self.bf)
         
     def testSimpleMessage(self):
-        self.noisy = 1
+        self.noisy = 0
         self.a.connectionForAddr(('127.0.0.1', 4051)).protocol.sendRequest('store', {'msg' : "This is a test."})
         reactor.iterate()
         reactor.iterate()
         reactor.iterate()
         self.assertEqual(self.bf.buf, ["This is a test."])
+
+class BlastTest(TestCase):
+    def setUp(self):
+        self.noisy = 0
+        
+        self.af = Receiver()
+        self.bf = Receiver()        
+        self.a = listenAirhookStream(4060, self.af)
+        self.b = listenAirhookStream(4061, self.bf)
+
+    def testMessageBlast(self):
+        self.a.connectionForAddr(('127.0.0.1', 4061)).protocol.sendRequest('store', {'msg' : "This is a test."})
+        reactor.iterate()
+        reactor.iterate()
+        reactor.iterate()
+        self.assertEqual(self.bf.buf, ["This is a test."])
+        self.bf.buf = []
+        
+        for i in range(100):
+            self.a.connectionForAddr(('127.0.0.1', 4061)).protocol.sendRequest('store', {'msg' : "This is a test."})
+            reactor.iterate()
+            #self.bf.buf = []
+        self.assertEqual(self.bf.buf, ["This is a test."] * 100)
 
 class EchoTest(TestCase):
     def setUp(self):
@@ -77,7 +100,9 @@ class EchoTest(TestCase):
         reactor.iterate()
         self.assertEqual(self.msg, "This is a test.")
 
-    def gotMsg(self, msg):
+    def gotMsg(self, dict):
+        _krpc_sender = dict['_krpc_sender']
+        msg = dict['rsp']
         self.msg = msg
 
 class MultiEchoTest(TestCase):
@@ -116,7 +141,50 @@ class MultiEchoTest(TestCase):
         reactor.iterate()
         self.assertEqual(self.msg, "This is yet another test.")
 
-    def gotMsg(self, msg):
+    def gotMsg(self, dict):
+        _krpc_sender = dict['_krpc_sender']
+        msg = dict['rsp']
+        self.msg = msg
+
+class EchoResetTest(TestCase):
+    def setUp(self):
+        self.noisy = 0
+        self.msg = None
+        
+        self.af = Receiver()
+        self.bf = Receiver()        
+        self.a = listenAirhookStream(4078, self.af)
+        self.b = listenAirhookStream(4079, self.bf)
+        
+    def testEchoReset(self):
+        self.noisy = 1
+        df = self.a.connectionForAddr(('127.0.0.1', 4079)).protocol.sendRequest('echo', {'msg' : "This is a test."})
+        df.addCallback(self.gotMsg)
+        reactor.iterate()
+        reactor.iterate()
+        reactor.iterate()
+        reactor.iterate()
+        self.assertEqual(self.msg, "This is a test.")
+
+        df = self.a.connectionForAddr(('127.0.0.1', 4079)).protocol.sendRequest('echo', {'msg' : "This is another test."})
+        df.addCallback(self.gotMsg)
+        reactor.iterate()
+        reactor.iterate()
+        reactor.iterate()
+        reactor.iterate()
+        self.assertEqual(self.msg, "This is another test.")
+
+        df = self.a.connectionForAddr(('127.0.0.1', 4079)).protocol.sendRequest('echo', {'msg' : "This is yet another test."})
+        df.addCallback(self.gotMsg)
+        reactor.iterate()
+        reactor.iterate()
+        reactor.iterate()
+        reactor.iterate()
+        self.assertEqual(self.msg, "This is yet another test.")
+
+    def gotMsg(self, dict):
+        _krpc_sender = dict['_krpc_sender']
+        msg = dict['rsp']
         self.msg = msg
 
 class UnknownMethErrTest(TestCase):
@@ -140,3 +208,4 @@ class UnknownMethErrTest(TestCase):
 
     def gotErr(self, err):
         self.err = err.value
+        

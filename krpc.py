@@ -19,12 +19,18 @@ class KRPC(basic.NetstringReceiver):
     def __init__(self):
         self.tids = {}
 
+    def resetConnection(self):
+        self.brokenPeer = 0
+        self._readerState = basic.LENGTH
+        self._readerLength = 0
+
     def stringReceived(self, str):
         # bdecode
         try:
             msg = bdecode(str)
         except Exception, e:
-            print "response decode error: " + `e`
+            if self.naisy:
+                print "response decode error: " + `e`
             self.d.errback()
         else:
             # look at msg type
@@ -47,12 +53,14 @@ class KRPC(basic.NetstringReceiver):
                             #	make response
                             str = bencode({'tid' : msg['tid'], 'typ' : 'rsp', 'rsp' : ret})
                         else:
-                            str = bencode({'tid' : msg['tid'], 'typ' : 'rsp', 'rsp' : []})
+                            str = bencode({'tid' : msg['tid'], 'typ' : 'rsp', 'rsp' : {}})
                         #	send response
                         olen = len(str)
                         self.sendString(str)
 
                 else:
+                    if self.noisy:
+                        print "don't know about method %s" % msg['req']
                     # unknown method
                     str = bencode({'tid':msg['tid'], 'typ':'err', 'err' : KRPC_ERROR_METHOD_UNKNOWN})
                     olen = len(str)
@@ -66,9 +74,9 @@ class KRPC(basic.NetstringReceiver):
                 if self.tids.has_key(msg['tid']):
                     df = self.tids[msg['tid']]
                     # 	callback
-                    df.callback(msg['rsp'])
                     del(self.tids[msg['tid']])
-                # no tid, perhaps this transaction timed out already...
+                    df.callback({'rsp' : msg['rsp'], '_krpc_sender': self.transport.addr})
+                # no tid, this transaction timed out already...
             elif msg['typ'] == 'err':
                 # if error
                 # 	lookup tid
@@ -88,15 +96,15 @@ class KRPC(basic.NetstringReceiver):
         # send it
         msg = {'tid' : hash.newID(), 'typ' : 'req',  'req' : method, 'arg' : args}
         str = bencode(msg)
-        self.sendString(str)
         d = Deferred()
         self.tids[msg['tid']] = d
-        
         def timeOut(tids = self.tids, id = msg['tid']):
             if tids.has_key(id):
                 df = tids[id]
                 del(tids[id])
+                print ">>>>>> KRPC_ERROR_TIMEOUT"
                 df.errback(KRPC_ERROR_TIMEOUT)
         reactor.callLater(KRPC_TIMEOUT, timeOut)
+        self.sendString(str)
         return d
  

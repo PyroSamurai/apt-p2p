@@ -40,8 +40,11 @@ FIND_NODE_TIMEOUT = 15
 class FindNode(ActionBase):
     """ find node action merits it's own class as it is a long running stateful process """
     def handleGotNodes(self, dict):
+        _krpc_sender = dict['_krpc_sender']
+        dict = dict['rsp']
         l = dict["nodes"]
         sender = dict["sender"]
+        sender['port'] = _krpc_sender[1]        
         sender = Node().initWithDict(sender)
         sender.conn = self.table.airhook.connectionForAddr((sender.host, sender.port))
         self.table.table.insertNode(sender)
@@ -109,7 +112,10 @@ GET_VALUE_TIMEOUT = 15
 class GetValue(FindNode):
     """ get value task """
     def handleGotNodes(self, dict):
+        _krpc_sender = dict['_krpc_sender']
+        dict = dict['rsp']
         sender = dict["sender"]
+        sender['port'] = _krpc_sender[1]        
         sender = Node().initWithDict(sender)
         sender.conn = self.table.airhook.connectionForAddr((sender.host, sender.port))
         self.table.table.insertNode(sender)
@@ -133,6 +139,7 @@ class GetValue(FindNode):
                     return y
                 else:
                     return None
+            z = len(dict['values'])
             v = filter(None, map(x, dict['values']))
             if(len(v)):
                 reactor.callFromThread(self.callback, v)
@@ -243,4 +250,3 @@ class KeyExpirer:
         s = "delete from kv where time < '%s';" % self.cut
         c.execute(s)
         reactor.callLater(const.KE_DELAY, self.doExpire)
-    

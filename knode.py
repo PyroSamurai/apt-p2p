@@ -10,11 +10,13 @@ class IDChecker:
 class KNode(Node):
     def checkSender(self, dict):
         try:
-            senderid = dict['sender']['id']
+            senderid = dict['rsp']['sender']['id']
         except KeyError:
+            print ">>>> No peer id in response"
             raise Exception, "No peer id in response."
         else:
             if self.id != NULL_ID and senderid != self.id:
+                print "Got response from different node than expected."
                 raise Exception, "Got response from different node than expected."
         return dict
         
