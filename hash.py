@@ -73,7 +73,7 @@ class Intify(unittest.TestCase):
 
 class Disantance(unittest.TestCase):
     known = [
-	    (("\0" * 20, "\xff" * 20), 2**160 -1),
+	    (("\0" * 20, "\xff" * 20), 2**160L -1),
 	    ((sha("foo").digest(), sha("foo").digest()), 0),
 	    ((sha("bar").digest(), sha("bar").digest()), 0)
 	    ]
