@@ -337,13 +337,15 @@ class Khashmir(xmlrpc.XMLRPC):
 			nodes = self.table.findNodes(key)
 			nodes = map(lambda node: node.senderDict(), nodes)
 			return {'nodes' : nodes}, self.node.senderDict()
-#------ testing
+
+### TESTING ###
+from random import randrange
+import threading, thread, sys, time
+from sha import sha
+from hash import newID
+
 
 def test_build_net(quiet=0, peers=24, host='localhost',  pause=0, startport=2001):
-	from whrandom import randrange
-	import threading
-	import thread
-	import sys
 	port = startport
 	l = []
 		
@@ -372,7 +374,6 @@ def test_build_net(quiet=0, peers=24, host='localhost',  pause=0, startport=2001
 		peer.addContact(host, n.port)
 		if pause:
 			time.sleep(.33)
-		sys.stdout.flush()
 	
 	time.sleep(10)
 	print "finding close nodes...."
@@ -383,14 +384,11 @@ def test_build_net(quiet=0, peers=24, host='localhost',  pause=0, startport=2001
 			f.set()
 		peer.findCloseNodes(cb)
 		flag.wait()
-		sys.stdout.flush()
 	#    for peer in l:
 	#	peer.refreshTable()
 	return l
         
 def test_find_nodes(l, quiet=0):
-	import threading, sys
-	from whrandom import randrange
 	flag = threading.Event()
 	
 	n = len(l)
@@ -408,10 +406,6 @@ def test_find_nodes(l, quiet=0):
 	flag.wait()
     
 def test_find_value(l, quiet=0):
-	from whrandom import randrange
-	from sha import sha
-	from hash import newID
-	import time, threading, sys
 	
 	fa = threading.Event()
 	fb = threading.Event()
@@ -425,14 +419,11 @@ def test_find_value(l, quiet=0):
 	
 	key = newID()
 	value = newID()
-	if not quiet:
-		print "inserting value..."
-		sys.stdout.flush()
+	if not quiet: print "inserting value..."
 	a.storeValueForKey(key, value)
 	time.sleep(3)
 	if not quiet:
 		print "finding..."
-		sys.stdout.flush()
 	
 	class cb:
 		def __init__(self, flag, value=value):
@@ -446,7 +437,6 @@ def test_find_value(l, quiet=0):
 						print "find                NOT FOUND"
 					else:
 						print "find                FOUND"
-					sys.stdout.flush()
 				else:
 					if self.val in values:
 						self.found = 1
@@ -469,8 +459,7 @@ def test_one(host, port, db='/tmp/test'):
 if __name__ == "__main__":
     import sys
     n = 8
-    if len(sys.argv) > 1:
-		n = int(sys.argv[1])
+    if len(sys.argv) > 1: n = int(sys.argv[1])
     l = test_build_net(peers=n)
     time.sleep(3)
     print "finding nodes..."
