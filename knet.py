@@ -1,12 +1,9 @@
 #
 #  knet.py
-#  UberTracker
-#
-#  Created by andrew loewenstern on Sun Jun 13 2004.
-#  Copyright (c) 2004 __MyCompanyName__. All rights reserved.
-#
+#  create a network of khashmir nodes
+# usage: knet.py <num_nodes> <start_port> <ip_address>
 
-from khashmir.khashmir import Khashmir
+from khashmir import Khashmir
 from twisted.internet import reactor
 from whrandom import randrange
 import sys, os
