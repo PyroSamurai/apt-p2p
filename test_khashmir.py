@@ -78,7 +78,7 @@ class MultiTest(TestCase):
         
     def setUp(self):
         self.l = []
-        self.startport = 4044
+        self.startport = 4088
         for i in range(self.num):
             self.l.append(Khashmir('127.0.0.1', self.startport + i, '/tmp/%s.test' % (self.startport + i)))
         reactor.iterate()
@@ -139,33 +139,6 @@ class MultiTest(TestCase):
                         reactor.iterate()
 
 
-            K = khash.newID()
-            l = map(lambda a: newID(), range(8))
-            for a in range(3):
-                self.done = 0
-                def _scb(val):
-                    self.done = 1
-                self.l[randrange(0, self.num)].storeValueForKey(K, l, _scb)
-                while not self.done:
-                    reactor.iterate()
-
-
-                c = []
-                def _rcb(val):
-                    if not val:
-                        self.done = 1
-                        self.assertEqual(self.got, 1)
-                    for n in val:
-                        c.remove(n)
-                        if not c:
-                            self.got = 1
-                for x in range(3):
-                    self.got = 0
-                    self.done = 0
-                    c = copy(l)
-                    self.l[randrange(0, self.num)].valueForKey(K, _rcb)
-                    while not self.done:
-                        reactor.iterate()
             
             
             
