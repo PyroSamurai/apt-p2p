@@ -3,6 +3,7 @@ from twisted.protocols.http import HTTPClient
 from twisted.internet.defer import Deferred
 
 from xmlrpclib import loads, dumps
+import socket
 
 USER_AGENT = 'Python/Twisted XMLRPC 0.1'
 class XMLRPCClient(HTTPClient):
@@ -17,6 +18,10 @@ class XMLRPCClient(HTTPClient):
         self.transport.write('\r\n')
 	
     def handleResponse(self, buf):
+   	try:
+	    self.thehost = self.transport.getHost()[1]
+	except:
+	    self.thehost = None
 	try:
 	    args, name = loads(buf)
 	except Exception, e:
@@ -26,7 +31,7 @@ class XMLRPCClient(HTTPClient):
 	    l = []
 	    for i in args:
 		l.append(i)
-	    l.append({'host' : self.transport.getHost()[1]})
+	    l.append({'host' : self.thehost})
 	    apply(self.d.callback, (l,))
 
 class XMLRPCClientFactory(ClientFactory):
