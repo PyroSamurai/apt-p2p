@@ -123,9 +123,13 @@ class GetValue(FindNode):
 		    self.found[n.id] = n
 		    self.table.insertNode(n)
 	elif l.has_key('values'):
-	    ## done
-	    self.finished = 1
-	    reactor.callFromThread(self.callback, l['values'])
+	    def x(y, z=self.results):
+		if not z.has_key(y):
+		    z[y] = 1
+		    return y
+	    v = filter(None, map(x, l['values']))
+	    if(len(v)):
+		reactor.callFromThread(self.callback, v)
 	self.schedule()
 		
     ## get value
@@ -153,6 +157,7 @@ class GetValue(FindNode):
     
     ## get value
     def goWithNodes(self, nodes):
+	self.results = {}
 	for node in nodes:
 	    if node.id == self.table.node.id:
 		continue
