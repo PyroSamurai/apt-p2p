@@ -310,11 +310,15 @@ class ustr(str):
 	def __ge__(self, other):
 		return (self.getseq() - other.getseq()) % 2**16 < 256
 		
-class OrderedConnection(AirhookConnection):
+class StreamConnection(AirhookConnection):
 	"""
-		this implements a simple protocol for ordered messages over airhook
+		this implements a simple protocol for a stream over airhook
 		the first two octets of each message are interpreted as a 16-bit sequence number
 		253 bytes are used for payload
+		
+		delegate should implement method:
+		  def dataCameIn(self, host, port, data):
+			[...]
 	"""
 	def __init__(self, transport, addr, delegate):
 		AirhookConnection.__init__(self, transport, addr, delegate)

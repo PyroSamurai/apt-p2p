@@ -501,7 +501,7 @@ class BasicTests(unittest.TestCase):
 		self.assertEqual(a.next, 255)
 		self.assertEqual(a.outMsgNums[(a.outSeq-1) % 256], 254)
 
-class OrderedTests(unittest.TestCase):
+class StreamTests(unittest.TestCase):
 	def setUp(self):
 		self.noisy = 0
 		class queuer:
@@ -511,10 +511,10 @@ class OrderedTests(unittest.TestCase):
 				self.msg+= data
 		self.A = queuer()
 		self.B = queuer()
-		self.a = OrderedConnection(StringIO(), (None, 'localhost', 4040), self.A)
-		self.b = OrderedConnection(StringIO(), (None, 'localhost', 4040), self.B)
+		self.a = StreamConnection(StringIO(), (None, 'localhost', 4040), self.A)
+		self.b = StreamConnection(StringIO(), (None, 'localhost', 4040), self.B)
 
-	def testOrderedSimple(self, num = 2**18, prob=1.0):
+	def testStreamSimple(self, num = 2**18, prob=1.0):
 		f = open('/dev/urandom', 'r')
 		a = self.a
 		b = self.b
@@ -542,5 +542,5 @@ class OrderedTests(unittest.TestCase):
 		self.assertEqual(self.A.msg, MSGB)
 		self.assertEqual(self.B.msg, MSGA)
 
-	def testOrderedLossy(self, num = 2**18, prob=0.5):
-		self.testOrderedSimple(num, prob)
+	def testStreamLossy(self, num = 2**18, prob=0.5):
+		self.testStreamSimple(num, prob)
