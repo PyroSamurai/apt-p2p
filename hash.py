@@ -3,33 +3,19 @@
 from sha import sha
 from whrandom import randrange
 
-## takes a 20 bit hash, big-endian, and returns it expressed a python integer
-## ha ha ha ha    if this were a C module I wouldn't resort to such sillyness
+## takes a 20 bit hash, big-endian, and returns it expressed a long python integer
 def intify(hstr):
     assert(len(hstr) == 20)
-    i = 0L
-    i = i + ord(hstr[19])
-    i = i + ord(hstr[18]) * 256L
-    i = i + ord(hstr[17]) * 65536L
-    i = i + ord(hstr[16]) * 16777216L
-    i = i + ord(hstr[15]) * 4294967296L
-    i = i + ord(hstr[14]) * 1099511627776L
-    i = i + ord(hstr[13]) * 281474976710656L
-    i = i + ord(hstr[12]) * 72057594037927936L
-    i = i + ord(hstr[11]) * 18446744073709551616L
-    i = i + ord(hstr[10]) * 4722366482869645213696L
-    i = i + ord(hstr[9]) * 1208925819614629174706176L
-    i = i + ord(hstr[8]) * 309485009821345068724781056L
-    i = i + ord(hstr[7]) * 79228162514264337593543950336L
-    i = i + ord(hstr[6]) * 20282409603651670423947251286016L
-    i = i + ord(hstr[5]) * 5192296858534827628530496329220096L
-    i = i + ord(hstr[4]) * 1329227995784915872903807060280344576L
-    i = i + ord(hstr[3]) * 340282366920938463463374607431768211456L
-    i = i + ord(hstr[2]) * 87112285931760246646623899502532662132736L
-    i = i + ord(hstr[1]) * 22300745198530623141535718272648361505980416L
-    i = i + ord(hstr[0]) * 5708990770823839524233143877797980545530986496L
-    return i
+    return eval('0x' + hstr.encode('hex') + 'L')
 
+## takes a long int and returns a 20-character string
+def stringify(int):
+    str = hex(int)[2:]
+    if str[-1] == 'L':
+	str = str[:1]
+    str = str.decode('hex')
+    return (20 - len(str)) *'\x00' + str
+    
 ## returns the distance between two 160-bit hashes expressed as 20-character strings
 def distance(a, b):
     return intify(a) ^ intify(b)
@@ -42,6 +28,9 @@ def newID():
 	h.update(chr(randrange(0,256)))
     return h.digest()
 
+def newIDInRange(min, max):
+    return stringify(randRange(min,max))
+    
 def randRange(min, max):
     return min + intify(newID()) % (max - min)
 
