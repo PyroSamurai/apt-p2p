@@ -209,7 +209,6 @@ class Khashmir(xmlrpc.XMLRPC):
 		v = loads(self.store[h1])[1]
 		l.append(v)
 		tup = c.next()
-	    l = map(lambda v: Binary(v), l)
 	    return l
 	return []
 	
@@ -265,7 +264,8 @@ class Khashmir(xmlrpc.XMLRPC):
 	self.insertNode(n)
 
 	l = self.retrieveValues(key)
-	if len(l):
+	if len(l) > 0:
+	    l = map(lambda v: Binary(v), l)
 	    return {'values' : l}, self.node.senderDict()
 	else:
 	    nodes = self.table.findNodes(key)

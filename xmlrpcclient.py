@@ -41,3 +41,6 @@ class XMLRPCClientFactory(ClientFactory):
 	prot.args = self.args
 	prot.d = self.d
 	return prot
+
+    def clientConnectionFailed(self, connector, reason):
+	self.d.errback()

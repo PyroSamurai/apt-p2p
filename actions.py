@@ -173,7 +173,8 @@ class GetValue(FindNode):
 	    self.found[node.id] = node
 	    #xxx t.timeout = time.time() + FIND_NODE_TIMEOUT
 	    df = node.findValue(self.target, self.table.node.senderDict())
-	    df.addCallbacks(self.handleGotNodes, self.defaultGotNodes)
+	    df.addCallback(self.handleGotNodes)
+	    df.addErrback(self.defaultGotNodes)
 	    self.outstanding = self.outstanding + 1
 	    self.queried[node.id] = 1
 	if self.outstanding == 0:
@@ -226,6 +227,8 @@ class KeyExpirer:
 		    self.store.delete(h)
 		    ic.delete()
 		    i = i + 1
+		else:
+		    break
 	    irec = f()
 	    
 	reactor.callLater(KE_DELAY, self.doExpire)
