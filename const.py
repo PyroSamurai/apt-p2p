@@ -1,9 +1,16 @@
 from twisted.internet.default import SelectReactor ## twistedmatrix.com
 
 reactor = SelectReactor(installSignalHandlers=0)
+
 from twisted.internet import main
 main.installReactor(reactor)
 
+try:
+    import twisted.names.client
+    reactor.installResolver(twisted.names.client.theResolver)
+except IOError:
+    print "no resolv.conf!"
+    
 # magic id to use before we know a peer's id
 NULL_ID =  20 * '\0'
 

@@ -3,6 +3,7 @@ from twisted.internet.defer import Deferred
 from twisted.protocols import basic
 from bencode import bencode, bdecode
 from twisted.internet import reactor
+import time
 
 import hash
 
@@ -57,7 +58,7 @@ class KRPC(basic.NetstringReceiver):
                     olen = len(str)
                     self.sendString(str)
                 if self.noisy:
-                    print "%s >>> (%s, %s) - %s %s %s" % (self.transport.addr, self.factory.node.host, self.factory.node.port, 
+                    print "%s %s >>> %s - %s %s %s" % (time.asctime(), self.transport.addr, self.factory.node.port, 
                                                     ilen, msg['req'], olen)
             elif msg['typ'] == 'rsp':
                 # if response

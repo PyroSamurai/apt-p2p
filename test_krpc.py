@@ -2,6 +2,8 @@ from unittest import *
 from krpc import *
 from airhook import *
 
+KRPC.noisy = 0
+
 import sys
 
 if __name__ =="__main__":
@@ -31,7 +33,7 @@ class SimpleTest(TestCase):
         self.b = listenAirhookStream(4041, self.bf)
         
     def testSimpleMessage(self):
-        self.noisy = 1
+        self.noisy = 0
         self.a.connectionForAddr(('127.0.0.1', 4041)).protocol.sendRequest('store', {'msg' : "This is a test."})
         reactor.iterate()
         reactor.iterate()

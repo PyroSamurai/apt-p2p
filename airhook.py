@@ -101,7 +101,7 @@ class AirhookConnection(protocol.ConnectedDatagramProtocol, interfaces.IUDPConne
         self.lastTransmit = 0  # time we last sent a packet with messages
         self.lastReceieved = 0 # time we last received a packet with messages
         self.lastTransmitSeq = -1 # last sequence we sent a packet
-        self.state = pending
+        self.state = pending # one of pending, sent, confirmed
         
         self.outMsgs = [None] * 256  # outgoing messages  (seq sent, message), index = message number
         self.omsgq = [] # list of messages to go out
@@ -226,7 +226,7 @@ class AirhookConnection(protocol.ConnectedDatagramProtocol, interfaces.IUDPConne
                 ids +=  pack("!L", self.sessionID)
 
         else:
-            if self.state == sent or self.sendSession:
+            if self.state == sent or self.sendSession != None:
                 if self.state == confirmed and (self.obSeq - self.sendSession) % 2**16 < 256:
                     self.sendSession = None
                 else:
