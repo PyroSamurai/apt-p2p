@@ -99,8 +99,7 @@ class Khashmir(xmlrpc.XMLRPC):
 	# get locals
 	l = self.retrieveValues(key)
 	if len(l) > 0:
-	    callback(l)
-
+	    reactor.callFromThread(callback, l)
 
 
     ## async, but in the current implementation there is no guarantee a store does anything so there is no callback right now
