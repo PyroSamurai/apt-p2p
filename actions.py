@@ -2,8 +2,6 @@ from time import time
 from bencode import bdecode as loads
 from bencode import bencode as dumps
 
-from bsddb3 import db
-
 from const import reactor
 import const
 
