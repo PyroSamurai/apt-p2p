@@ -12,7 +12,9 @@ def intify(hstr):
 def stringify(int):
     str = hex(int)[2:]
     if str[-1] == 'L':
-	str = str[:1]
+	str = str[:-1]
+    if len(str) % 2 != 0:
+	str = '0' + str
     str = str.decode('hex')
     return (20 - len(str)) *'\x00' + str
     
