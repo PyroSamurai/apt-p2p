@@ -82,7 +82,7 @@ class KTable:
 		min = min - 1
 		max = max + 1
 	    nodes.sort(sort)
-	    return nodes[:K-1]
+	    return nodes[:K]
 
     def _splitBucket(self, a):
 	diff = (a.max - a.min) / 2
