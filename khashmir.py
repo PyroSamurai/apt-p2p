@@ -100,7 +100,7 @@ class Khashmir:
 	"""
 	insert a node in our local table, pinging oldest contact in bucket, if necessary
 	
-	If all you have is a host/port, then use addContact, which calls this function after
+	If all you have is a host/port, then use addContact, which calls this method after
 	receiving the PONG from the remote node.  The reason for the seperation is we can't insert
 	a node into the table without it's peer-ID.  That means of course the node passed into this
 	method needs to be a properly formed Node object with a valid ID.
