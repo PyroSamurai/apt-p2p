@@ -12,7 +12,7 @@ class KNode(Node):
 	return df
     def findNode(self, target, sender):
 	df = Deferred()
-	f = factory('find_node', (target, sender), df.callback, df.errback)
+	f = factory('find_node', (Binary(target), sender), df.callback, df.errback)
 	reactor.connectTCP(self.host, self.port, f)
 	return df
     def storeValue(self, key, value, sender):

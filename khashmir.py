@@ -211,7 +211,7 @@ class Khashmir(xmlrpc.XMLRPC):
 	return self.node.senderDict()
 		
     def xmlrpc_find_node(self, target, sender):
-	nodes = self.table.findNodes(target)
+	nodes = self.table.findNodes(target.data)
 	nodes = map(lambda node: node.senderDict(), nodes)
 	ip = self.crequest.getClientIP()
 	sender['host'] = ip
