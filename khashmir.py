@@ -4,13 +4,15 @@ from const import reactor
 import const
 
 import time
-from pickle import loads, dumps
+from bencode import bdecode as loads
+from bencode import bencode as dumps
+
 from sha import sha
 
 from ktable import KTable, K
 from knode import KNode as Node
 
-from hash import newID
+from hash import newID, newIDInRange
 
 from actions import FindNode, GetValue, KeyExpirer
 from twisted.web import xmlrpc
@@ -78,7 +80,10 @@ class Khashmir(xmlrpc.XMLRPC):
 	# get K nodes out of local table/cache, or the node we want
 	nodes = self.table.findNodes(id)
 	d = Deferred()
-	d.addCallbacks(callback, errback)
+	if errback:
+	    d.addCallbacks(callback, errback)
+	else:
+	    d.addCallback(callback)
 	if len(nodes) == 1 and nodes[0].id == id :
 	    d.callback(nodes)
 	else:
@@ -151,7 +156,8 @@ class Khashmir(xmlrpc.XMLRPC):
 	    def _notStaleNodeHandler(sender, old=old):
 		""" called when we get a pong from the old node """
 		sender, conn = sender
-		sender['host'] = conn['host']
+		if conn['host']:
+		    sender['host'] = conn['host']
 		sender = Node().initWithDict(sender)
 		if sender.id == old.id:
 		    self.table.justSeenNode(old)
@@ -167,7 +173,6 @@ class Khashmir(xmlrpc.XMLRPC):
 	df = node.ping(self.node.senderDict())
 	## these are the callbacks we use when we issue a PING
 	def _pongHandler(sender, id=node.id, host=node.host, port=node.port, table=self.table):
-	    sender = sender[0]
 	    if id != 20 * ' ' and id != sender['id'].data:
 		# whoah, got response from different peer than we were expecting
 		pass
@@ -202,8 +207,8 @@ class Khashmir(xmlrpc.XMLRPC):
 	    pass
 
 	for bucket in self.table.buckets:
-	    if time.time() - bucket.lastAccessed >= 60 * 60:
-		id = randRange(bucket.min, bucket.max)
+	    if time.time() - bucket.lastAccessed >= const.BUCKET_STALENESS:
+		id = newIDInRange(bucket.min, bucket.max)
 		self.findNode(id, callback)
 	
  
@@ -316,17 +321,17 @@ def test_build_net(quiet=0, peers=24, host='localhost',  pause=1):
 	n = l[randrange(0, len(l))].node
 	peer.addContact(host, n.port)
 	if pause:
-	    time.sleep(.30)
+	    time.sleep(.5)
 	    
-    time.sleep(1)
+    time.sleep(10)
     print "finding close nodes...."
 
     for peer in l:
 	peer.findCloseNodes()
 	if pause:
-	    time.sleep(.5)
-    if pause:
 	    time.sleep(2)
+    if pause:
+	    time.sleep(10)
 #    for peer in l:
 #	peer.refreshTable()
     return l
