@@ -1,3 +1,6 @@
+## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
+# see LICENSE.txt for license information
+
 from node import Node
 from twisted.internet.defer import Deferred
 from const import reactor, NULL_ID

@@ -1,5 +1,6 @@
 ##  Airhook Protocol http://airhook.org/protocol.html
-##  Copyright 2002, Andrew Loewenstern, All Rights Reserved
+## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
+# see LICENSE.txt for license information
 
 from random import uniform as rand
 from struct import pack, unpack

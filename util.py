@@ -1,3 +1,6 @@
+## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
+# see LICENSE.txt for license information
+
 def bucket_stats(l):
     """given a list of khashmir instances, finds min, max, and average number of nodes in tables"""
     max = avg = 0

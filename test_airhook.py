@@ -1,3 +1,6 @@
+## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
+# see LICENSE.txt for license information
+
 import unittest
 from airhook import *
 from random import uniform as rand

@@ -1,3 +1,6 @@
+## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
+# see LICENSE.txt for license information
+
 from twisted.internet.default import SelectReactor ## twistedmatrix.com
 
 reactor = SelectReactor(installSignalHandlers=0)
