@@ -70,7 +70,7 @@ class Khashmir(xmlrpc.XMLRPC):
 	"""
 	 ping this node and add the contact info to the table on pong!
 	"""
-	n =Node().init(" "*20, host, port)  # note, we 
+	n =Node().init(const.NULL_ID, host, port)  # note, we 
 	self.sendPing(n)
 
 
@@ -122,7 +122,7 @@ class Khashmir(xmlrpc.XMLRPC):
 		    pass
 		response=_storedValueHandler
 	
-	    for node in nodes:
+	    for node in nodes[:const.STORE_REDUNDANCY]:
 		def cb(t, table = table, node=node, resp=response):
 		    self.table.insertNode(node)
 		    response(t)
@@ -169,8 +169,9 @@ class Khashmir(xmlrpc.XMLRPC):
 	"""
 	df = node.ping(self.node.senderDict())
 	## these are the callbacks we use when we issue a PING
-	def _pongHandler(sender, id=node.id, host=node.host, port=node.port, table=self.table):
-	    if id != 20 * ' ' and id != sender['id'].data:
+	def _pongHandler(args, id=node.id, host=node.host, port=node.port, table=self.table):
+	    l, sender = args
+	    if id != const.NULL_ID and id != sender['id'].data:
 		# whoah, got response from different peer than we were expecting
 		pass
 	    else:
@@ -234,7 +235,7 @@ class Khashmir(xmlrpc.XMLRPC):
 	sender['host'] = ip
 	n = Node().initWithDict(sender)
 	self.insertNode(n, contacted=0)
-	return self.node.senderDict()
+	return (), self.node.senderDict()
 		
     def xmlrpc_find_node(self, target, sender):
 	nodes = self.table.findNodes(target.data)
@@ -264,7 +265,7 @@ class Khashmir(xmlrpc.XMLRPC):
 	sender['host'] = ip
 	n = Node().initWithDict(sender)
 	self.insertNode(n, contacted=0)
-	return self.node.senderDict()
+	return (), self.node.senderDict()
 	
     def xmlrpc_find_value(self, key, sender):
     	ip = self.crequest.getClientIP()
@@ -320,15 +321,15 @@ def test_build_net(quiet=0, peers=24, host='localhost',  pause=1):
 	if pause:
 	    time.sleep(.5)
 	    
-    time.sleep(10)
+    time.sleep(1)
     print "finding close nodes...."
 
     for peer in l:
 	peer.findCloseNodes()
 	if pause:
-	    time.sleep(2)
+	    time.sleep(.5)
     if pause:
-	    time.sleep(10)
+	    time.sleep(1)
 #    for peer in l:
 #	peer.refreshTable()
     return l
