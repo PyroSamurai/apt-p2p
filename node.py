@@ -8,8 +8,9 @@ class Node:
     
     def __init__(self):
 	self.fails = 0
-	self.lastSeen = time.time()
-
+	self.lastSeen = 0
+	self.id = self.host = self.port = ''
+	
     def init(self, id, host, port):
 	self.id = id
 	self.int = hash.intify(id)
