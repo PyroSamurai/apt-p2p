@@ -14,6 +14,9 @@ class Node:
     def updateLastSeen(self):
 	self.lastSeen = time.time()
 
+    def senderDict(self):
+	return {'id': self.id, 'port' : self.port, 'host' : self.host}
+	
     def __repr__(self):
 	return `(self.id, self.host, self.port)`
 	

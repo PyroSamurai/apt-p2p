@@ -8,7 +8,7 @@ from types import *
 from node import Node
 
 # The all-powerful, magical Kademlia "k" constant, bucket depth
-K = 20
+K = 8
 
 # how many bits wide is our hash?
 HASH_LENGTH = 160
@@ -111,6 +111,7 @@ class KTable:
 	this insert the node, returning None if successful, returns the oldest node in the bucket if it's full
 	the caller responsible for pinging the returned node and calling replaceStaleNode if it is found to be stale!!
 	"""
+	assert(node.id != " "*20)
 	# get the bucket for this node
 	i = self. _bucketIndexForInt(node.int)
 	## check to see if node is in the bucket already

@@ -1,10 +1,9 @@
 import unittest
 
 import hash, node, messages
-import listener, dispatcher
 import ktable, transactions, khashmir
-
+import protocol
 import bencode, btemplate
 
-tests = unittest.defaultTestLoader.loadTestsFromNames(['hash', 'node', 'bencode', 'btemplate', 'listener', 'messages', 'dispatcher', 'transactions', 'ktable'])
+tests = unittest.defaultTestLoader.loadTestsFromNames(['hash', 'node', 'bencode', 'btemplate', 'messages', 'transactions', 'ktable', 'protocol'])
 result = unittest.TextTestRunner().run(tests)
