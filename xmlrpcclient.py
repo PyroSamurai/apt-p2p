@@ -17,9 +17,13 @@ class XMLRPCClient(HTTPClient):
         self.transport.write('\r\n')
 	
     def handleResponse(self, buf):
-	args, name = loads(buf)
-	apply(self.d.callback, args)
-
+	try:
+	    args, name = loads(buf)
+	except Exception, e:
+	    print "response decode error: " + `e`
+	    self.d.errback()
+	else:
+	    apply(self.d.callback, args)
 
 class XMLRPCClientFactory(ClientFactory):
     def __init__(self, method, args, callback=None, errback=None):

@@ -1,21 +1,33 @@
 import hash
 import time
 from types import *
+from xmlrpclib import Binary
 
 class Node:
     """encapsulate contact info"""
-    def __init__(self, id, host, port):
+    def init(self, id, host, port):
 	self.id = id
 	self.int = hash.intify(id)
 	self.host = host
 	self.port = port
 	self.lastSeen = time.time()
+	self._senderDict = {'id': Binary(self.id), 'port' : self.port, 'host' : self.host}
+	return self
+	
+    def initWithDict(self, dict):
+	self._senderDict = dict
+	self.id = dict['id'].data
+	self.int = hash.intify(self.id)
+	self.port = dict['port']
+	self.host = dict['host']
+	self.lastSeen = time.time()
+	return self
 	
     def updateLastSeen(self):
 	self.lastSeen = time.time()
 
     def senderDict(self):
-	return {'id': self.id, 'port' : self.port, 'host' : self.host}
+	return self._senderDict
 	
     def __repr__(self):
 	return `(self.id, self.host, self.port)`

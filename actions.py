@@ -46,14 +46,15 @@ class FindNode(ActionBase):
     """ find node action merits it's own class as it is a long running stateful process """
     def handleGotNodes(self, args):
 	l, sender = args
-	if self.finished or self.answered.has_key(sender['id']):
+	sender = Node().initWithDict(sender)
+	if self.finished or self.answered.has_key(sender.id):
 	    # a day late and a dollar short
 	    return
 	self.outstanding = self.outstanding - 1
-	self.answered[sender['id']] = 1
+	self.answered[sender.id] = 1
 	for node in l:
-	    if not self.found.has_key(node['id']):
-		n = Node(node['id'], node['host'], node['port'])
+	    n = Node().initWithDict(node)
+	    if not self.found.has_key(n.id):
 		self.found[n.id] = n
 		self.table.insertNode(n)
 	self.schedule()
@@ -115,17 +116,18 @@ class GetValue(FindNode):
     """ get value task """
     def handleGotNodes(self, args):
 	l, sender = args
-	if self.finished or self.answered.has_key(sender['id']):
+	sender = Node().initWithDict(sender)
+	if self.finished or self.answered.has_key(sender.id):
 	    # a day late and a dollar short
 	    return
 	self.outstanding = self.outstanding - 1
-	self.answered[sender['id']] = 1
+	self.answered[sender.id] = 1
 	# go through nodes
 	# if we have any closer than what we already got, query them
 	if l.has_key('nodes'):
 	    for node in l['nodes']:
-		if not self.found.has_key(node['id']):
-		    n = Node(node['id'], node['host'], node['port'])
+		n = Node().initWithDict(node)
+		if not self.found.has_key(n.id):
 		    self.found[n.id] = n
 		    self.table.insertNode(n)
 	elif l.has_key('values'):
