@@ -4,11 +4,12 @@ from twisted.internet.defer import Deferred
 
 from xmlrpclib import loads, dumps
 
+USER_AGENT = 'Python/Twisted XMLRPC 0.1'
 class XMLRPCClient(HTTPClient):
     def connectionMade(self):
 	payload = dumps(self.args, self.method)
 	self.sendCommand('POST', '/RPC2')
-	self.sendHeader('User-Agent', 'Python/Twisted XMLRPC 0.1')
+	self.sendHeader('User-Agent', USER_AGENT)
 	self.sendHeader('Content-Type', 'text/xml')
 	self.sendHeader('Content-Length', len(payload))
 	self.endHeaders()
