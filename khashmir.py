@@ -140,7 +140,7 @@ class Khashmir(xmlrpc.XMLRPC):
 	
 	    def _notStaleNodeHandler(sender, old=old):
 		""" called when we get a ping from the remote node """
-		sender = Node().initWithSenderDict(sender)
+		sender = Node().initWithDict(sender)
 		if sender.id == old.id:
 		    self.table.insertNode(old)
 
@@ -155,8 +155,7 @@ class Khashmir(xmlrpc.XMLRPC):
 	df = node.ping(self.node.senderDict())
 	## these are the callbacks we use when we issue a PING
 	def _pongHandler(sender, id=node.id, host=node.host, port=node.port, table=self.table):
-	    sender = Node().initWithSenderDict(sender)
-	    if id != 20 * ' ' and id != sender.id:
+	    if id != 20 * ' ' and id != sender['id'].data:
 		# whoah, got response from different peer than we were expecting
 		pass
 	    else:
