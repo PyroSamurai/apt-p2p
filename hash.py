@@ -1,7 +1,7 @@
 ## Copyright 2002 Andrew Loewenstern, All Rights Reserved
 
 from sha import sha
-from whrandom import randrange
+import whrandom
 
 ## takes a 20 bit hash, big-endian, and returns it expressed a long python integer
 def intify(hstr):
@@ -27,7 +27,7 @@ def distance(a, b):
 def newID():
     h = sha()
     for i in range(20):
-	h.update(chr(randrange(0,256)))
+	h.update(chr(whrandom.randrange(0,256)))
     return h.digest()
 
 def newIDInRange(min, max):

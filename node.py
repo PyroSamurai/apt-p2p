@@ -16,12 +16,12 @@ class Node:
 	self.int = hash.intify(id)
 	self.host = host
 	self.port = port
-	self._senderDict = {'id': Binary(self.id), 'port' : self.port, 'host' : self.host}
+	self._senderDict = {'id': self.id.encode('base64'), 'port' : self.port, 'host' : self.host}
 	return self
 	
     def initWithDict(self, dict):
 	self._senderDict = dict
-	self.id = dict['id'].data
+	self.id = dict['id'].decode('base64')
 	self.int = hash.intify(self.id)
 	self.port = dict['port']
 	self.host = dict['host']

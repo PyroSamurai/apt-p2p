@@ -127,7 +127,7 @@ class GetValue(FindNode):
 		    self.found[n.id] = n
 	elif l.has_key('values'):
 	    def x(y, z=self.results):
-		y = y.data
+		y = y.decode('base64')
 		if not z.has_key(y):
 		    z[y] = 1
 		    return y
@@ -178,10 +178,8 @@ class GetValue(FindNode):
 
 
 class KeyExpirer:
-    def __init__(self, store, itime, kw):
+    def __init__(self, store):
 	self.store = store
-	self.itime = itime
-	self.kw = kw
 	reactor.callLater(const.KEINITIAL_DELAY, self.doExpire)
 	
     def doExpire(self):
@@ -189,41 +187,9 @@ class KeyExpirer:
 	self._expire()
 	
     def _expire(self):
-	ic = self.itime.cursor()
-	sc = self.store.cursor()
-	kc = self.kw.cursor()
-	irec = None
-	try:
-	    irec = ic.set_range(self.cut)
-	except db.DBNotFoundError:
-	    # everything is expired
-	    f = ic.prev
-	    irec = f()
-	else:
-	    f = ic.next
-	i = 0
-	while irec:
-	    it, h = irec
-	    try:
-		k, v, lt = loads(self.store[h])
-	    except KeyError:
-		ic.delete()
-	    else:
-		if lt < self.cut:
-		    try:
-			kc.set_both(k, h)
-		    except db.DBNotFoundError:
-			print "Database inconsistency!  No key->value entry when a store entry was found!"
-		    else:
-			kc.delete()
-		    self.store.delete(h)
-		    ic.delete()
-		    i = i + 1
-		else:
-		    break
-	    irec = f()
-	    
+	c = self.store.cursor()
+	s = "delete from kv where time < '%s';" % self.cut
+	c.execute(s)
+	self.store.commit()
 	reactor.callLater(const.KE_DELAY, self.doExpire)
-	if(i > 0):
-	    print ">>>KE: done expiring %d" % i
 	
