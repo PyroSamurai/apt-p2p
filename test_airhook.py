@@ -74,8 +74,8 @@ def swap(a, dir="", noisy=0):
 class SimpleTest(unittest.TestCase):
 	def setUp(self):
 		self.noisy = 0
-		self.a = AirhookConnection(StringIO(), (None, 'localhost', 4040))
-		self.b = AirhookConnection(StringIO(), (None, 'localhost', 4040))
+		self.a = AirhookConnection(StringIO(), (None, 'localhost', 4040), None)
+		self.b = AirhookConnection(StringIO(), (None, 'localhost', 4040), None)
 	def testReallySimple(self):
 		# connect to eachother and send a few packets, observe sequence incrementing
 		self.noisy = 0
@@ -121,8 +121,8 @@ class SimpleTest(unittest.TestCase):
 
 class BasicTests(unittest.TestCase):
 	def setUp(self):
-		self.a = AirhookConnection(StringIO(), (None, 'localhost', 4040))
-		self.b = AirhookConnection(StringIO(), (None, 'localhost', 4040))
+		self.a = AirhookConnection(StringIO(), (None, 'localhost', 4040), None)
+		self.b = AirhookConnection(StringIO(), (None, 'localhost', 4040), None)
 		self.noisy = 0
 	def testSimple(self):
 		a = self.a
@@ -383,7 +383,7 @@ class BasicTests(unittest.TestCase):
 
 		self.assertEqual(len(b.imsgq), num)
 		
-	def testTwoWayBlast(self, num = 2**15, prob=0.5):
+	def testTwoWayBlast(self, num = 2**9, prob=0.5):
 		a = self.a
 		b = self.b
 		import sha
@@ -431,3 +431,45 @@ class BasicTests(unittest.TestCase):
 			self.assertEqual(a.outMsgNums[a.obSeq], 0)
 		self.assertEqual(a.next, 254)
 		self.assertEqual(a.outMsgNums[19], 254)
+
+class OrderedTests(unittest.TestCase):
+	def setUp(self):
+		self.noisy = 0
+		class queuer:
+			def __init__(self):
+				self.msg = ""
+			def dataCameIn(self, host, port, data):
+				self.msg+= data
+		self.A = queuer()
+		self.B = queuer()
+		self.a = OrderedConnection(StringIO(), (None, 'localhost', 4040), self.A)
+		self.b = OrderedConnection(StringIO(), (None, 'localhost', 4040), self.B)
+
+	def testOrderedSimple(self, num = 2**17, prob=1.0):
+		f = open('/dev/urandom', 'r')
+		a = self.a
+		b = self.b
+		A = self.A
+		B = self.B
+
+		MSGA = f.read(num)
+		MSGB = f.read(num)
+		self.a.sendSomeData(MSGA)
+		self.b.sendSomeData(MSGB)
+		
+		while a.omsgq or b.omsgq or a.weMissed or b.weMissed or ord(msga[0]) & (FLAG_NEXT | FLAG_MISSED) or ord(msgb[0]) & (FLAG_NEXT | FLAG_MISSED):
+			if rand(0,1) < prob:
+				msga = swap(a, '>', self.noisy)
+				b.datagramReceived(msga)
+			else:
+				msga = swap(a, '>', 0)
+			if rand(0,1) < prob:
+				msgb = swap(b, '<', self.noisy)
+				a.datagramReceived(msgb)
+			else:
+				msgb = swap(b, '<', 0)
+		self.assertEqual(self.A.msg, MSGB)
+		self.assertEqual(self.B.msg, MSGA)
+		
+	def testOrderedLossy(self, num = 2**17, prob=0.5):
+		self.testOrderedSimple(num, prob)

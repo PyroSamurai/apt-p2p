@@ -6,6 +6,7 @@ from struct import pack, unpack
 from time import time
 from StringIO import StringIO
 import unittest
+from bisect import insort_left
 
 from twisted.internet import protocol
 from twisted.internet import reactor
@@ -24,8 +25,19 @@ pending = 0
 sent = 1
 confirmed = 2
 
+class Delegate:
+	def setDelegate(self, delegate):
+		self.delegate = delegate
+	def getDelegate(self):
+		return self.delegate
+	def msgDelegate(self, method, args=(), kwargs={}):
+		if hasattr(self, 'delegate') and hasattr(self.delegate, method) and callable(getattr(self.delegate, method)):
+			apply(getattr(self.delegate, method) , args, kwargs)
+
 class Airhook(protocol.DatagramProtocol):
 
+	def __init__(self, connection_class):
+		self.connection_class = connection_class
 	def startProtocol(self):
 		self.connections = {}
 				
@@ -37,10 +49,11 @@ class Airhook(protocol.DatagramProtocol):
 
 	def connectionForAddr(self, addr):
 		if not self.connections.has_key(addr):
-			conn = AirhookConnection(self.transport, addr)
+			conn = connection_class(self.transport, addr, self.delegate)
 			self.connections[addr] = conn
 		return self.connections[addr]
 
+		
 class AirhookPacket:
 	def __init__(self, msg):
 		self.datagram = msg
@@ -74,11 +87,10 @@ class AirhookPacket:
 				skip+=1
 				self.msgs.append( msg[skip:skip+n])
 				skip += n
-		
-		
 
-class AirhookConnection:
-	def __init__(self, transport, addr):
+class AirhookConnection(Delegate):
+	def __init__(self, transport, addr, delegate):
+		self.delegate = delegate
 		self.addr = addr
 		type, self.host, self.port = addr
 		self.transport = transport
@@ -102,7 +114,7 @@ class AirhookConnection:
 		self.sendSession = None  # send session/observed fields until obSeq > sendSession
 
 		self.resetMessages()
-		
+	
 	def resetMessages(self):
 		self.weMissed = []
 		self.inMsg = 0   # next incoming message number
@@ -188,8 +200,8 @@ class AirhookConnection:
 		if response:
 			reactor.callLater(0, self.sendNext)
 		self.lastReceived = time()
-
-
+		self.dataCameIn()
+		
 	def sendNext(self):
 		flags = 0
 		header = chr(self.inSeq & 255) + pack("!H", self.outSeq)
@@ -264,3 +276,57 @@ class AirhookConnection:
 		else:
 			reactor.callLater(1, self.sendNext)
 
+
+	def dataCameIn(self):
+		self.msgDelegate('dataCameIn', (self.host, self.port, self.imsgq))
+		if hasattr(self, 'delegate') and self.delegate != None:
+			self.imsgq = []
+
+class ustr(str):
+	def getseq(self):
+		if not hasattr(self, 'seq'):
+			self.seq = unpack("!H", self[0:2])[0]
+		return self.seq
+	def __lt__(self, other):
+		return self.getseq() < other.getseq()
+	def __le__(self, other):
+		return self.getseq() <= other.getseq()
+	def __eq__(self, other):
+		return self.getseq() != other.getseq()
+	def __ne__(self, other):
+		return self.getseq() <= other.getseq()
+	def __gt__(self, other):
+		return self.getseq() > other.getseq()
+	def __ge__(self, other):
+		return self.getseq() >= other.getseq()
+
+class OrderedConnection(AirhookConnection):
+	def __init__(self, transport, addr, delegate):
+		AirhookConnection.__init__(self, transport, addr, delegate)
+		self.oseq = 0
+		self.iseq = 0
+		self.q = []
+
+	def dataCameIn(self):
+		# put 'em together
+		for msg in self.imsgq:
+			insort_left(self.q, ustr(msg))
+		self.imsgq = []
+		data = ""
+		while self.q and self.iseq == self.q[0].getseq():
+			data += self.q[0][2:]
+			self.iseq = (self.iseq + 1) % 2**16
+			self.q = self.q[1:]
+		if data:
+			self.msgDelegate('dataCameIn', (self.host, self.port, data))
+		
+	def sendSomeData(self, data):
+		# chop it up and queue it up
+		while data:
+			p = "%s%s" % (pack("!H", self.oseq), data[:253])
+			self.omsgq.append(p)
+			data = data[253:]
+			self.oseq = (self.oseq + 1) % 2**16
+
+		if self.omsgq:
+			self.sendNext()
