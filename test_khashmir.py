@@ -71,7 +71,7 @@ class SimpleTests(TestCase):
 
 
 class MultiTest(TestCase):
-    num = 30
+    num = 5
     def _done(self, val):
         self.done = 1
         

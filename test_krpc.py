@@ -79,7 +79,7 @@ class KRPCTests(TestCase):
 
     def gotMsg(self, dict):
         _krpc_sender = dict['_krpc_sender']
-        msg = dict[RSP]
+        msg = dict['rsp']
         self.msg = msg
 
     def testManyEcho(self):

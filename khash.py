@@ -12,7 +12,7 @@ except ImportError:
         s = ''
         for i in range(n):
             s += chr(whrandom.randint(0,255))
-        return s        
+        return s
 
 def intify(hstr):
     """20 bit hash, big-endian -> long python integer"""

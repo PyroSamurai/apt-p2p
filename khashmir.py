@@ -222,7 +222,6 @@ class Khashmir(protocol.Factory):
             
             def _notStaleNodeHandler(dict, old=old):
                 """ called when we get a pong from the old node """
-                _krpc_sender = dict['_krpc_sender']
                 dict = dict['rsp']
                 sender = dict['sender']
                 if sender['id'] == old.id:
@@ -245,8 +244,8 @@ class Khashmir(protocol.Factory):
                 # whoah, got response from different peer than we were expecting
                 self.table.invalidateNode(node)
             else:
-                sender['host'] = node.host
-                sender['port'] = node.port
+                sender['host'] = _krpc_sender[0]
+                sender['port'] = _krpc_sender[1]
                 n = Node().initWithDict(sender)
                 n.conn = self.udp.connectionForAddr((n.host, n.port))
                 table.insertNode(n)

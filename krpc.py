@@ -20,16 +20,15 @@ KRPC_ERROR_RECEIVED_UNKNOWN = 3
 KRPC_ERROR_TIMEOUT = 4
 
 # commands
-TID = 'tid'
-REQ = 'req'
-RSP = 'rsp'
-TYP = 'typ'
-ARG = 'arg'
-ERR = 'err'
+TID = 't'
+REQ = 'q'
+RSP = 'r'
+TYP = 'y'
+ARG = 'a'
+ERR = 'e'
 
 class hostbroker(protocol.DatagramProtocol):       
     def __init__(self, server):
-        self.noisy = 0
         self.server = server
         # this should be changed to storage that drops old entries
         self.connections = {}
@@ -38,7 +37,7 @@ class hostbroker(protocol.DatagramProtocol):
         #print `addr`, `datagram`
         #if addr != self.addr:
         c = self.connectionForAddr(addr)
-        c.datagramReceived(datagram)
+        c.datagramReceived(datagram, addr)
         #if c.idle():
         #    del self.connections[addr]
 
@@ -65,8 +64,9 @@ class KRPC:
         self.factory = server
         self.addr = addr
         self.tids = {}
+        self.mtid = 0
 
-    def datagramReceived(self, str):
+    def datagramReceived(self, str, addr):
         # bdecode
         try:
             msg = bdecode(str)
@@ -83,15 +83,15 @@ class KRPC:
                 # if request
                 #	tell factory to handle
                 f = getattr(self.factory ,"krpc_" + msg[REQ], None)
+                msg[ARG]['_krpc_sender'] =  self.addr
                 if f and callable(f):
-                    msg[ARG]['_krpc_sender'] =  self.addr
                     try:
                         ret = apply(f, (), msg[ARG])
                     except Exception, e:
                         ## send error
                         out = bencode({TID:msg[TID], TYP:ERR, ERR :`e`})
                         olen = len(out)
-                        self.transport.write(out, self.addr)
+                        self.transport.write(out, addr)
                     else:
                         if ret:
                             #	make response
@@ -100,7 +100,7 @@ class KRPC:
                             out = bencode({TID : msg[TID], TYP : RSP, RSP : {}})
                         #	send response
                         olen = len(out)
-                        self.transport.write(out, self.addr)
+                        self.transport.write(out, addr)
 
                 else:
                     if self.noisy:
@@ -108,9 +108,9 @@ class KRPC:
                     # unknown method
                     out = bencode({TID:msg[TID], TYP:ERR, ERR : KRPC_ERROR_METHOD_UNKNOWN})
                     olen = len(out)
-                    self.transport.write(out, self.addr)
+                    self.transport.write(out, addr)
                 if self.noisy:
-                    print "%s %s >>> %s - %s %s %s" % (time.asctime(), self.addr, self.factory.node.port, 
+                    print "%s %s >>> %s - %s %s %s" % (time.asctime(), addr, self.factory.node.port, 
                                                     ilen, msg[REQ], olen)
             elif msg[TYP] == RSP:
                 # if response
@@ -119,7 +119,7 @@ class KRPC:
                     df = self.tids[msg[TID]]
                     # 	callback
                     del(self.tids[msg[TID]])
-                    df.callback({RSP : msg[RSP], '_krpc_sender': self.addr})
+                    df.callback({'rsp' : msg[RSP], '_krpc_sender': addr})
                 else:
                     print 'timeout ' + `msg[RSP]['sender']`
                     # no tid, this transaction timed out already...
@@ -145,7 +145,8 @@ class KRPC:
     def sendRequest(self, method, args):
         # make message
         # send it
-        msg = {TID : hash.newTID(), TYP : REQ,  REQ : method, ARG : args}
+        msg = {TID : chr(self.mtid), TYP : REQ,  REQ : method, ARG : args}
+        self.mtid = (self.mtid + 1) % 256
         str = bencode(msg)
         d = Deferred()
         self.tids[msg[TID]] = d
