@@ -15,7 +15,7 @@ from traceback import format_exception
 
 import khash as hash
 
-KRPC_TIMEOUT = 60
+KRPC_TIMEOUT = 20
 
 KRPC_ERROR = 1
 KRPC_ERROR_METHOD_UNKNOWN = 2

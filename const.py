@@ -55,7 +55,7 @@ BUCKET_STALENESS = 60 # one hour
 KEINITIAL_DELAY = 15 # 15 seconds - to clean out old stuff in persistent db
 
 # time between expirer runs
-KE_DELAY = 60 * 60 # 1 hour
+KE_DELAY = 60 * 20 # 20 minutes
 
 # expire entries older than this
-KE_AGE = 60 * 60 * 24 # 24 hours
+KE_AGE = 60 * 60 # 60 minutes

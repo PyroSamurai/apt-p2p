@@ -1,4 +1,4 @@
-## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
+## Copyright 2002-2004 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
 from time import time
@@ -231,7 +231,11 @@ class StoreValue(ActionBase):
             else:
                 if not node.id == self.table.node.id:
                     self.outstanding += 1
-                    df = node.storeValue(self.target, self.value, self.table.node.id)
+                    if type(self.value) == type([]):
+                        df = node.storeValues(self.target, self.value, self.table.node.id)                        
+                    else:
+                        df = node.storeValue(self.target, self.value, self.table.node.id)
+                    
                     df.addCallback(self.storedValue, node=node)
                     df.addErrback(self.storeFailed, node=node)
                     

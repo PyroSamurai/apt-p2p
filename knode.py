@@ -42,6 +42,11 @@ class KNode(Node):
         df.addErrback(self.errBack)
         df.addCallback(self.checkSender)
         return df
+    def storeValues(self, key, value, id):
+        df = self.conn.sendRequest('store_values', {"key" : key, "values" : value, "id": id})
+        df.addErrback(self.errBack)
+        df.addCallback(self.checkSender)
+        return df
     def findValue(self, key, id):
         df =  self.conn.sendRequest('find_value', {"key" : key, "id" : id})
         df.addErrback(self.errBack)

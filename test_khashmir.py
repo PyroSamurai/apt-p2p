@@ -1,6 +1,7 @@
 from unittest import *
 from khashmir import *
 import khash
+from copy import copy
 
 from whrandom import randrange
 
@@ -71,7 +72,7 @@ class SimpleTests(TestCase):
 
 
 class MultiTest(TestCase):
-    num = 5
+    num = 20
     def _done(self, val):
         self.done = 1
         
@@ -115,23 +116,56 @@ class MultiTest(TestCase):
             K = khash.newID()
             V = khash.newID()
             
-            self.done = 0
-            def _cb(val):
-                self.done = 1
-            self.l[randrange(0, self.num)].storeValueForKey(K, V, _cb)
-            while not self.done:
-                reactor.iterate()
-
-            self.got = 0
-            self.done = 0
-
-            def _cb(val):
-                if not val:
+            for a in range(3):
+                self.done = 0
+                def _scb(val):
                     self.done = 1
-                    self.assertEqual(self.got, 1)
-                elif V in val:
-                    self.got = 1
-                                    
-            self.l[randrange(0, self.num)].valueForKey(K, _cb)
-            while not self.done:
-                reactor.iterate()
+                self.l[randrange(0, self.num)].storeValueForKey(K, V, _scb)
+                while not self.done:
+                    reactor.iterate()
+
+
+                def _rcb(val):
+                    if not val:
+                        self.done = 1
+                        self.assertEqual(self.got, 1)
+                    elif V in val:
+                        self.got = 1
+                for x in range(3):
+                    self.got = 0
+                    self.done = 0
+                    self.l[randrange(0, self.num)].valueForKey(K, _rcb)
+                    while not self.done:
+                        reactor.iterate()
+
+
+            K = khash.newID()
+            l = map(lambda a: newID(), range(8))
+            for a in range(3):
+                self.done = 0
+                def _scb(val):
+                    self.done = 1
+                self.l[randrange(0, self.num)].storeValueForKey(K, l, _scb)
+                while not self.done:
+                    reactor.iterate()
+
+
+                c = []
+                def _rcb(val):
+                    if not val:
+                        self.done = 1
+                        self.assertEqual(self.got, 1)
+                    for n in val:
+                        c.remove(n)
+                        if not c:
+                            self.got = 1
+                for x in range(3):
+                    self.got = 0
+                    self.done = 0
+                    c = copy(l)
+                    self.l[randrange(0, self.num)].valueForKey(K, _rcb)
+                    while not self.done:
+                        reactor.iterate()
+            
+            
+            

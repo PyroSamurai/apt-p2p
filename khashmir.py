@@ -1,4 +1,4 @@
-## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
+## Copyright 2002-2004 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
 from const import reactor
@@ -326,7 +326,27 @@ class Khashmir(protocol.Factory):
         n.conn = self.udp.connectionForAddr((n.host, n.port))
         self.insertNode(n, contacted=0)
         return {"id" : self.node.id}
-    
+
+    ## multiple values per key
+    def krpc_store_values(self, key, values, id, _krpc_sender):
+        t = "%0.6f" % time.time()
+        c = self.store.cursor()
+        key = sqlite.encode(key)
+        for value in values:
+            value = sqlite.encode(value)
+            try:
+                c.execute("insert into kv values (%s, %s, %s);", key, value, t)
+            except sqlite.IntegrityError, reason:
+                # update last insert time
+                c.execute("update kv set time = %s where key = %s and value = %s;", (t, key, value))
+        sender = {'id' : id}
+        sender['host'] = _krpc_sender[0]
+        sender['port'] = _krpc_sender[1]        
+        n = Node().initWithDict(sender)
+        n.conn = self.udp.connectionForAddr((n.host, n.port))
+        self.insertNode(n, contacted=0)
+        return {"id" : self.node.id}
+
     def krpc_find_value(self, key, id, _krpc_sender):
         sender = {'id' : id}
         sender['host'] = _krpc_sender[0]
