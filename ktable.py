@@ -65,21 +65,22 @@ class KTable:
 	    return [self.buckets[i].l[index]]
 	    
 	nodes = nodes + self.buckets[i].l
-	if len(nodes) == K:
+	if len(nodes) >= K:
 	    nodes.sort(sort)
-	    return nodes
+	    return nodes[:K]
 	else:
 	    # need more nodes
 	    min = i - 1
 	    max = i + 1
-	    while (len(nodes) < K and (min >= 0 and max < len(self.buckets))):
+	    while (len(nodes) < K and (min >= 0 or max < len(self.buckets))):
 		if min >= 0:
 		    nodes = nodes + self.buckets[min].l
 		    self.buckets[min].touch()
 		if max < len(self.buckets):
 		    nodes = nodes + self.buckets[max].l
 		    self.buckets[max].touch()
-		
+		min = min - 1
+		max = max + 1
 	    nodes.sort(sort)
 	    return nodes[:K-1]
 
@@ -108,10 +109,11 @@ class KTable:
 	if new:
 	    self.buckets[i].l.append(new)
 
-    def insertNode(self, node):
+    def insertNode(self, node, contacted=1):
 	""" 
 	this insert the node, returning None if successful, returns the oldest node in the bucket if it's full
 	the caller responsible for pinging the returned node and calling replaceStaleNode if it is found to be stale!!
+	contacted means that yes, we contacted THEM and we know the node is available
 	"""
 	assert(node.id != " "*20)
 	# get the bucket for this node
@@ -123,16 +125,21 @@ class KTable:
 	    ## no
 	    pass
 	else:
-	    node.updateLastSeen()
-	    # move node to end of bucket
-	    del(self.buckets[i].l[it])
-	    self.buckets[i].l.append(node)
-	    self.buckets[i].touch()
+	    if contacted:
+		node.updateLastSeen()
+		# move node to end of bucket
+		del(self.buckets[i].l[it])
+		# note that we removed the original and replaced it with the new one
+		# utilizing this nodes new contact info
+		self.buckets[i].l.append(node)
+		self.buckets[i].touch()
 	    return
 	
 	# we don't have this node, check to see if the bucket is full
 	if len(self.buckets[i].l) < K:
 	    # no, append this node and return
+	    if contacted:
+		node.updateLastSeen()
 	    self.buckets[i].l.append(node)
 	    self.buckets[i].touch()
 	    return
