@@ -225,10 +225,10 @@ class SimpleTest(unittest.TestCase):
         self.assertEqual(a.obSeq, 0)
 
         b.datagramReceived(msg)
-        self.assertEqual(b.state, sent)
         self.assertEqual(b.inSeq, 0)
         self.assertEqual(b.obSeq, 0)
         msg = swap(b, '<', self.noisy)		
+        self.assertEqual(b.state, sent)
         self.assertEqual(b.outSeq, 1)
 
         a.datagramReceived(msg)
@@ -443,9 +443,9 @@ class BasicTests(unittest.TestCase):
             
 
         b.datagramReceived(msg)
-        self.assertEqual(b.state, sent)
         
         msg = swap(b, '<', self.noisy)
+        self.assertEqual(b.state, sent)
         a.datagramReceived(msg)
 
         msg = swap(a, '>', self.noisy)
@@ -546,6 +546,48 @@ class BasicTests(unittest.TestCase):
         self.assertEqual(a.next, 255)
         self.assertEqual(a.outMsgNums[(a.outSeq-1) % 256], 254)
 
+    def testConnectionReset(self):
+        a = self.a
+        b = self.b
+        msg = swap(a, noisy=self.noisy)
+        b.datagramReceived(msg)
+
+        msg = swap(b, noisy=self.noisy)
+        a.datagramReceived(msg)
+
+        a.omsgq.append("TESTING")
+        msg = swap(a, noisy=self.noisy)
+        b.datagramReceived(msg)
+
+        msg = swap(b, noisy=self.noisy)
+        a.datagramReceived(msg)
+
+        self.assertEqual(b.protocol.q[0], "TESTING")
+        self.assertEqual(b.state, confirmed)
+        
+        self.a = AirhookConnection()
+        self.a.makeConnection(DummyTransport())
+        self.a.addr = ('127.0.0.1', 4444)
+        a = self.a
+        
+        a.omsgq.append("TESTING2")
+        msg = swap(a, noisy=self.noisy)
+        b.datagramReceived(msg)
+
+        msg = swap(b, noisy=self.noisy)
+        a.datagramReceived(msg)
+        
+        self.assertEqual(len(b.protocol.q), 1)
+        msg = swap(a, noisy=self.noisy)
+        b.datagramReceived(msg)
+
+        msg = swap(b, noisy=self.noisy)
+        a.datagramReceived(msg)
+
+        self.assertEqual(len(b.protocol.q), 2)
+        self.assertEqual(b.protocol.q[1], "TESTING2")
+
+        
 class StreamTests(unittest.TestCase):
     def setUp(self):
         self.noisy = 0
@@ -585,12 +627,15 @@ class SimpleReactor(unittest.TestCase):
         self.b = makeReceiver(2021)
         self.ac = self.a.connectionForAddr(('127.0.0.1', 2021))
         self.bc = self.b.connectionForAddr(('127.0.0.1', 2020))
+        self.ac.noisy = self.noisy
+        self.bc.noisy = self.noisy
     def testSimple(self):
         msg = "Testing 1, 2, 3"
         self.ac.write(msg)
         reactor.iterate()
         reactor.iterate()
         reactor.iterate()
+        self.assertEqual(self.bc.state, confirmed)
         self.assertEqual(self.bc.protocol.q, [msg])
 
 class SimpleReactorEcho(unittest.TestCase):
