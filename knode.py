@@ -20,7 +20,7 @@ class KNode(Node):
 	reactor.connectTCP(self.host, self.port, f)
 	return df
     def findValue(self, key, sender):
+	df = Deferred()
 	f = factory('find_value', (key, sender), df.callback, df.errback)
 	reactor.connectTCP(self.host, self.port, f)
-	df = Deferred()
 	return df

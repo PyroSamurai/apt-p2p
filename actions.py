@@ -109,7 +109,6 @@ class GetValue(FindNode):
     """ get value task """
     def handleGotNodes(self, args):
 	l, sender = args
-	l = l[0]
 	if self.finished or self.answered.has_key(sender['id']):
 	    # a day late and a dollar short
 	    return
@@ -126,7 +125,7 @@ class GetValue(FindNode):
 	elif l.has_key('values'):
 	    ## done
 	    self.finished = 1
-	    return self.callback(l['values'])
+	    reactor.callFromThread(self.callback, l['values'])
 	self.schedule()
 		
     ## get value
@@ -139,8 +138,9 @@ class GetValue(FindNode):
 	for node in l[:K]:
 	    if not self.queried.has_key(node.id) and node.id != self.table.node.id:
 		#xxx t.timeout = time.time() + GET_VALUE_TIMEOUT
-		df = node.getValue(node, self.target)
-		df.addCallbacks(self.handleGotNodes, self.defaultGotNodes)
+		df = node.findValue(self.target, self.table.node.senderDict())
+		df.addCallback(self.handleGotNodes)
+		df.addErrback(self.defaultGotNodes)
 		self.outstanding = self.outstanding + 1
 		self.queried[node.id] = 1
 	    if self.outstanding >= N:
@@ -158,7 +158,7 @@ class GetValue(FindNode):
 		continue
 	    self.found[node.id] = node
 	    #xxx t.timeout = time.time() + FIND_NODE_TIMEOUT
-	    df = node.findNode(self.target, self.table.node.senderDict())
+	    df = node.findValue(self.target, self.table.node.senderDict())
 	    df.addCallbacks(self.handleGotNodes, self.defaultGotNodes)
 	    self.outstanding = self.outstanding + 1
 	    self.queried[node.id] = 1

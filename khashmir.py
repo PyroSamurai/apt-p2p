@@ -12,6 +12,8 @@ from actions import FindNode, GetValue
 from twisted.web import xmlrpc
 from twisted.internet.defer import Deferred
 from twisted.python import threadable
+from twisted.internet.app import Application
+from twisted.web import server
 threadable.init()
 
 from bsddb3 import db ## find this at http://pybsddb.sf.net/
@@ -28,8 +30,6 @@ class Khashmir(xmlrpc.XMLRPC):
     def __init__(self, host, port):
 	self.node = Node(newID(), host, port)
 	self.table = KTable(self.node)
-	from twisted.internet.app import Application
-	from twisted.web import server
 	self.app = Application("xmlrpc")
 	self.app.listenTCP(port, server.Site(self))
 	self.store = db.DB()
@@ -204,7 +204,7 @@ class Khashmir(xmlrpc.XMLRPC):
 	if self.store.has_key(key):
 	    return {'values' : self.store[key]}, self.node.senderDict()
 	else:
-	    nodes = self.table.findNodes(msg['key'])
+	    nodes = self.table.findNodes(key)
 	    nodes = map(lambda node: node.senderDict(), nodes)
 	    return {'nodes' : nodes}, self.node.senderDict()
 
@@ -215,7 +215,11 @@ class Khashmir(xmlrpc.XMLRPC):
 	pass
 
 
-#------
+
+
+
+
+#------ testing
 
 def test_build_net(quiet=0):
     from whrandom import randrange
@@ -309,7 +313,7 @@ def test_find_value(l, quiet=0):
 		if(len(values) == 0):
 		    print "find                FAILED"
 		else:
-		    if values[0]['value'] != val:
+		    if values != val:
 			print "find                FAILED"
 		    else:
 			print "find                FOUND"
@@ -317,11 +321,10 @@ def test_find_value(l, quiet=0):
 		f.set()
 	return callback
     b.valueForKey(key, mc(fa))
-    c.valueForKey(key, mc(fb))
-    d.valueForKey(key, mc(fc))
-    
     fa.wait()
+    c.valueForKey(key, mc(fb))
     fb.wait()
+    d.valueForKey(key, mc(fc))    
     fc.wait()
     
 if __name__ == "__main__":
