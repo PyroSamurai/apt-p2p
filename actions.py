@@ -45,7 +45,8 @@ class FindNode(ActionBase):
     def handleGotNodes(self, args):
 	args, conn = args
 	l, sender = args
-	sender['host'] = conn['host']
+	if conn['host']:
+	    sender['host'] = conn['host']
 	sender = Node().initWithDict(sender)
 	self.table.table.insertNode(sender)
 	if self.finished or self.answered.has_key(sender.id):
@@ -68,11 +69,11 @@ class FindNode(ActionBase):
 	l = self.found.values()
 	l.sort(self.sort)
 
-	for node in l:
+	for node in l[:K]:
 	    if node.id == self.target:
 		self.finished=1
 		return self.callback([node])
-	    if not self.queried.has_key(node.id) and node.id != self.table.node.id:
+	    if (not self.queried.has_key(node.id)) and node.id != self.table.node.id:
 		#xxxx t.timeout = time.time() + FIND_NODE_TIMEOUT
 		df = node.findNode(self.target, self.table.node.senderDict())
 		df.addCallbacks(self.handleGotNodes, self.makeMsgFailed(node))
@@ -89,8 +90,6 @@ class FindNode(ActionBase):
     def makeMsgFailed(self, node):
 	def defaultGotNodes(err, self=self, node=node):
 	    self.table.table.nodeFailed(node)
-	    if self.finished:
-		return
 	    self.outstanding = self.outstanding - 1
 	    self.schedule()
 	return defaultGotNodes
@@ -115,7 +114,8 @@ class GetValue(FindNode):
     def handleGotNodes(self, args):
 	args, conn = args
 	l, sender = args
-	sender['host'] = conn['host']
+	if conn['host']:
+	    sender['host'] = conn['host']
 	sender = Node().initWithDict(sender)
 	self.table.table.insertNode(sender)
 	if self.finished or self.answered.has_key(sender.id):
@@ -150,8 +150,8 @@ class GetValue(FindNode):
 	l = self.found.values()
 	l.sort(self.sort)
 
-	for node in l:
-	    if not self.queried.has_key(node.id) and node.id != self.table.node.id:
+	for node in l[:K]:
+	    if (not self.queried.has_key(node.id)) and node.id != self.table.node.id:
 		#xxx t.timeout = time.time() + GET_VALUE_TIMEOUT
 		df = node.findValue(self.target, self.table.node.senderDict())
 		df.addCallback(self.handleGotNodes)
