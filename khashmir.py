@@ -32,18 +32,18 @@ class Khashmir(xmlrpc.XMLRPC):
 		self.setup(host, port, db)
 		
 	def setup(self, host, port, db='khashmir.db'):
-		self.findDB(db)
-		self.node = self.loadSelfNode(host, port)
+		self._findDB(db)
+		self.node = self._loadSelfNode(host, port)
 		self.table = KTable(self.node)
-		self.loadRoutingTable()
+		self._loadRoutingTable()
 		self.app = Application("xmlrpc")
 		self.app.listenTCP(port, server.Site(self))
 		self.last = time.time()
 		KeyExpirer(store=self.store)
-		reactor.callLater(const.CHECKPOINT_INTERVAL, self.checkpoint)
-		self.refreshTable(force=1)
+		#self.refreshTable(force=1)
+		reactor.callLater(60, self.checkpoint, (1,))
 		
-	def loadSelfNode(self, host, port):
+	def _loadSelfNode(self, host, port):
 		c = self.store.cursor()
 		c.execute('select id from self where num = 0;')
 		if c.rowcount > 0:
@@ -52,7 +52,7 @@ class Khashmir(xmlrpc.XMLRPC):
 			id = newID()
 		return Node().init(id, host, port)
 		
-	def saveSelfNode(self):
+	def _saveSelfNode(self):
 		self.store.autocommit = 0
 		c = self.store.cursor()
 		c.execute('delete from self where num = 0;')
@@ -60,21 +60,22 @@ class Khashmir(xmlrpc.XMLRPC):
 		self.store.commit()
 		self.store.autocommit = 1
 		
-	def checkpoint(self):
-		self.saveSelfNode()
-		self.dumpRoutingTable()
-		reactor.callLater(const.CHECKPOINT_INTERVAL, self.checkpoint)
+	def checkpoint(self, auto=0):
+		self._saveSelfNode()
+		self._dumpRoutingTable()
+		if auto:
+			reactor.callLater(const.CHECKPOINT_INTERVAL, self.checkpoint)
 		
-	def findDB(self, db):
+	def _findDB(self, db):
 		import os
 		try:
 			os.stat(db)
 		except OSError:
-			self.createNewDB(db)
+			self._createNewDB(db)
 		else:
-			self.loadDB(db)
+			self._loadDB(db)
 	    
-	def loadDB(self, db):
+	def _loadDB(self, db):
 		try:
 			self.store = sqlite.connect(db=db)
 			self.store.autocommit = 1
@@ -82,7 +83,7 @@ class Khashmir(xmlrpc.XMLRPC):
 			import traceback
 			raise KhashmirDBExcept, "Couldn't open DB", traceback.exc_traceback
 	    
-	def createNewDB(self, db):
+	def _createNewDB(self, db):
 		self.store = sqlite.connect(db=db)
 		self.store.autocommit = 1
 		s = """
@@ -97,7 +98,7 @@ class Khashmir(xmlrpc.XMLRPC):
 		c = self.store.cursor()
 		c.execute(s)
 
-	def dumpRoutingTable(self):
+	def _dumpRoutingTable(self):
 		"""
 			save routing table nodes to the database
 		"""
@@ -111,7 +112,7 @@ class Khashmir(xmlrpc.XMLRPC):
 		self.store.commit()
 		self.store.autocommit = 1;
 		
-	def loadRoutingTable(self):
+	def _loadRoutingTable(self):
 		"""
 			load routing table nodes from database
 			it's usually a good idea to call refreshTable(force=1) after loading the table
@@ -345,15 +346,29 @@ from sha import sha
 from hash import newID
 
 
-def test_build_net(quiet=0, peers=24, host='localhost',  pause=0, startport=2001):
+def test_net(peers=24, startport=2001, dbprefix='/tmp/test'):
+	import thread
+	l = []
+	for i in xrange(peers):
+		a = Khashmir('localhost', startport + i, db = dbprefix+`i`)
+		l.append(a)
+	thread.start_new_thread(l[0].app.run, ())
+	for peer in l[1:]:
+		peer.app.run()	
+	return l
+	
+def test_build_net(quiet=0, peers=24, host='localhost',  pause=0, startport=2001, dbprefix='/tmp/test'):
+	from whrandom import randrange
+	import threading
+	import thread
+	import sys
 	port = startport
 	l = []
-		
 	if not quiet:
 		print "Building %s peer table." % peers
 	
 	for i in xrange(peers):
-		a = Khashmir(host, port + i, db = '/tmp/test'+`i`)
+		a = Khashmir(host, port + i, db = dbprefix +`i`)
 		l.append(a)
 	
 	
