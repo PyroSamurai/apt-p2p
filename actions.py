@@ -180,9 +180,10 @@ class GetValue(FindNode):
 	    reactor.callFromThread(self.callback, [])
 
 
-KEINITIAL_DELAY = 60 # 1 minute
-KE_DELAY = 60 # 1 minute
-KE_AGE = 60 * 5
+KEINITIAL_DELAY = 60 * 60 * 24 # 24 hours
+KE_DELAY = 60 * 60 # 1 hour
+KE_AGE = KEINITIAL_DELAY
+
 class KeyExpirer:
     def __init__(self, store, itime, kw):
 	self.store = store
