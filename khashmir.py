@@ -4,8 +4,6 @@ from const import reactor
 import const
 
 import time
-from bencode import bdecode as loads
-from bencode import bencode as dumps
 
 from sha import sha
 
@@ -23,7 +21,7 @@ from twisted.web import server
 threadable.init()
 
 import sqlite  ## find this at http://pysqlite.sourceforge.net/
-
+import pysqlite_exceptions
 
 KhashmirDBExcept = "KhashmirDBExcept"
 
@@ -58,8 +56,9 @@ class Khashmir(xmlrpc.XMLRPC):
     def createNewDB(self, db):
 	self.store = sqlite.connect(db=db)
 	s = """
-	    create table kv (hkv text primary key, key text, value text, time timestamp);
+	    create table kv (key text, value text, time timestamp, primary key (key, value));
 	    create index kv_key on kv(key);
+	    create index kv_timestamp on kv(time);
 	    
 	    create table nodes (id text primary key, host text, port number);
 	    """
@@ -259,16 +258,18 @@ class Khashmir(xmlrpc.XMLRPC):
 	return nodes, self.node.senderDict()
     	    
     def xmlrpc_store_value(self, key, value, sender):
-	h1 = sha(key+value).digest().encode('base64')
 	t = `time.time()`
-	s = "insert into kv values ('%s', '%s', '%s', '%s')" % (h1, key, value, t)
+	s = "insert into kv values ('%s', '%s', '%s')" % (key, value, t)
 	c = self.store.cursor()
 	try:
 	    c.execute(s)
-	except:
-	    # update last insert time
-	    s = "update kv set time = '%s' where hkv = '%s'" % (t, h1)
-	    c.execute(s)
+	except pysqlite_exceptions.IntegrityError, reason:
+	    if reason == 'constraint failed':
+		# update last insert time
+		s = "update kv set time = '%s' where key = '%s' and value = %s" % (key, value)
+		c.execute(s)
+	    else:
+		raise pysqlite_exceptions.IntegrityError, reason
 	self.store.commit()
 	ip = self.crequest.getClientIP()
 	sender['host'] = ip
