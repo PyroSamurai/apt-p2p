@@ -173,6 +173,7 @@ class Khashmir(xmlrpc.XMLRPC):
 	df = node.ping(self.node.senderDict())
 	## these are the callbacks we use when we issue a PING
 	def _pongHandler(sender, id=node.id, host=node.host, port=node.port, table=self.table):
+	    sender, conn = sender
 	    if id != 20 * ' ' and id != sender['id'].data:
 		# whoah, got response from different peer than we were expecting
 		pass
