@@ -68,7 +68,7 @@ class FindNode(ActionBase):
 	l = self.found.values()
 	l.sort(self.sort)
 
-	for node in l[:K]:
+	for node in l:
 	    if node.id == self.target:
 		self.finished=1
 		return self.callback([node])
@@ -103,17 +103,10 @@ class FindNode(ActionBase):
 	for node in nodes:
 	    if node.id == self.table.node.id:
 		continue
-	    self.found[node.id] = node
-	    #xxx t.timeout = time.time() + FIND_NODE_TIMEOUT
-	    df = node.findNode(self.target, self.table.node.senderDict())
-	    df.addCallbacks(self.handleGotNodes, self.makeMsgFailed(node))
-	    self.outstanding = self.outstanding + 1
-	    self.queried[node.id] = 1
-	    if self.outstanding >= const.CONCURRENT_REQS:
-		break
-
-	if self.outstanding == 0:
-	    self.callback(nodes)
+	    else:
+		self.found[node.id] = node
+	    
+	self.schedule()
 
 
 GET_VALUE_TIMEOUT = 15
@@ -157,7 +150,7 @@ class GetValue(FindNode):
 	l = self.found.values()
 	l.sort(self.sort)
 
-	for node in l[:K]:
+	for node in l:
 	    if not self.queried.has_key(node.id) and node.id != self.table.node.id:
 		#xxx t.timeout = time.time() + GET_VALUE_TIMEOUT
 		df = node.findValue(self.target, self.table.node.senderDict())
@@ -182,18 +175,10 @@ class GetValue(FindNode):
 	for node in nodes:
 	    if node.id == self.table.node.id:
 		continue
-	    self.found[node.id] = node
-	    #xxx t.timeout = time.time() + FIND_NODE_TIMEOUT
-	    df = node.findValue(self.target, self.table.node.senderDict())
-	    df.addCallback(self.handleGotNodes)
-	    df.addErrback(self.makeMsgFailed(node))
-	    self.outstanding = self.outstanding + 1
-	    self.queried[node.id] = 1
-	    if self.outstanding >= const.CONCURRENT_REQS:
-		break
-
-	if self.outstanding == 0:
-	    reactor.callFromThread(self.callback, [])
+	    else:
+		self.found[node.id] = node
+	    
+	self.schedule()
 
 
 
