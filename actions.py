@@ -43,10 +43,7 @@ FIND_NODE_TIMEOUT = 15
 class FindNode(ActionBase):
     """ find node action merits it's own class as it is a long running stateful process """
     def handleGotNodes(self, args):
-	args, conn = args
 	l, sender = args
-	if conn['host']:
-	    sender['host'] = conn['host']
 	sender = Node().initWithDict(sender)
 	self.table.table.insertNode(sender)
 	if self.finished or self.answered.has_key(sender.id):
@@ -112,10 +109,7 @@ GET_VALUE_TIMEOUT = 15
 class GetValue(FindNode):
     """ get value task """
     def handleGotNodes(self, args):
-	args, conn = args
 	l, sender = args
-	if conn['host']:
-	    sender['host'] = conn['host']
 	sender = Node().initWithDict(sender)
 	self.table.table.insertNode(sender)
 	if self.finished or self.answered.has_key(sender.id):

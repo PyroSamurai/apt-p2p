@@ -155,9 +155,6 @@ class Khashmir(xmlrpc.XMLRPC):
 	
 	    def _notStaleNodeHandler(sender, old=old):
 		""" called when we get a pong from the old node """
-		sender, conn = sender
-		if conn['host']:
-		    sender['host'] = conn['host']
 		sender = Node().initWithDict(sender)
 		if sender.id == old.id:
 		    self.table.justSeenNode(old)
