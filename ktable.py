@@ -113,6 +113,8 @@ class KTable:
 	contacted means that yes, we contacted THEM and we know the node is available
 	"""
 	assert(node.id != " "*20)
+	if node.id == self.node.id:
+	    return
 	# get the bucket for this node
 	i = self. _bucketIndexForInt(node.int)
 	## check to see if node is in the bucket already
@@ -144,7 +146,7 @@ class KTable:
 	    
 	# bucket is full, check to see if self.node is in the bucket
 	try:
-	    me = self.buckets[i].l.index(self.node) 
+	    me = self.buckets[i].min <= self.node < self.buckets[i].max
 	except ValueError:
 	    return self.buckets[i].l[0]
 	
