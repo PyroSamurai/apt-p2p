@@ -40,7 +40,7 @@ class KTable:
         i = self._bucketIndexForInt(int)
         
         # if this node is already in our table then return it
-        if int in self.buckets[i].l.index(int): return [int]
+        if int in self.buckets[i].l: return [int]
             
         nodes = nodes + self.buckets[i].l
         if len(nodes) < K:
