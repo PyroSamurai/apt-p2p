@@ -18,10 +18,8 @@ import krpc
 
 from twisted.internet.defer import Deferred
 from twisted.internet import protocol
-from twisted.python import threadable
 from twisted.application import service, internet
 from twisted.web import server
-threadable.init()
 import sys
 
 from random import randrange
@@ -164,7 +162,7 @@ class KhashmirBase(protocol.Factory):
         else:
             # create our search state
             state = FindNode(self, id, d.callback)
-            reactor.callFromThread(state.goWithNodes, nodes)
+            reactor.callLater(0, state.goWithNodes, nodes)
     
     def insertNode(self, n, contacted=1):
         """
@@ -300,7 +298,7 @@ class KhashmirRead(KhashmirBase):
         
         # create our search state
         state = GetValue(self, key, callback)
-        reactor.callFromThread(state.goWithNodes, nodes, l)
+        reactor.callLater(0, state.goWithNodes, nodes, l)
 
     def krpc_find_value(self, key, id, _krpc_sender):
         sender = {'id' : id}
@@ -335,7 +333,7 @@ class KhashmirWrite(KhashmirRead):
                     pass
                 response=_storedValueHandler
             action = StoreValue(self.table, key, value, response)
-            reactor.callFromThread(action.goWithNodes, nodes)
+            reactor.callLater(action.goWithNodes, nodes)
             
         # this call is asynch
         self.findNode(key, _storeValueForKey)

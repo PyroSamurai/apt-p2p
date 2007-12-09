@@ -87,7 +87,7 @@ class FindNode(ActionBase):
         if self.outstanding == 0:
             ## all done!!
             self.finished=1
-            reactor.callFromThread(self.callback, l[:K])
+            reactor.callLater(0, self.callback, l[:K])
     
     def makeMsgFailed(self, node):
         def defaultGotNodes(err, self=self, node=node):
@@ -150,7 +150,7 @@ class GetValue(FindNode):
             z = len(dict['values'])
             v = filter(None, map(x, dict['values']))
             if(len(v)):
-                reactor.callFromThread(self.callback, v)
+                reactor.callLater(0, self.callback, v)
         self.schedule()
         
     ## get value
@@ -179,7 +179,7 @@ class GetValue(FindNode):
         if self.outstanding == 0:
             ## all done, didn't find it!!
             self.finished=1
-            reactor.callFromThread(self.callback,[])
+            reactor.callLater(0, self.callback,[])
 
     ## get value
     def goWithNodes(self, nodes, found=None):
