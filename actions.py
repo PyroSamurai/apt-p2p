@@ -3,11 +3,10 @@
 
 from time import time
 
-from const import reactor
-import const
+from twisted.internet import reactor
 
+import const
 from khash import intify
-from ktable import KTable, K
 
 class ActionBase:
     """ base class for some long running asynchronous proccesses like finding nodes or values """
@@ -71,7 +70,7 @@ class FindNode(ActionBase):
             return
         l = self.found.values()
         l.sort(self.sort)
-        for node in l[:K]:
+        for node in l[:const.K]:
             if node.id == self.target:
                 self.finished=1
                 return self.callback([node])
@@ -87,7 +86,7 @@ class FindNode(ActionBase):
         if self.outstanding == 0:
             ## all done!!
             self.finished=1
-            reactor.callLater(0, self.callback, l[:K])
+            reactor.callLater(0, self.callback, l[:const.K])
     
     def makeMsgFailed(self, node):
         def defaultGotNodes(err, self=self, node=node):
@@ -160,7 +159,7 @@ class GetValue(FindNode):
         l = self.found.values()
         l.sort(self.sort)
         
-        for node in l[:K]:
+        for node in l[:const.K]:
             if (not self.queried.has_key(node.id)) and node.id != self.table.node.id:
                 #xxx t.timeout = time.time() + GET_VALUE_TIMEOUT
                 try:

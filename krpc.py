@@ -1,18 +1,14 @@
 ## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
-from twisted.internet.defer import Deferred
-from twisted.protocols import basic
 from bencode import bencode, bdecode
-from twisted.internet import protocol
-
-from twisted.internet import reactor
-import time
-
+from time import asctime
 import sys
 from traceback import format_exception
 
-import khash as hash
+from twisted.internet.defer import Deferred
+from twisted.internet import protocol
+from twisted.internet import reactor
 
 KRPC_TIMEOUT = 20
 
@@ -111,7 +107,7 @@ class KRPC:
                     olen = len(out)
                     self.transport.write(out, addr)
                 if self.noisy:
-                    print "%s %s >>> %s - %s %s %s" % (time.asctime(), addr, self.factory.node.port, 
+                    print "%s %s >>> %s - %s %s %s" % (asctime(), addr, self.factory.node.port, 
                                                     ilen, msg[REQ], olen)
             elif msg[TYP] == RSP:
                 # if response

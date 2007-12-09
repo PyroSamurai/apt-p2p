@@ -1,9 +1,10 @@
 ## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
+from time import time
+from types import InstanceType
+
 import khash
-import time
-from types import *
 
 class Node:
     """encapsulate contact info"""
@@ -29,7 +30,7 @@ class Node:
         return self
     
     def updateLastSeen(self):
-        self.lastSeen = time.time()
+        self.lastSeen = time()
         self.fails = 0
     
     def msgFailed(self):

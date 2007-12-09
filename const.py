@@ -16,7 +16,6 @@ try:
 except IOError:
     print "no resolv.conf!"
 """
-from twisted.internet import reactor
 
 # magic id to use before we know a peer's id
 NULL_ID =  20 * '\0'

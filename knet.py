@@ -3,10 +3,12 @@
 #  create a network of khashmir nodes
 # usage: knet.py <num_nodes> <start_port> <ip_address>
 
-from khashmir import Khashmir
-from twisted.internet import reactor
 from random import randrange
 import sys, os
+
+from twisted.internet import reactor
+
+from khashmir import Khashmir
 
 class Network:
     def __init__(self, size=0, startport=5555, localip='127.0.0.1'):

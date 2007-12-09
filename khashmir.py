@@ -1,30 +1,20 @@
 ## Copyright 2002-2004 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
-from const import reactor
-import const
-
-import time
-
-from sha import sha
-
-from ktable import KTable, K
-from knode import *
-
-from khash import newID, newIDInRange
-
-from actions import FindNode, GetValue, KeyExpirer, StoreValue
-import krpc
+from time import time
+from random import randrange
+import sqlite  ## find this at http://pysqlite.sourceforge.net/
 
 from twisted.internet.defer import Deferred
 from twisted.internet import protocol
-from twisted.application import service, internet
-from twisted.web import server
-import sys
+from twisted.internet import reactor
 
-from random import randrange
-
-import sqlite  ## find this at http://pysqlite.sourceforge.net/
+import const
+from ktable import KTable
+from knode import KNodeBase, KNodeRead, KNodeWrite
+from khash import newID, newIDInRange
+from actions import FindNode, GetValue, KeyExpirer, StoreValue
+import krpc
 
 class KhashmirDBExcept(Exception):
     pass
@@ -44,7 +34,7 @@ class KhashmirBase(protocol.Factory):
         self.udp = krpc.hostbroker(self)
         self.udp.protocol = krpc.KRPC
         self.listenport = reactor.listenUDP(port, self.udp)
-        self.last = time.time()
+        self.last = time()
         self._loadRoutingTable()
         KeyExpirer(store=self.store)
         self.refreshTable(force=1)
@@ -173,7 +163,7 @@ class KhashmirBase(protocol.Factory):
         method needs to be a properly formed Node object with a valid ID.
         """
         old = self.table.insertNode(n, contacted=contacted)
-        if old and (time.time() - old.lastSeen) > const.MIN_PING_INTERVAL and old.id != self.node.id:
+        if old and (time() - old.lastSeen) > const.MIN_PING_INTERVAL and old.id != self.node.id:
             # the bucket is full, check to see if old node is still around and if so, replace it
             
             ## these are the callbacks used when we ping the oldest node in a bucket
@@ -231,7 +221,7 @@ class KhashmirBase(protocol.Factory):
             pass
     
         for bucket in self.table.buckets:
-            if force or (time.time() - bucket.lastAccessed >= const.BUCKET_STALENESS):
+            if force or (time() - bucket.lastAccessed >= const.BUCKET_STALENESS):
                 id = newIDInRange(bucket.min, bucket.max)
                 self.findNode(id, callback)
 
@@ -338,7 +328,7 @@ class KhashmirWrite(KhashmirRead):
         self.findNode(key, _storeValueForKey)
                     
     def krpc_store_value(self, key, value, id, _krpc_sender):
-        t = "%0.6f" % time.time()
+        t = "%0.6f" % time()
         c = self.store.cursor()
         try:
             c.execute("insert into kv values (%s, %s, %s);", (sqlite.encode(key), sqlite.encode(value), t))

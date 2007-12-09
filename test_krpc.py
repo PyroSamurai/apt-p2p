@@ -1,12 +1,15 @@
 ## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
-from unittest import *
-from krpc import *
+from unittest import defaultTestLoader, TestCase, TextTestRunner
+import sys
+
+from twisted.internet import protocol
+from twisted.internet import reactor
+
+from krpc import KRPC, hostbroker, KRPC_ERROR_METHOD_UNKNOWN
 
 KRPC.noisy = 0
-
-import sys
 
 if __name__ =="__main__":
     tests = defaultTestLoader.loadTestsFromNames([sys.argv[0][:-3]])

@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-import os
-import sys
-
 try:
     import distutils.core
     import distutils.command.build_ext

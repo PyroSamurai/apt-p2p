@@ -2,10 +2,10 @@
 # see LICENSE.txt for license information
 
 from types import IntType, LongType, StringType, ListType, TupleType, DictType
-import re
+from re import compile
 from cStringIO import StringIO
 
-int_filter = re.compile('(0|-?[1-9][0-9]*)e')
+int_filter = compile('(0|-?[1-9][0-9]*)e')
 
 def decode_int(x, f):
     m = int_filter.match(x, f)
@@ -13,7 +13,7 @@ def decode_int(x, f):
         raise ValueError
     return (long(m.group(1)), m.end())
 
-string_filter = re.compile('(0|[1-9][0-9]*):')
+string_filter = compile('(0|[1-9][0-9]*):')
 
 def decode_string(x, f):
     m = string_filter.match(x, f)

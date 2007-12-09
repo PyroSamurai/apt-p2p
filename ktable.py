@@ -1,13 +1,11 @@
 ## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
-import time
-from bisect import *
-from types import *
+from time import time
+from bisect import bisect_left
 
-import khash as hash
-import const
-from const import K, HASH_LENGTH, NULL_ID
+from const import K, HASH_LENGTH, NULL_ID, MAX_FAILURES
+import khash
 from node import Node
 
 class KTable:
@@ -28,7 +26,7 @@ class KTable:
         """
         
         if isinstance(id, str):
-            num = hash.intify(id)
+            num = khash.intify(id)
         elif isinstance(id, Node):
             num = id.num
         elif isinstance(id, int) or isinstance(id, long):
@@ -166,7 +164,7 @@ class KTable:
         except IndexError:
             return None
         else:
-            if n.msgFailed() >= const.MAX_FAILURES:
+            if n.msgFailed() >= MAX_FAILURES:
                 self.invalidateNode(n)
                         
 class KBucket:
@@ -174,10 +172,10 @@ class KBucket:
         self.l = contents
         self.min = min
         self.max = max
-        self.lastAccessed = time.time()
+        self.lastAccessed = time()
         
     def touch(self):
-        self.lastAccessed = time.time()
+        self.lastAccessed = time()
     
     def getNodeWithInt(self, num):
         if num in self.l: return num
@@ -214,11 +212,11 @@ import unittest
 
 class TestKTable(unittest.TestCase):
     def setUp(self):
-        self.a = Node().init(hash.newID(), 'localhost', 2002)
+        self.a = Node().init(khash.newID(), 'localhost', 2002)
         self.t = KTable(self.a)
 
     def testAddNode(self):
-        self.b = Node().init(hash.newID(), 'localhost', 2003)
+        self.b = Node().init(khash.newID(), 'localhost', 2003)
         self.t.insertNode(self.b)
         self.assertEqual(len(self.t.buckets[0].l), 1)
         self.assertEqual(self.t.buckets[0].l[0], self.b)
@@ -230,7 +228,7 @@ class TestKTable(unittest.TestCase):
 
     def testFail(self):
         self.testAddNode()
-        for i in range(const.MAX_FAILURES - 1):
+        for i in range(MAX_FAILURES - 1):
             self.t.nodeFailed(self.b)
             self.assertEqual(len(self.t.buckets[0].l), 1)
             self.assertEqual(self.t.buckets[0].l[0], self.b)

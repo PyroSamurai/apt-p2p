@@ -1,11 +1,12 @@
-from unittest import *
-from khashmir import *
-import khash
-from copy import copy
-
+from unittest import defaultTestLoader, TextTestRunner, TestCase
+from sha import sha
 from random import randrange
+import os, sys
 
-import os
+from twisted.internet import reactor
+
+from khashmir import Khashmir
+from khash import newID
 
 if __name__ =="__main__":
     tests = defaultTestLoader.loadTestsFromNames([sys.argv[0][:-3]])
@@ -113,8 +114,8 @@ class MultiTest(TestCase):
         
     def testStoreRetrieve(self):
         for i in range(10):
-            K = khash.newID()
-            V = khash.newID()
+            K = newID()
+            V = newID()
             
             for a in range(3):
                 self.done = 0
