@@ -5,7 +5,7 @@
 
 from khashmir import Khashmir
 from twisted.internet import reactor
-from whrandom import randrange
+from random import randrange
 import sys, os
 
 class Network:

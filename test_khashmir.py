@@ -3,7 +3,7 @@ from khashmir import *
 import khash
 from copy import copy
 
-from whrandom import randrange
+from random import randrange
 
 import os
 
