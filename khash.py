@@ -2,17 +2,7 @@
 # see LICENSE.txt for license information
 
 from sha import sha
-import random
-
-#this is ugly, hopefully os.entropy will be in 2.4
-try:
-    from entropy import entropy
-except ImportError:
-    def entropy(n):
-        s = ''
-        for i in range(n):
-            s += chr(random.randint(0,255))
-        return s
+from os import urandom
 
 def intify(hstr):
     """20 bit hash, big-endian -> long python integer"""
@@ -37,7 +27,7 @@ def distance(a, b):
 def newID():
     """returns a new pseudorandom globally unique ID string"""
     h = sha()
-    h.update(entropy(20))
+    h.update(urandom(20))
     return h.digest()
 
 def newIDInRange(min, max):
