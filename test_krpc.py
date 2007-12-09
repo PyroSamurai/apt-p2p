@@ -3,7 +3,6 @@
 
 from unittest import *
 from krpc import *
-#from airhook import *
 
 KRPC.noisy = 0
 

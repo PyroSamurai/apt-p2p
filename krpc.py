@@ -1,7 +1,6 @@
 ## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
-import airhook
 from twisted.internet.defer import Deferred
 from twisted.protocols import basic
 from bencode import bencode, bdecode

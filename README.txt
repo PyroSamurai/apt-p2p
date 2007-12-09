@@ -7,14 +7,13 @@ applications.  Note that Khashmir currently isn't very attack resistant.
   1 - http://kademlia.scs.cs.nyu.edu/
   
 Khashmir is implemented in Python using the Twisted [2] asynchronous networking
-framework.  Network deliver is done using Airhook [3].  PySQLite is used for each
+framework.  Network deliver is done using UDP.  PySQLite is used for each
 peer's backing store of keys and values.  The backing store is currently
 held in memory but it could easily be placed on disk.  Values expire after
 24 hours, by default.  Each peer stores multiple values for a key and
 currently returns all available values when requested.
   
   2 - http://twistedmatrix.com
-  3 - http://airhook.org/
 
 If you just want to watch it build a test network of peers, run "python
 khashmir.py <num peers>" This script will create the specified number of
