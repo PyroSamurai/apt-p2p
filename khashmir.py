@@ -322,7 +322,7 @@ class KhashmirWrite(KhashmirRead):
                     pass
                 response=_storedValueHandler
             action = StoreValue(self.table, key, value, response)
-            reactor.callLater(action.goWithNodes, nodes)
+            reactor.callLater(0, action.goWithNodes, nodes)
             
         # this call is asynch
         self.findNode(key, _storeValueForKey)
