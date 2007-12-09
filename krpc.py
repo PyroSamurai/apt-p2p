@@ -75,7 +75,6 @@ class KRPC:
         except Exception, e:
             if self.noisy:
                 print "response decode error: " + `e`
-            self.d.errback()
         else:
             #if self.noisy:
             #    print msg

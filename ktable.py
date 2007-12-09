@@ -170,7 +170,6 @@ class KTable:
                 self.invalidateNode(n)
                         
 class KBucket:
-    __slots__ = ('min', 'max', 'lastAccessed')
     def __init__(self, contents, min, max):
         self.l = contents
         self.min = min

@@ -31,7 +31,6 @@ class KhashmirDBExcept(Exception):
 
 # this is the base class, has base functionality and find node, no key-value mappings
 class KhashmirBase(protocol.Factory):
-    __slots__ = ('listener', 'node', 'table', 'store', 'app', 'last', 'protocol')
     _Node = KNodeBase
     def __init__(self, host, port, db='khashmir.db'):
         self.setup(host, port, db)
@@ -96,7 +95,7 @@ class KhashmirBase(protocol.Factory):
             #self.store.autocommit = 0
         except:
             import traceback
-            raise KhashmirDBExcept, "Couldn't open DB", traceback.exc_traceback
+            raise KhashmirDBExcept, "Couldn't open DB", traceback.format_exc()
         
     def _createNewDB(self, db):
         self.store = sqlite.connect(db=db)

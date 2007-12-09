@@ -6,10 +6,6 @@ from twisted.internet.defer import Deferred
 from const import reactor, NULL_ID
 
 
-class IDChecker:
-    def __init__(id):
-        self.id = id
-
 class KNodeBase(Node):
     def checkSender(self, dict):
         try:
