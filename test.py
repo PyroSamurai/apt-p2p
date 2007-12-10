@@ -3,5 +3,5 @@
 
 import unittest
 
-tests = unittest.defaultTestLoader.loadTestsFromNames(['hash', 'node', 'knode', 'actions',  'ktable', 'test_krpc'])
+tests = unittest.defaultTestLoader.loadTestsFromNames(['khash', 'node', 'knode', 'actions',  'ktable', 'test_krpc'])
 result = unittest.TextTestRunner().run(tests)
