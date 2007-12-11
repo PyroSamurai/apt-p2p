@@ -1,14 +1,21 @@
 
+import unittest
+
 from twisted.web2.client import http
 from twisted.internet.defer import Deferred
+from twisted.internet.protocol import ClientFactory
+from twisted.web2.client.interfaces import IHTTPClientManager
+from zope.interface import implements
 
-class HTTPClientManager(object):
+class HTTPClientManager(ClientFactory):
     """A manager for all HTTP requests to a site.
     
     
     """
 
     implements(IHTTPClientManager)
+    
+    protocol = HTTPClientProtocol
     
     def __init__(self, host, port):
         self.host = host
@@ -20,7 +27,7 @@ class HTTPClientManager(object):
         self.pending_requests = []
         
     def get(self, path):
-        uri = 'http://' + self.host + ':' + self.port + path
+        uri = 'http://' + self.host + ':' + str(self.port) + path
         request = http.ClientRequest('GET', uri, {}, None)
         request.responseDefer = Deferred()
         self.pending_requests.append(request)
@@ -57,3 +64,17 @@ class HTTPClientManager(object):
         del self.client
         if self.pending_requests:
             self._submitRequest()
+
+class TestDownloader(unittest.TestCase):
+    
+    def test_download(self):
+        h = HTTPClientManager('www.google.ca', 80)
+        def print_resutls(result):
+            print result
+            
+        d = h.get('/index.html')
+        d.addCallback(print_results)
+        reactor.run()
+    
+if __name__ == '__main__':
+    unittest.main()
