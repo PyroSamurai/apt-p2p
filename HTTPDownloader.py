@@ -110,12 +110,27 @@ class HTTPDownloader:
     
     def __init__(self):
         self.clients = {}
+        
+    def setCommonHeaders(self, host):
+        headers = http_headers.Headers()
+        headers.setHeader('Host', host)
+        headers.setHeader('User-Agent', 'apt-dht/0.0.0 (twisted.web2 0.2.0+svn20070403)')
+        return headers
     
-    def get(self, host, port, request):
+    def get(self, host, port, path, method="GET"):
         site = host + ":" + str(port)
         if site not in self.clients:
             self.clients[site] = HTTPClientManager(host, port)
-        return self.clients[site].submitRequest(request)
+        headers = self.setCommonHeaders(host)
+        return self.clients[site].submitRequest(ClientRequest(method, path, headers, None))
+    
+    def getRange(self, host, port, path, rangeStart, rangeEnd, method="GET"):
+        site = host + ":" + str(port)
+        if site not in self.clients:
+            self.clients[site] = HTTPClientManager(host, port)
+        headers = self.setCommonHeaders(host)
+        headers.setHeader('Range', ('bytes', [(rangeStart, rangeEnd)]))
+        return self.clients[site].submitRequest(ClientRequest(method, path, headers, None))
     
     def closeAll(self):
         for site in self.clients:
@@ -226,7 +241,7 @@ class TestDownloader(unittest.TestCase):
         lastDefer = defer.Deferred()
         
         host = 'www.camrdale.org'
-        d = self.manager.get(host, 80, ClientRequest("GET", '/robots.txt', {'Host':host}, None))
+        d = self.manager.get(host, 80, '/robots.txt')
         d.addCallback(self.gotResp, 1, 309)
         d.addBoth(lastDefer.callback)
         return lastDefer
@@ -237,7 +252,7 @@ class TestDownloader(unittest.TestCase):
         lastDefer = defer.Deferred()
         
         host = 'www.camrdale.org'
-        d = self.manager.get(host, 80, ClientRequest("HEAD", '/robots.txt', {'Host':host}, None))
+        d = self.manager.get(host, 80, '/robots.txt', "HEAD")
         d.addCallback(self.gotResp, 1, 0)
         d.addBoth(lastDefer.callback)
         return lastDefer
@@ -248,7 +263,7 @@ class TestDownloader(unittest.TestCase):
         lastDefer = defer.Deferred()
         
         def newRequest(host, path, num, expect, last=False):
-            d = self.manager.get(host, 80, ClientRequest("GET", path, {'Host':host}, None))
+            d = self.manager.get(host, 80, path)
             d.addCallback(self.gotResp, num, expect)
             if last:
                 d.addCallback(lastDefer.callback)
@@ -271,7 +286,7 @@ class TestDownloader(unittest.TestCase):
         lastDefer = defer.Deferred()
         
         host = 'www.camrdale.org'
-        d = self.manager.get(host, 80, ClientRequest("GET", '/robots.txt', {'Host':host, 'Range': ('bytes', [(100, 199)])}, None))
+        d = self.manager.getRange(host, 80, '/robots.txt', 100, 199)
         d.addCallback(self.gotResp, 1, 100)
         d.addBoth(lastDefer.callback)
         return lastDefer
