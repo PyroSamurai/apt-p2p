@@ -18,10 +18,9 @@ import apt_pkg, apt_inst, sys, os, stat
 from os.path import dirname, basename
 import re, shelve, shutil, fcntl
 from twisted.internet import process
-import apt_proxy, copy, UserDict
-from misc import log
+import copy, UserDict
 
-aptpkg_dir='.apt-proxy'
+aptpkg_dir='.apt-dht'
 apt_pkg.InitSystem()
 
 class AptDpkgInfo(UserDict.UserDict):
@@ -56,7 +55,7 @@ class PackageFileList:
     """
     def __init__(self, backendName, cache_dir):
         self.cache_dir = cache_dir
-        self.packagedb_dir = cache_dir+'/'+ apt_proxy.status_dir + \
+        self.packagedb_dir = cache_dir+'/'+ aptpkg_dir + \
                            '/backends/' + backendName
         if not os.path.exists(self.packagedb_dir):
             os.makedirs(self.packagedb_dir)
@@ -206,7 +205,7 @@ class AptPackages:
             # we should probably clear old entries from self.packages and
             # take into account the recorded mtime as optimization
             filepath = self.cache_dir + file
-            fake_uri='http://apt-proxy/'+file
+            fake_uri='http://apt-dht/'+file
             source_line='deb '+dirname(fake_uri)+'/ /'
             listpath=(self.status_dir+'/apt/lists/'
                     +apt_pkg.URItoFileName(fake_uri))
@@ -449,6 +448,7 @@ def test(factory, file):
         print "\t%s:%s"%(ver)
     print "Guess:"
     print "\t%s:%s"%(info['Version'], closest_match(info, vers))
+
 if __name__ == '__main__':
     from apt_proxy_conf import factoryConfig
     class DummyFactory:
