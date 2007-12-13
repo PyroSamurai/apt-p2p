@@ -18,6 +18,7 @@ import apt_pkg, apt_inst, sys, os, stat
 from os.path import dirname, basename
 import re, shelve, shutil, fcntl
 from twisted.internet import process
+from twisted.python import log
 import copy, UserDict
 
 aptpkg_dir='.apt-dht'
@@ -42,7 +43,7 @@ class AptDpkgInfo(UserDict.UserDict):
                 # Make sure that file is always closed.
                 filehandle.close()
         except SystemError:
-            log.debug("Had problems reading: %s"%(filename), 'AptDpkgInfo')
+            log.msg("Had problems reading: %s"%(filename))
             raise
         for line in self.control.split('\n'):
             if line.find(': ') != -1:
@@ -77,7 +78,7 @@ class PackageFileList:
         @param entry CacheEntry for cached file
         """
         if entry.filename=="Packages" or entry.filename=="Release":
-            log.msg("Registering package file: "+entry.cache_path, 'apt_pkg', 4)
+            log.msg("Registering package file: "+entry.cache_path)
             stat_result = os.stat(entry.file_path)
             self.packages[entry.cache_path] = stat_result
 
@@ -89,7 +90,7 @@ class PackageFileList:
         #print self.packages.keys()
         for f in files:
             if not os.path.exists(self.cache_dir + os.sep + f):
-                log.debug("File in packages database has been deleted: "+f, 'apt_pkg')
+                log.msg("File in packages database has been deleted: "+f)
                 del files[files.index(f)]
                 del self.packages[f]
         return files
@@ -210,7 +211,7 @@ class AptPackages:
             listpath=(self.status_dir+'/apt/lists/'
                     +apt_pkg.URItoFileName(fake_uri))
             sources.write(source_line+'\n')
-            log.debug("Sources line: " + source_line, 'apt_pkg')
+            log.msg("Sources line: " + source_line)
             sources_count = sources_count + 1
 
             try:
@@ -222,10 +223,10 @@ class AptPackages:
         sources.close()
 
         if sources_count == 0:
-            log.msg("No Packages files available for %s backend"%(self.backendName), 'apt_pkg')
+            log.msg("No Packages files available for %s backend"%(self.backendName))
             return False
 
-        log.msg("Loading Packages database for "+self.status_dir,'apt_pkg')
+        log.msg("Loading Packages database for "+self.status_dir)
         #apt_pkg.Config = apt_pkg.newConfiguration(); #-- this causes unit tests to fail!
         for key, value in self.apt_config.items():
             apt_pkg.Config[key] = value
@@ -233,15 +234,13 @@ class AptPackages:
 #         for I in apt_pkg.Config.keys():
 #            print "%s \"%s\";"%(I,apt_pkg.Config[I]);
 
-        if log.isEnabled('apt'):
+        # apt_pkg prints progress messages to stdout, disable
+        self.__save_stdout()
+        try:
             self.cache = apt_pkg.GetCache()
-        else:
-            # apt_pkg prints progress messages to stdout, disable
-            self.__save_stdout()
-            try:
-                self.cache = apt_pkg.GetCache()
-            finally:
-                self.__restore_stdout()
+        finally:
+            pass
+            self.__restore_stdout()
 
         self.records = apt_pkg.GetPkgRecords(self.cache)
         #for p in self.cache.Packages:
@@ -359,16 +358,16 @@ def import_directory(factory, dir, recursive=0):
     imported_count  = 0
 
     if not os.path.exists(dir):
-        log.err('Directory ' + dir + ' does not exist', 'import')
+        log.err('Directory ' + dir + ' does not exist')
         return
 
     if recursive:    
-        log.msg("Importing packages from directory tree: " + dir, 'import',3)
+        log.msg("Importing packages from directory tree: " + dir)
         for root, dirs, files in os.walk(dir):
             for file in files:
                 imported_count += import_file(factory, root, file)
     else:
-        log.debug("Importing packages from directory: " + dir, 'import',3)
+        log.msg("Importing packages from directory: " + dir)
         for file in os.listdir(dir):
             mode = os.stat(dir + '/' + file)[stat.ST_MODE]
             if not stat.S_ISDIR(mode):
@@ -385,32 +384,32 @@ def import_file(factory, dir, file):
     Import a .deb or .udeb into cache from given filename
     """
     if file[-4:]!='.deb' and file[-5:]!='.udeb':
-        log.msg("Ignoring (unknown file type):"+ file, 'import')
+        log.msg("Ignoring (unknown file type):"+ file)
         return 0
     
-    log.debug("considering: " + dir + '/' + file, 'import')
+    log.msg("considering: " + dir + '/' + file)
     try:
         paths = get_mirror_path(factory, dir+'/'+file)
     except SystemError:
-        log.msg(file + ' skipped - wrong format or corrupted', 'import')
+        log.msg(file + ' skipped - wrong format or corrupted')
         return 0
     if paths:
         if len(paths) != 1:
-            log.debug("WARNING: multiple ocurrences", 'import')
-            log.debug(str(paths), 'import')
+            log.msg("WARNING: multiple ocurrences")
+            log.msg(str(paths), 'import')
         cache_path = paths[0]
     else:
-        log.debug("Not found, trying to guess", 'import')
+        log.msg("Not found, trying to guess")
         info = AptDpkgInfo(dir+'/'+file)
         cache_path = closest_match(info,
                                 get_mirror_versions(factory, info['Package']))
     if cache_path:
-        log.debug("MIRROR_PATH:"+ cache_path, 'import')
+        log.msg("MIRROR_PATH:"+ cache_path)
         src_path = dir+'/'+file
         dest_path = factory.config.cache_dir+cache_path
         
         if not os.path.exists(dest_path):
-            log.debug("IMPORTING:" + src_path, 'import')
+            log.msg("IMPORTING:" + src_path)
             dest_path = re.sub(r'/\./', '/', dest_path)
             if not os.path.exists(dirname(dest_path)):
                 os.makedirs(dirname(dest_path))
@@ -422,14 +421,14 @@ def import_file(factory, dir, file):
             if hasattr(factory, 'access_times'):
                 atime = os.stat(src_path)[stat.ST_ATIME]
                 factory.access_times[cache_path] = atime
-            log.msg(file + ' imported', 'import')
+            log.msg(file + ' imported')
             return 1
         else:
-            log.msg(file + ' skipped - already in cache', 'import')
+            log.msg(file + ' skipped - already in cache')
             return 0
 
     else:
-        log.msg(file + ' skipped - no suitable backend found', 'import')
+        log.msg(file + ' skipped - no suitable backend found')
         return 0
             
 def test(factory, file):
