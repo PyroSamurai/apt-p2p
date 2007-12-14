@@ -50,7 +50,7 @@ class AptDpkgInfo(UserDict.UserDict):
                 key, value = line.split(': ', 1)
                 self.data[key] = value
 
-class PackageFileList:
+class PackageFileList(UserDict.DictMixin):
     """
     Manages a list of package files belonging to a backend
     """
@@ -66,34 +66,37 @@ class PackageFileList:
     def open(self):
         if self.packages is None:
             self.packages = shelve.open(self.packagedb_dir+'/packages.db')
+
     def close(self):
         if self.packages is not None:
             self.packages.close()
 
-    def update_file(self, entry):
+    def update_file(self, filename, cache_path, file_path):
         """
         Called from apt_proxy.py when files get updated so we can update our
         fake lists/ directory and sources.list.
-
-        @param entry CacheEntry for cached file
         """
-        if entry.filename=="Packages" or entry.filename=="Release":
-            log.msg("Registering package file: "+entry.cache_path)
-            stat_result = os.stat(entry.file_path)
-            self.packages[entry.cache_path] = stat_result
+        if filename=="Packages" or filename=="Release":
+            log.msg("Registering package file: "+cache_path)
+            self.packages[cache_path] = file_path
+            return True
+        return False
 
-    def get_files(self):
+    def check_files(self):
         """
-        Get list of files in database.  Each file will be checked that it exists
+        Check all files in the database to make sure it exists.
         """
         files = self.packages.keys()
         #print self.packages.keys()
         for f in files:
-            if not os.path.exists(self.cache_dir + os.sep + f):
+            if not os.path.exists(self.packages[f]):
                 log.msg("File in packages database has been deleted: "+f)
-                del files[files.index(f)]
                 del self.packages[f]
-        return files
+                
+    def __getitem__(self, key): return self.packages[key]
+    def __setitem__(self, key, item): self.packages[key] = item
+    def __delitem__(self, key): del self.packages[key]
+    def keys(self): return self.packages.keys()
 
 class AptPackages:
     """
@@ -103,7 +106,7 @@ class AptPackages:
     """
     DEFAULT_APT_CONFIG = {
         #'APT' : '',
-	'APT::Architecture' : 'i386',  # TODO: Fix this, see bug #436011 and #285360
+	'APT::Architecture' : 'amd64',  # TODO: Fix this, see bug #436011 and #285360
         #'APT::Default-Release' : 'unstable',
    
         'Dir':'.', # /
@@ -174,11 +177,11 @@ class AptPackages:
         #print "start aptPackages [%s] %s " % (self.backendName, self.cache_dir)
         self.packages.close()
         #print "Deleted aptPackages [%s] %s " % (self.backendName, self.cache_dir)
-    def file_updated(self, entry):
+    def file_updated(self, filename, cache_path, file_path):
         """
         A file in the backend has changed.  If this affects us, unload our apt database
         """
-        if self.packages.update_file(entry):
+        if self.packages.update_file(filename, cache_path, file_path):
             self.unload()
 
     def __save_stdout(self):
@@ -202,11 +205,12 @@ class AptPackages:
         sources_filename = self.status_dir+'/'+'apt/etc/sources.list'
         sources = open(sources_filename, 'w')
         sources_count = 0
-        for file in self.packages.get_files():
+        self.packages.check_files()
+        for f in self.packages:
             # we should probably clear old entries from self.packages and
             # take into account the recorded mtime as optimization
-            filepath = self.cache_dir + file
-            fake_uri='http://apt-dht/'+file
+            filepath = self.packages[f]
+            fake_uri='http://apt-dht/'+f
             source_line='deb '+dirname(fake_uri)+'/ /'
             listpath=(self.status_dir+'/apt/lists/'
                     +apt_pkg.URItoFileName(fake_uri))
@@ -219,7 +223,7 @@ class AptPackages:
                 os.unlink(listpath)
             except:
                 pass
-            os.symlink('../../../../../'+file, listpath)
+            os.symlink(self.packages[f], listpath)
         sources.close()
 
         if sources_count == 0:
@@ -239,7 +243,6 @@ class AptPackages:
         try:
             self.cache = apt_pkg.GetCache()
         finally:
-            pass
             self.__restore_stdout()
 
         self.records = apt_pkg.GetPkgRecords(self.cache)
