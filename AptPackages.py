@@ -170,6 +170,7 @@ class AptPackages:
         #os.system('find '+self.status_dir+' -ls ')
         #print "status:"+self.apt_config['Dir::State::status']
         self.packages = PackageFileList(backendName, cache_dir)
+        self.indexrecords = {}
         self.loaded = 0
         #print "Loaded aptPackages [%s] %s " % (self.backendName, self.cache_dir)
         
@@ -178,10 +179,48 @@ class AptPackages:
         #print "start aptPackages [%s] %s " % (self.backendName, self.cache_dir)
         self.packages.close()
         #print "Deleted aptPackages [%s] %s " % (self.backendName, self.cache_dir)
+        
+    def addRelease(self, cache_path, file_path):
+        """
+        Dirty hack until python-apt supports apt-pkg/indexrecords.h
+        (see Bug #456141)
+        """
+        self.indexrecords[cache_path] = {}
+
+        read_packages = False
+        f = open(file_path, 'r')
+        
+        for line in f:
+            line = line.rstrip()
+    
+            if line[:1] != " ":
+                read_packages = False
+                try:
+                    # Read the various headers from the file
+                    h, v = line.split(":", 1)
+                    if h == "MD5Sum" or h == "SHA1" or h == "SHA256":
+                        read_packages = True
+                        hash_type = h
+                except:
+                    # Bad header line, just ignore it
+                    log.msg("WARNING: Ignoring badly formatted Release line: %s" % line)
+    
+                # Skip to the next line
+                continue
+            
+            # Read file names from the multiple hash sections of the file
+            if read_packages:
+                p = line.split()
+                self.indexrecords[cache_path].setdefault(p[2], {})[hash_type] = (p[0], p[1])
+        
+        f.close()
+
     def file_updated(self, filename, cache_path, file_path):
         """
         A file in the backend has changed.  If this affects us, unload our apt database
         """
+        if filename == "Release":
+            self.addRelease(cache_path, file_path)
         if self.packages.update_file(filename, cache_path, file_path):
             self.unload()
 
@@ -480,7 +519,8 @@ class TestAptPackages(unittest.TestCase):
                             ' | grep -E "^SHA1:" | head -n 1' + 
                             ' | cut -d\  -f 2').read().rstrip('\n')
 
-        self.failUnless(self.client.records.SHA1Hash == pkg_hash)
+        self.failUnless(self.client.records.SHA1Hash == pkg_hash, 
+                        "Hashes don't match: %s != %s" % (self.client.records.SHA1Hash, pkg_hash))
 
     def test_src_hash(self):
         self.client.srcrecords.Lookup('dpkg')
@@ -491,7 +531,17 @@ class TestAptPackages(unittest.TestCase):
                             ' | cut -d\  -f 2').read().split('\n')[:-1]
 
         for f in self.client.srcrecords.Files:
-            self.failUnless(f[0] in src_hashes)
+            self.failUnless(f[0] in src_hashes, "Couldn't find %s in: %r" % (f[0], src_hashes))
+
+    def test_index_hash(self):
+        indexhash = self.client.indexrecords[self.releaseFile[self.releaseFile.find('_debian_')+1:].replace('_','/')]['main/binary-i386/Packages.bz2']['SHA1'][0]
+
+        idx_hash = os.popen('grep -A 3000 -E "^SHA1:" ' + 
+                            '/var/lib/apt/lists/' + self.releaseFile + 
+                            ' | grep -E " main/binary-i386/Packages.bz2$"'
+                            ' | head -n 1 | cut -d\  -f 2').read().rstrip('\n')
+
+        self.failUnless(indexhash == idx_hash, "Hashes don't match: %s != %s" % (indexhash, idx_hash))
 
     def tearDown(self):
         for p in self.pending_calls:
