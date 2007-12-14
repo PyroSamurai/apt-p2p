@@ -20,6 +20,7 @@ import re, shelve, shutil, fcntl
 from twisted.internet import process
 from twisted.python import log
 import copy, UserDict
+from twisted.trial import unittest
 
 aptpkg_dir='.apt-dht'
 apt_pkg.InitSystem()
@@ -434,35 +435,33 @@ def import_file(factory, dir, file):
         log.msg(file + ' skipped - no suitable backend found')
         return 0
             
-def test(factory, file):
-    "Just for testing purposes, this should probably go to hell soon."
-    for backend in factory.backends:
-        backend.get_packages_db().load()
+class TestAptPackages(unittest.TestCase):
+    """Unit tests for the AptPackages cache."""
+    
+    pending_calls = []
 
-    info = AptDpkgInfo(file)
-    path = get_mirror_path(factory, file)
-    print "Exact Match:"
-    print "\t%s:%s"%(info['Version'], path)
+    def test_sha1(self):
+        a = AptPackages('whatever', '/tmp')
+    
+        packagesFile = os.popen('ls -Sr /var/lib/apt/lists/ | tail -n 1').read().rstrip('\n')
+        for f in os.walk('/var/lib/apt/lists').next()[2]:
+            if f[-7:] == "Release" and packagesFile.startswith(f[:-7]):
+                releaseFile = f
+                break
+        
+        a.file_updated('Release', releaseFile[releaseFile.find('_debian_')+1:].replace('_','/'), '/var/lib/apt/lists/' + releaseFile)
+        a.file_updated('Packages', packagesFile[packagesFile.find('_debian_')+1:].replace('_','/'), '/var/lib/apt/lists/' + packagesFile)
+    
+        a.load()
+    
+        a.records.Lookup(a.cache['dpkg'].VersionList[0].FileList[0])
+        
+        pkg_hash = os.popen('grep -A 30 -E "^Package: dpkg$" ' + '/var/lib/apt/lists/' + packagesFile + ' | grep -E "^SHA1:" | head -n 1 | cut -d\  -f 2').read().rstrip('\n')
 
-    vers = get_mirror_versions(factory, info['Package'])
-    print "Other Versions:"
-    for ver in vers:
-        print "\t%s:%s"%(ver)
-    print "Guess:"
-    print "\t%s:%s"%(info['Version'], closest_match(info, vers))
+        self.failUnless(a.records.SHA1Hash == pkg_hash)
 
-if __name__ == '__main__':
-    from apt_proxy_conf import factoryConfig
-    class DummyFactory:
-        def debug(self, msg):
-            pass
-    factory = DummyFactory()
-    factoryConfig(factory)
-    test(factory,
-         '/home/ranty/work/apt-proxy/related/tools/galeon_1.2.5-1_i386.deb')
-    test(factory,
-         '/storage/apt-proxy/debian/dists/potato/main/binary-i386/base/'
-         +'libstdc++2.10_2.95.2-13.deb')
-
-    cleanup(factory)
-
+    def tearDown(self):
+        for p in self.pending_calls:
+            if p.active():
+                p.cancel()
+        self.pending_calls = []
