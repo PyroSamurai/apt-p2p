@@ -23,7 +23,7 @@ import copy, UserDict
 from twisted.trial import unittest
 
 aptpkg_dir='.apt-dht'
-apt_pkg.InitSystem()
+apt_pkg.init()
 
 class AptDpkgInfo(UserDict.UserDict):
     """
@@ -107,7 +107,7 @@ class AptPackages:
     """
     DEFAULT_APT_CONFIG = {
         #'APT' : '',
-	'APT::Architecture' : 'amd64',  # TODO: Fix this, see bug #436011 and #285360
+        #'APT::Architecture' : 'amd64',  # TODO: Fix this, see bug #436011 and #285360
         #'APT::Default-Release' : 'unstable',
    
         'Dir':'.', # /
