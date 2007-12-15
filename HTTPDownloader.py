@@ -5,7 +5,7 @@ from twisted.web2.client.interfaces import IHTTPClientManager
 from twisted.web2.client.http import ProtocolError, ClientRequest, HTTPClientProtocol
 from twisted.trial import unittest
 from zope.interface import implements
-from twisted.web2 import stream as stream_mod, http, http_headers, responsecode
+from twisted.web2 import stream as stream_mod, http_headers
 
 class HTTPClientManager(ClientFactory):
     """A manager for all HTTP requests to a single site.
@@ -18,7 +18,7 @@ class HTTPClientManager(ClientFactory):
 
     implements(IHTTPClientManager)
     
-    def __init__(self, host, port):
+    def __init__(self, host, port=80):
         self.host = host
         self.port = port
         self.busy = False
@@ -105,38 +105,21 @@ class HTTPClientManager(ClientFactory):
         if self.request_queue:
             self.processQueue()
             
-class HTTPDownloader:
-    """Manages all the HTTP connections to various sites."""
-    
-    def __init__(self):
-        self.clients = {}
-        
-    def setCommonHeaders(self, host):
+    def setCommonHeaders(self):
         headers = http_headers.Headers()
-        headers.setHeader('Host', host)
+        headers.setHeader('Host', self.host)
         headers.setHeader('User-Agent', 'apt-dht/0.0.0 (twisted.web2 0.2.0+svn20070403)')
         return headers
     
-    def get(self, host, port, path, method="GET"):
-        site = host + ":" + str(port)
-        if site not in self.clients:
-            self.clients[site] = HTTPClientManager(host, port)
-        headers = self.setCommonHeaders(host)
-        return self.clients[site].submitRequest(ClientRequest(method, path, headers, None))
+    def get(self, path, method="GET"):
+        headers = self.setCommonHeaders()
+        return self.submitRequest(ClientRequest(method, path, headers, None))
     
-    def getRange(self, host, port, path, rangeStart, rangeEnd, method="GET"):
-        site = host + ":" + str(port)
-        if site not in self.clients:
-            self.clients[site] = HTTPClientManager(host, port)
-        headers = self.setCommonHeaders(host)
+    def getRange(self, path, rangeStart, rangeEnd, method="GET"):
+        headers = self.setCommonHeaders()
         headers.setHeader('Range', ('bytes', [(rangeStart, rangeEnd)]))
-        return self.clients[site].submitRequest(ClientRequest(method, path, headers, None))
+        return self.submitRequest(ClientRequest(method, path, headers, None))
     
-    def closeAll(self):
-        for site in self.clients:
-            self.clients[site].close()
-        self.clients = {}
-
 class TestClientManager(unittest.TestCase):
     """Unit tests for the HTTPClientManager."""
     
@@ -157,23 +140,19 @@ class TestClientManager(unittest.TestCase):
         host = 'www.camrdale.org'
         self.client = HTTPClientManager(host, 80)
         self.timeout = 10
-        lastDefer = defer.Deferred()
         
-        d = self.client.submitRequest(ClientRequest("GET", '/robots.txt', {'Host':host}, None))
+        d = self.client.get('/robots.txt')
         d.addCallback(self.gotResp, 1, 309)
-        d.addBoth(lastDefer.callback)
-        return lastDefer
+        return d
         
     def test_head(self):
         host = 'www.camrdale.org'
         self.client = HTTPClientManager(host, 80)
         self.timeout = 10
-        lastDefer = defer.Deferred()
         
-        d = self.client.submitRequest(ClientRequest("HEAD", '/robots.txt', {'Host':host}, None))
+        d = self.client.get('/robots.txt', "HEAD")
         d.addCallback(self.gotResp, 1, 0)
-        d.addBoth(lastDefer.callback)
-        return lastDefer
+        return d
         
     def test_multiple_downloads(self):
         host = 'www.camrdale.org'
@@ -182,7 +161,7 @@ class TestClientManager(unittest.TestCase):
         lastDefer = defer.Deferred()
         
         def newRequest(path, num, expect, last=False):
-            d = self.client.submitRequest(ClientRequest("GET", path, {'Host':host}, None))
+            d = self.client.get(path)
             d.addCallback(self.gotResp, num, expect)
             if last:
                 d.addCallback(lastDefer.callback)
@@ -199,16 +178,38 @@ class TestClientManager(unittest.TestCase):
         self.pending_calls.append(reactor.callLater(62, newRequest, '/sitemap2.rss', 0, 302362, True))
         return lastDefer
         
+    def test_multiple_quick_downloads(self):
+        host = 'www.camrdale.org'
+        self.client = HTTPClientManager(host, 80)
+        self.timeout = 30
+        lastDefer = defer.Deferred()
+        
+        def newRequest(path, num, expect, last=False):
+            d = self.client.get(path)
+            d.addCallback(self.gotResp, num, expect)
+            if last:
+                d.addCallback(lastDefer.callback)
+                
+        newRequest("/", 1, 3433)
+        newRequest("/blog/", 2, 37121)
+        newRequest("/camrdale.html", 3, 2234)
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/robots.txt', 4, 309))
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/wikilink.html', 5, 3084))
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/sitemap.html', 6, 4750))
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/PlanetLab.html', 7, 2783))
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/openid.html', 8, 2525))
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/subpage.html', 9, 2381))
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/sitemap2.rss', 0, 302362, True))
+        return lastDefer
+        
     def test_range(self):
         host = 'www.camrdale.org'
         self.client = HTTPClientManager(host, 80)
         self.timeout = 10
-        lastDefer = defer.Deferred()
         
-        d = self.client.submitRequest(ClientRequest("GET", '/robots.txt', {'Host':host, 'Range': ('bytes', [(100, 199)])}, None))
+        d = self.client.getRange('/robots.txt', 100, 199)
         d.addCallback(self.gotResp, 1, 100)
-        d.addBoth(lastDefer.callback)
-        return lastDefer
+        return d
         
     def tearDown(self):
         for p in self.pending_calls:
@@ -218,84 +219,3 @@ class TestClientManager(unittest.TestCase):
         if self.client:
             self.client.close()
             self.client = None
-
-class TestDownloader(unittest.TestCase):
-    """Unit tests for the HTTPDownloader."""
-    
-    manager = None
-    pending_calls = []
-    
-    def gotResp(self, resp, num, expect):
-        self.failUnless(resp.code >= 200 and resp.code < 300, "Got a non-200 response: %r" % resp.code)
-        if expect is not None:
-            self.failUnless(resp.stream.length == expect, "Length was incorrect, got %r, expected %r" % (resp.stream.length, expect))
-        def print_(n):
-            pass
-        def printdone(n):
-            pass
-        stream_mod.readStream(resp.stream, print_).addCallback(printdone)
-    
-    def test_download(self):
-        self.manager = HTTPDownloader()
-        self.timeout = 10
-        lastDefer = defer.Deferred()
-        
-        host = 'www.camrdale.org'
-        d = self.manager.get(host, 80, '/robots.txt')
-        d.addCallback(self.gotResp, 1, 309)
-        d.addBoth(lastDefer.callback)
-        return lastDefer
-        
-    def test_head(self):
-        self.manager = HTTPDownloader()
-        self.timeout = 10
-        lastDefer = defer.Deferred()
-        
-        host = 'www.camrdale.org'
-        d = self.manager.get(host, 80, '/robots.txt', "HEAD")
-        d.addCallback(self.gotResp, 1, 0)
-        d.addBoth(lastDefer.callback)
-        return lastDefer
-        
-    def test_multiple_downloads(self):
-        self.manager = HTTPDownloader()
-        self.timeout = 120
-        lastDefer = defer.Deferred()
-        
-        def newRequest(host, path, num, expect, last=False):
-            d = self.manager.get(host, 80, path)
-            d.addCallback(self.gotResp, num, expect)
-            if last:
-                d.addCallback(lastDefer.callback)
-                
-        newRequest('www.camrdale.org', "/", 1, 3433)
-        newRequest('www.camrdale.org', "/blog/", 2, 37121)
-        newRequest('www.google.ca', "/", 3, None)
-        self.pending_calls.append(reactor.callLater(1, newRequest, 'www.sfu.ca', '/', 4, None))
-        self.pending_calls.append(reactor.callLater(10, newRequest, 'www.camrdale.org', '/wikilink.html', 5, 3084))
-        self.pending_calls.append(reactor.callLater(30, newRequest, 'www.camrdale.org', '/sitemap.html', 6, 4750))
-        self.pending_calls.append(reactor.callLater(31, newRequest, 'www.sfu.ca', '/studentcentral/index.html', 7, None))
-        self.pending_calls.append(reactor.callLater(32, newRequest, 'www.camrdale.org', '/openid.html', 8, 2525))
-        self.pending_calls.append(reactor.callLater(32, newRequest, 'www.camrdale.org', '/subpage.html', 9, 2381))
-        self.pending_calls.append(reactor.callLater(62, newRequest, 'www.google.ca', '/intl/en/options/', 0, None, True))
-        return lastDefer
-        
-    def test_range(self):
-        self.manager = HTTPDownloader()
-        self.timeout = 10
-        lastDefer = defer.Deferred()
-        
-        host = 'www.camrdale.org'
-        d = self.manager.getRange(host, 80, '/robots.txt', 100, 199)
-        d.addCallback(self.gotResp, 1, 100)
-        d.addBoth(lastDefer.callback)
-        return lastDefer
-        
-    def tearDown(self):
-        for p in self.pending_calls:
-            if p.active():
-                p.cancel()
-        self.pending_calls = []
-        if self.manager:
-            self.manager.closeAll()
-            self.manager = None
