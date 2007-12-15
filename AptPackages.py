@@ -2,7 +2,11 @@
 import warnings
 warnings.simplefilter("ignore", FutureWarning)
 
-import os, os.path, stat, random, re, shelve, shutil, fcntl, copy, UserDict
+import os, shelve
+from random import choice
+from shutil import rmtree
+from copy import deepcopy
+from UserDict import DictMixin
 
 from twisted.internet import threads, defer
 from twisted.python import log
@@ -13,7 +17,7 @@ from apt import OpProgress
 
 apt_pkg.init()
 
-class PackageFileList(UserDict.DictMixin):
+class PackageFileList(DictMixin):
     """Manages a list of package files belonging to a backend.
     
     @type packages: C{shelve dictionary}
@@ -113,7 +117,7 @@ class AptPackages:
         @ivar cache_dir: cache directory from config file
         """
         self.cache_dir = cache_dir
-        self.apt_config = copy.deepcopy(self.DEFAULT_APT_CONFIG)
+        self.apt_config = deepcopy(self.DEFAULT_APT_CONFIG)
 
         for dir in self.essential_dirs:
             path = os.path.join(self.cache_dir, dir)
@@ -196,8 +200,8 @@ class AptPackages:
         """Regenerates the fake configuration and load the packages cache."""
         if self.loaded: return True
         apt_pkg.InitSystem()
-        shutil.rmtree(os.path.join(self.cache_dir, self.apt_config['Dir::State'], 
-                                   self.apt_config['Dir::State::Lists']))
+        rmtree(os.path.join(self.cache_dir, self.apt_config['Dir::State'], 
+                            self.apt_config['Dir::State::Lists']))
         os.makedirs(os.path.join(self.cache_dir, self.apt_config['Dir::State'], 
                                  self.apt_config['Dir::State::Lists'], 'partial'))
         sources_filename = os.path.join(self.cache_dir, self.apt_config['Dir::Etc'], 
@@ -434,7 +438,7 @@ class TestAptPackages(unittest.TestCase):
                             ' | grep -A 4 -E "^Files:" | grep -E "^ " ' + 
                             ' | cut -d\  -f 4').read().split('\n')[:-1]
 
-        i = random.choice(range(len(src_hashes)))
+        i = choice(range(len(src_hashes)))
         d = self.client.findHash(src_dir + '/' + src_paths[i])
         d.addCallback(self.verifyHash, src_dir + '/' + src_paths[i], src_hashes[i])
             
