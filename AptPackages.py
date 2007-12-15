@@ -2,8 +2,7 @@
 import warnings
 warnings.simplefilter("ignore", FutureWarning)
 
-import os, stat, random, re, shelve, shutil, fcntl, copy, UserDict
-from os.path import dirname, basename
+import os, os.path, stat, random, re, shelve, shutil, fcntl, copy, UserDict
 
 from twisted.internet import threads, defer
 from twisted.python import log
@@ -12,7 +11,6 @@ from twisted.trial import unittest
 import apt_pkg, apt_inst
 from apt import OpProgress
 
-aptpkg_dir='.apt-dht'
 apt_pkg.init()
 
 class PackageFileList(UserDict.DictMixin):
@@ -22,31 +20,30 @@ class PackageFileList(UserDict.DictMixin):
     @ivar packages: the files stored for this backend
     """
     
-    def __init__(self, backendName, cache_dir):
+    def __init__(self, cache_dir):
         self.cache_dir = cache_dir
-        self.packagedb_dir = cache_dir+'/'+ aptpkg_dir + \
-                           '/backends/' + backendName
-        if not os.path.exists(self.packagedb_dir):
-            os.makedirs(self.packagedb_dir)
+        if not os.path.exists(self.cache_dir):
+            os.makedirs(self.cache_dir)
         self.packages = None
         self.open()
 
     def open(self):
         """Open the persistent dictionary of files in this backend."""
         if self.packages is None:
-            self.packages = shelve.open(self.packagedb_dir+'/packages.db')
+            self.packages = shelve.open(self.cache_dir+'/packages.db')
 
     def close(self):
         """Close the persistent dictionary."""
         if self.packages is not None:
             self.packages.close()
 
-    def update_file(self, filename, cache_path, file_path):
+    def update_file(self, cache_path, file_path):
         """Check if an updated file needs to be tracked.
 
         Called from the mirror manager when files get updated so we can update our
         fake lists and sources.list.
         """
+        filename = cache_path.split('/')[-1]
         if filename=="Packages" or filename=="Release" or filename=="Sources":
             log.msg("Registering package file: "+cache_path)
             self.packages[cache_path] = file_path
@@ -109,32 +106,30 @@ class AptPackages:
                       'apt/lists/partial')
     essential_files = ('apt/dpkg/status', 'apt/etc/sources.list',)
         
-    def __init__(self, backendName, cache_dir):
+    def __init__(self, cache_dir):
         """Construct a new packages manager.
 
         @ivar backendName: name of backend associated with this packages file
         @ivar cache_dir: cache directory from config file
         """
-        self.backendName = backendName
         self.cache_dir = cache_dir
         self.apt_config = copy.deepcopy(self.DEFAULT_APT_CONFIG)
 
-        self.status_dir = (cache_dir+'/'+ aptpkg_dir
-                           +'/backends/'+backendName)
         for dir in self.essential_dirs:
-            path = self.status_dir+'/'+dir
+            path = os.path.join(self.cache_dir, dir)
             if not os.path.exists(path):
                 os.makedirs(path)
         for file in self.essential_files:
-            path = self.status_dir+'/'+file
+            path = os.path.join(self.cache_dir, file)
             if not os.path.exists(path):
                 f = open(path,'w')
                 f.close()
                 del f
                 
-        self.apt_config['Dir'] = self.status_dir
-        self.apt_config['Dir::State::status'] = self.status_dir + '/apt/dpkg/status'
-        self.packages = PackageFileList(backendName, cache_dir)
+        self.apt_config['Dir'] = self.cache_dir
+        self.apt_config['Dir::State::status'] = os.path.join(self.cache_dir, 
+                      self.apt_config['Dir::State'], self.apt_config['Dir::State::status'])
+        self.packages = PackageFileList(cache_dir)
         self.loaded = 0
         self.loading = None
         
@@ -176,12 +171,12 @@ class AptPackages:
         
         f.close()
 
-    def file_updated(self, filename, cache_path, file_path):
+    def file_updated(self, cache_path, file_path):
         """A file in the backend has changed, manage it.
         
         If this affects us, unload our apt database
         """
-        if self.packages.update_file(filename, cache_path, file_path):
+        if self.packages.update_file(cache_path, file_path):
             self.unload()
 
     def load(self):
@@ -201,9 +196,12 @@ class AptPackages:
         """Regenerates the fake configuration and load the packages cache."""
         if self.loaded: return True
         apt_pkg.InitSystem()
-        shutil.rmtree(self.status_dir+'/apt/lists/')
-        os.makedirs(self.status_dir+'/apt/lists/partial')
-        sources_filename = self.status_dir+'/'+'apt/etc/sources.list'
+        shutil.rmtree(os.path.join(self.cache_dir, self.apt_config['Dir::State'], 
+                                   self.apt_config['Dir::State::Lists']))
+        os.makedirs(os.path.join(self.cache_dir, self.apt_config['Dir::State'], 
+                                 self.apt_config['Dir::State::Lists'], 'partial'))
+        sources_filename = os.path.join(self.cache_dir, self.apt_config['Dir::Etc'], 
+                                        self.apt_config['Dir::Etc::sourcelist'])
         sources = open(sources_filename, 'w')
         sources_count = 0
         self.packages.check_files()
@@ -212,15 +210,17 @@ class AptPackages:
             # we should probably clear old entries from self.packages and
             # take into account the recorded mtime as optimization
             filepath = self.packages[f]
-            if basename(f) == "Release":
+            if f.split('/')[-1] == "Release":
                 self.addRelease(f, filepath)
-            fake_uri='http://apt-dht/'+f
+            fake_uri='http://apt-dht'+f
+            fake_dirname = '/'.join(fake_uri.split('/')[:-1])
             if f.endswith('Sources'):
-                source_line='deb-src '+dirname(fake_uri)+'/ /'
+                source_line='deb-src '+fake_dirname+'/ /'
             else:
-                source_line='deb '+dirname(fake_uri)+'/ /'
-            listpath=(self.status_dir+'/apt/lists/'
-                    +apt_pkg.URItoFileName(fake_uri))
+                source_line='deb '+fake_dirname+'/ /'
+            listpath=(os.path.join(self.cache_dir, self.apt_config['Dir::State'], 
+                                   self.apt_config['Dir::State::Lists'], 
+                                   apt_pkg.URItoFileName(fake_uri)))
             sources.write(source_line+'\n')
             log.msg("Sources line: " + source_line)
             sources_count = sources_count + 1
@@ -234,10 +234,10 @@ class AptPackages:
         sources.close()
 
         if sources_count == 0:
-            log.msg("No Packages files available for %s backend"%(self.backendName))
+            log.msg("No Packages files available for %s backend"%(self.cache_dir))
             return False
 
-        log.msg("Loading Packages database for "+self.status_dir)
+        log.msg("Loading Packages database for "+self.cache_dir)
         for key, value in self.apt_config.items():
             apt_pkg.Config[key] = value
 
@@ -327,7 +327,7 @@ class TestAptPackages(unittest.TestCase):
     releaseFile = ''
     
     def setUp(self):
-        self.client = AptPackages('whatever', '/tmp')
+        self.client = AptPackages('/tmp/.apt-dht')
     
         self.packagesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "Packages$" | tail -n 1').read().rstrip('\n')
         self.sourcesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "Sources$" | tail -n 1').read().rstrip('\n')
@@ -336,14 +336,11 @@ class TestAptPackages(unittest.TestCase):
                 self.releaseFile = f
                 break
         
-        self.client.file_updated('Release', 
-                                 self.releaseFile[self.releaseFile.find('_debian_')+1:].replace('_','/'), 
+        self.client.file_updated(self.releaseFile[self.releaseFile.find('_debian_')+1:].replace('_','/'), 
                                  '/var/lib/apt/lists/' + self.releaseFile)
-        self.client.file_updated('Packages', 
-                                 self.packagesFile[self.packagesFile.find('_debian_')+1:].replace('_','/'), 
+        self.client.file_updated(self.packagesFile[self.packagesFile.find('_debian_')+1:].replace('_','/'), 
                                  '/var/lib/apt/lists/' + self.packagesFile)
-        self.client.file_updated('Sources', 
-                                 self.sourcesFile[self.sourcesFile.find('_debian_')+1:].replace('_','/'), 
+        self.client.file_updated(self.sourcesFile[self.sourcesFile.find('_debian_')+1:].replace('_','/'), 
                                  '/var/lib/apt/lists/' + self.sourcesFile)
     
     def test_pkg_hash(self):
