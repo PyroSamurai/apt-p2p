@@ -3,7 +3,7 @@ import warnings
 warnings.simplefilter("ignore", FutureWarning)
 
 import os, stat, random, re, shelve, shutil, fcntl, copy, UserDict
-from os.path import dirname
+from os.path import dirname, basename
 
 from twisted.internet import threads, defer
 from twisted.python import log
@@ -135,7 +135,6 @@ class AptPackages:
         self.apt_config['Dir'] = self.status_dir
         self.apt_config['Dir::State::status'] = self.status_dir + '/apt/dpkg/status'
         self.packages = PackageFileList(backendName, cache_dir)
-        self.indexrecords = {}
         self.loaded = 0
         self.loading = None
         
@@ -182,8 +181,6 @@ class AptPackages:
         
         If this affects us, unload our apt database
         """
-        if filename == "Release":
-            self.addRelease(cache_path, file_path)
         if self.packages.update_file(filename, cache_path, file_path):
             self.unload()
 
@@ -210,10 +207,13 @@ class AptPackages:
         sources = open(sources_filename, 'w')
         sources_count = 0
         self.packages.check_files()
+        self.indexrecords = {}
         for f in self.packages:
             # we should probably clear old entries from self.packages and
             # take into account the recorded mtime as optimization
             filepath = self.packages[f]
+            if basename(f) == "Release":
+                self.addRelease(f, filepath)
             fake_uri='http://apt-dht/'+f
             if f.endswith('Sources'):
                 source_line='deb-src '+dirname(fake_uri)+'/ /'
@@ -254,6 +254,7 @@ class AptPackages:
             del self.cache
             del self.records
             del self.srcrecords
+            del self.indexrecords
             self.loaded = 0
 
     def cleanup(self):
@@ -268,14 +269,6 @@ class AptPackages:
         """
         d = defer.Deferred()
 
-        # First look for the path in the cache of index files
-        for release in self.indexrecords:
-            if path.startswith(release[:-7]):
-                for indexFile in self.indexrecords[release]:
-                    if release[:-7] + indexFile == path:
-                        d.callback(self.indexrecords[release][indexFile]['SHA1'])
-                        return d
-        
         deferLoad = self.load()
         deferLoad.addCallback(self._findHash, path, d)
         
@@ -290,6 +283,14 @@ class AptPackages:
         if not loadResult:
             d.callback((None, None))
             return loadResult
+        
+        # First look for the path in the cache of index files
+        for release in self.indexrecords:
+            if path.startswith(release[:-7]):
+                for indexFile in self.indexrecords[release]:
+                    if release[:-7] + indexFile == path:
+                        d.callback(self.indexrecords[release][indexFile]['SHA1'])
+                        return loadResult
         
         package = path.split('/')[-1].split('_')[0]
 
@@ -484,6 +485,15 @@ class TestAptPackages(unittest.TestCase):
             d = self.client.findHash(src_dir + '/' + src_paths[i])
             d.addCallback(self.verifyHash, src_dir + '/' + src_paths[i], src_hashes[i])
             
+        idx_hash = os.popen('grep -A 3000 -E "^SHA1:" ' + 
+                            '/var/lib/apt/lists/' + self.releaseFile + 
+                            ' | grep -E " main/source/Sources.bz2$"'
+                            ' | head -n 1 | cut -d\  -f 2').read().rstrip('\n')
+        idx_path = self.releaseFile[self.releaseFile.find('_debian_')+1:].replace('_','/')[:-7] + 'main/source/Sources.bz2'
+
+        d = self.client.findHash(idx_path)
+        d.addCallback(self.verifyHash, idx_path, idx_hash)
+
         d.addCallback(lastDefer.callback)
         return lastDefer
 
