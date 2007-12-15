@@ -304,7 +304,7 @@ class AptPackages:
                 size = version.Size
                 for verFile in version.FileList:
                     if self.records.Lookup(verFile):
-                        if self.records.FileName == path:
+                        if '/' + self.records.FileName == path:
                             d.callback((self.records.SHA1Hash, size))
                             return loadResult
         except KeyError:
@@ -314,7 +314,7 @@ class AptPackages:
         self.srcrecords.Restart()
         if self.srcrecords.Lookup(package):
             for f in self.srcrecords.Files:
-                if path == f[2]:
+                if path == '/' + f[2]:
                     d.callback((f[0], f[1]))
                     return loadResult
         
