@@ -1,11 +1,15 @@
 
 from twisted.internet import reactor, defer, protocol
 from twisted.internet.protocol import ClientFactory
+from twisted import version as twisted_version
 from twisted.web2.client.interfaces import IHTTPClientManager
 from twisted.web2.client.http import ProtocolError, ClientRequest, HTTPClientProtocol
+from twisted.web2 import stream as stream_mod, http_headers
+from twisted.web2 import version as web2_version
 from twisted.trial import unittest
 from zope.interface import implements
-from twisted.web2 import stream as stream_mod, http_headers
+
+from apt_dht_conf import version
 
 class HTTPClientManager(ClientFactory):
     """A manager for all HTTP requests to a single site.
@@ -108,7 +112,8 @@ class HTTPClientManager(ClientFactory):
     def setCommonHeaders(self):
         headers = http_headers.Headers()
         headers.setHeader('Host', self.host)
-        headers.setHeader('User-Agent', 'apt-dht/0.0.0 (twisted.web2 0.2.0+svn20070403)')
+        headers.setHeader('User-Agent', 'apt-dht/%s (twisted/%s twisted.web2/%s)' % 
+                          (version.short(), twisted_version.short(), web2_version.short()))
         return headers
     
     def get(self, path, method="GET"):
