@@ -16,8 +16,8 @@ from twisted.internet import reactor
 from twisted.python import usage, log
 from twisted.web2 import channel
 
-from apt_dht import AptDHT
-from apt_dht_conf import config, version
+from apt_dht.apt_dht import AptDHT
+from apt_dht.apt_dht_conf import config, version
 
 config_file = []
 

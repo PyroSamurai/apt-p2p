@@ -61,10 +61,10 @@ class TopLevel(resource.Resource):
             else:
                 return None, ()
         
-#        if len(name) > 1:
-        return FileDownloader(self.directory, self.manager), segments[0:]
-#        else:
-#            return self, ()
+        if len(name) > 1:
+            return FileDownloader(self.directory, self.manager), segments[0:]
+        else:
+            return self, ()
         
 if __name__ == '__builtin__':
     # Running from twistd -y

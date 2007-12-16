@@ -20,5 +20,5 @@ class AptDHT:
             200,
             {'content-type': http_headers.MimeType('text', 'html')},
             """<html><body>
-            <h2>Statistics</h2>
+            <h2>P2P Download</h2>
             <p>TODO: eventually this will cause a P2P lookup.</body></html>""")
