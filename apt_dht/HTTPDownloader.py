@@ -116,8 +116,10 @@ class HTTPClientManager(ClientFactory):
                           (version.short(), twisted_version.short(), web2_version.short()))
         return headers
     
-    def get(self, path, method="GET"):
+    def get(self, path, method="GET", modtime=None):
         headers = self.setCommonHeaders()
+        if modtime:
+            headers.setHeader('If-Modified-Since', modtime)
         return self.submitRequest(ClientRequest(method, path, headers, None))
     
     def getRange(self, path, rangeStart, rangeEnd, method="GET"):

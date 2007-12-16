@@ -29,7 +29,7 @@ DEFAULTS = {
     'username': '',
 
     # Which DHT implementation to use
-    'DHT': 'Khashmir',
+    'DHT': 'apt_dht_Khashmir',
 }
 
 DHT_DEFAULTS = {

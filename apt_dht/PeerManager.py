@@ -11,22 +11,22 @@ class PeerManager:
     def __init__(self):
         self.clients = {}
         
-    def get(self, location_list, method="GET"):
+    def get(self, location_list, method="GET", modtime=None):
         """Download from a list of peers.
         
         @type location_list: C{list} of (C{string}, C{int}, C{string})
         @var location_list: a list of the locations where the file can be found
         """
         host, port, path = choice(location_list)
-        return self.getPeer(host, port, path, method)
+        return self.getPeer(host, port, path, method, modtime)
         
-    def getPeer(self, host, port, path, method="GET"):
+    def getPeer(self, host, port, path, method="GET", modtime=None):
         if not port:
             port = 80
         site = host + ":" + str(port)
         if site not in self.clients:
             self.clients[site] = HTTPClientManager(host, port)
-        return self.clients[site].get(path, method)
+        return self.clients[site].get(path, method, modtime)
     
     def close(self):
         for site in self.clients:
