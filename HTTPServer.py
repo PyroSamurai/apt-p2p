@@ -1,26 +1,34 @@
 import os.path, time
+
 from twisted.web2 import server, http, resource, channel
 from twisted.web2 import static, http_headers, responsecode
 
 class FileDownloader(static.File):
+    
+    def __init__(self, path, manager, defaultType="text/plain", ignoredExts=(), processors=None, indexNames=None):
+        self.manager = manager
+        super(FileDownloader, self).__init__(path, defaultType, ignoredExts, processors, indexNames)
+        
     def render(self, req):
         resp = super(FileDownloader, self).render(req)
-        if resp != responsecode.NOT_FOUND:
-            return resp
         
-        return http.Response(
-            200,
-            {'content-type': http_headers.MimeType('text', 'html')},
-            """<html><body>
-            <h2>Finding</h2>
-            <p>TODO: eventually this will trigger a search for that file.</body></html>""")
+        if self.manager:
+            if resp != responsecode.NOT_FOUND:
+                return self.manager.check_freshness(req.uri, resp.headers.getHeader('Last-Modified'))
+            
+            return self.manager.get_resp(req.uri)
         
+        return resp
 
-class Toplevel(resource.Resource):
+    def createSimilarFile(self, path):
+        return self.__class__(path, self.manager, self.defaultType, self.ignoredExts,
+                              self.processors, self.indexNames[:])
+class TopLevel(resource.Resource):
     addSlash = True
     
-    def __init__(self, directory):
+    def __init__(self, directory, manager):
         self.directory = directory
+        self.manager = manager
         self.subdirs = []
 
     def addDirectory(self, directory):
@@ -53,14 +61,14 @@ class Toplevel(resource.Resource):
             else:
                 return None, ()
         
-        if len(name) > 1:
-            return FileDownloader(self.directory), segments[0:]
-        else:
-            return self, ()
+#        if len(name) > 1:
+        return FileDownloader(self.directory, self.manager), segments[0:]
+#        else:
+#            return self, ()
         
 if __name__ == '__builtin__':
     # Running from twistd -y
-    t = Toplevel('/home')
+    t = TopLevel('/home', None)
     t.addDirectory('/tmp')
     t.addDirectory('/var/log')
     site = server.Site(t)
