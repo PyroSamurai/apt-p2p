@@ -14,7 +14,7 @@ class FileDownloader(static.File):
         
         if self.manager:
             if resp != responsecode.NOT_FOUND:
-                return self.manager.check_freshness(req.uri, resp.headers.getHeader('Last-Modified'))
+                return self.manager.check_freshness(req.uri, resp.headers.getHeader('Last-Modified'), resp)
             
             return self.manager.get_resp(req.uri)
         
