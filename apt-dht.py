@@ -17,7 +17,7 @@ from twisted.python import usage, log
 from twisted.web2 import channel
 
 from apt_dht import AptDHT
-from apt_dht_conf import config
+from apt_dht_conf import config, version
 
 config_file = []
 
@@ -28,11 +28,11 @@ if __name__ == '__main__':
             ['help', 'h'],
             ]
         optParameters = [
-            ['config-file', 'c', None, "Configuration file"],
+            ['config-file', 'c', [], "Configuration file"],
             ]
         longdesc="apt-dht is a peer-to-peer downloader for apt users"
         def opt_version(self):
-            print "apt-dht 1.9.x"
+            print "apt-dht %s" % version.short()
             sys.exit(0)
 
     opts = AptDHTOptions()
