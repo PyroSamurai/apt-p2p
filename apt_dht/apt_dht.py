@@ -8,7 +8,8 @@ from HTTPServer import TopLevel
 from MirrorManager import MirrorManager
 
 class AptDHT:
-    def __init__(self):
+    def __init__(self, dht):
+        self.dht = dht
         self.http_server = TopLevel(config.defaults()['cache_dir'], self)
         self.http_site = server.Site(self.http_server)
         self.peers = PeerManager()

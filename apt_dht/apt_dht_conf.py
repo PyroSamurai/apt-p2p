@@ -28,8 +28,13 @@ DEFAULTS = {
     # User name to try and run as
     'username': '',
 
-    # Which DHT implementation to use
-    'DHT': 'apt_dht_Khashmir',
+    # Which DHT implementation to use.
+    # It must be possile to do "from <DHT> import DHT" to get a class that
+    # implements the IDHT interface.
+    'DHT': 'apt_dht_Khashmir.DHT',
+
+    # Whether to only run the DHT (for providing a login node)
+    'DHT-only': 'no',
 }
 
 DHT_DEFAULTS = {

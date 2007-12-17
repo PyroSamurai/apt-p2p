@@ -16,8 +16,8 @@ from twisted.internet import reactor
 from twisted.python import usage, log
 from twisted.web2 import channel
 
-from apt_dht.apt_dht import AptDHT
 from apt_dht.apt_dht_conf import config, version
+from apt_dht.interfaces import IDHT
 
 config_file = []
 
@@ -54,10 +54,16 @@ application = service.Application("apt-dht", uid, gid)
 print service.IProcess(application).processName
 service.IProcess(application).processName = 'apt-dht'
 
-myapp = AptDHT()
-site = myapp.getSite()
-s = strports.service('tcp:'+config.defaults()['port'], channel.HTTPFactory(site))
-s.setServiceParent(application)
+DHT = __import__(config.get('DEFAULT', 'DHT'), globals(), locals(), ['DHT'])
+assert(IDHT.implementedBy(DHT.DHT), "You must provide a DHT implementation that implements the IDHT interface.")
+myDHT = DHT.DHT()
+
+if not config.getboolean('DEFAULT', 'DHT-only'):
+    from apt_dht.apt_dht import AptDHT
+    myapp = AptDHT(myDHT)
+    site = myapp.getSite()
+    s = strports.service('tcp:'+config.defaults()['port'], channel.HTTPFactory(site))
+    s.setServiceParent(application)
 
 if __name__ == '__main__':
     # Run on command line
