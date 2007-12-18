@@ -326,6 +326,7 @@ class TestAptPackages(unittest.TestCase):
     
     pending_calls = []
     client = None
+    timeout = 10
     packagesFile = ''
     sourcesFile = ''
     releaseFile = ''
@@ -333,18 +334,18 @@ class TestAptPackages(unittest.TestCase):
     def setUp(self):
         self.client = AptPackages('/tmp/.apt-dht')
     
-        self.packagesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "Packages$" | tail -n 1').read().rstrip('\n')
-        self.sourcesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "Sources$" | tail -n 1').read().rstrip('\n')
+        self.packagesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Packages$" | tail -n 1').read().rstrip('\n')
+        self.sourcesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Sources$" | tail -n 1').read().rstrip('\n')
         for f in os.walk('/var/lib/apt/lists').next()[2]:
             if f[-7:] == "Release" and self.packagesFile.startswith(f[:-7]):
                 self.releaseFile = f
                 break
         
-        self.client.file_updated(self.releaseFile[self.releaseFile.find('_debian_')+1:].replace('_','/'), 
+        self.client.file_updated(self.releaseFile[self.releaseFile.find('_dists_')-6:].replace('_','/'), 
                                  '/var/lib/apt/lists/' + self.releaseFile)
-        self.client.file_updated(self.packagesFile[self.packagesFile.find('_debian_')+1:].replace('_','/'), 
+        self.client.file_updated(self.packagesFile[self.packagesFile.find('_dists_')-6:].replace('_','/'), 
                                  '/var/lib/apt/lists/' + self.packagesFile)
-        self.client.file_updated(self.sourcesFile[self.sourcesFile.find('_debian_')+1:].replace('_','/'), 
+        self.client.file_updated(self.sourcesFile[self.sourcesFile.find('_dists_')-6:].replace('_','/'), 
                                  '/var/lib/apt/lists/' + self.sourcesFile)
     
     def test_pkg_hash(self):
@@ -376,7 +377,7 @@ class TestAptPackages(unittest.TestCase):
     def test_index_hash(self):
         self.client._load()
 
-        indexhash = self.client.indexrecords[self.releaseFile[self.releaseFile.find('_debian_')+1:].replace('_','/')]['main/binary-i386/Packages.bz2']['SHA1'][0]
+        indexhash = self.client.indexrecords[self.releaseFile[self.releaseFile.find('_dists_')-6:].replace('_','/')]['main/binary-i386/Packages.bz2']['SHA1'][0]
 
         idx_hash = os.popen('grep -A 3000 -E "^SHA1:" ' + 
                             '/var/lib/apt/lists/' + self.releaseFile + 
@@ -396,7 +397,7 @@ class TestAptPackages(unittest.TestCase):
                             '/var/lib/apt/lists/' + self.releaseFile + 
                             ' | grep -E " main/binary-i386/Packages.bz2$"'
                             ' | head -n 1 | cut -d\  -f 2').read().rstrip('\n')
-        idx_path = self.releaseFile[self.releaseFile.find('_debian_')+1:].replace('_','/')[:-7] + 'main/binary-i386/Packages.bz2'
+        idx_path = self.releaseFile[self.releaseFile.find('_dists_')-6:].replace('_','/')[:-7] + 'main/binary-i386/Packages.bz2'
 
         d = self.client.findHash(idx_path)
         d.addCallback(self.verifyHash, idx_path, idx_hash)
@@ -452,7 +453,7 @@ class TestAptPackages(unittest.TestCase):
                             '/var/lib/apt/lists/' + self.releaseFile + 
                             ' | grep -E " main/binary-i386/Packages.bz2$"'
                             ' | head -n 1 | cut -d\  -f 2').read().rstrip('\n')
-        idx_path = self.releaseFile[self.releaseFile.find('_debian_')+1:].replace('_','/')[:-7] + 'main/binary-i386/Packages.bz2'
+        idx_path = self.releaseFile[self.releaseFile.find('_dists_')-6:].replace('_','/')[:-7] + 'main/binary-i386/Packages.bz2'
 
         d = self.client.findHash(idx_path)
         d.addCallback(self.verifyHash, idx_path, idx_hash)
@@ -490,7 +491,7 @@ class TestAptPackages(unittest.TestCase):
                             '/var/lib/apt/lists/' + self.releaseFile + 
                             ' | grep -E " main/source/Sources.bz2$"'
                             ' | head -n 1 | cut -d\  -f 2').read().rstrip('\n')
-        idx_path = self.releaseFile[self.releaseFile.find('_debian_')+1:].replace('_','/')[:-7] + 'main/source/Sources.bz2'
+        idx_path = self.releaseFile[self.releaseFile.find('_dists_')-6:].replace('_','/')[:-7] + 'main/source/Sources.bz2'
 
         d = self.client.findHash(idx_path)
         d.addCallback(self.verifyHash, idx_path, idx_hash)
