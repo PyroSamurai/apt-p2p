@@ -341,11 +341,11 @@ class TestAptPackages(unittest.TestCase):
                 self.releaseFile = f
                 break
         
-        self.client.file_updated(self.releaseFile[self.releaseFile.find('_dists_')-6:].replace('_','/'), 
+        self.client.file_updated(self.releaseFile[self.releaseFile.find('_dists_'):].replace('_','/'), 
                                  '/var/lib/apt/lists/' + self.releaseFile)
-        self.client.file_updated(self.packagesFile[self.packagesFile.find('_dists_')-6:].replace('_','/'), 
+        self.client.file_updated(self.packagesFile[self.packagesFile.find('_dists_'):].replace('_','/'), 
                                  '/var/lib/apt/lists/' + self.packagesFile)
-        self.client.file_updated(self.sourcesFile[self.sourcesFile.find('_dists_')-6:].replace('_','/'), 
+        self.client.file_updated(self.sourcesFile[self.sourcesFile.find('_dists_'):].replace('_','/'), 
                                  '/var/lib/apt/lists/' + self.sourcesFile)
     
     def test_pkg_hash(self):
@@ -397,7 +397,7 @@ class TestAptPackages(unittest.TestCase):
                             '/var/lib/apt/lists/' + self.releaseFile + 
                             ' | grep -E " main/binary-i386/Packages.bz2$"'
                             ' | head -n 1 | cut -d\  -f 2').read().rstrip('\n')
-        idx_path = self.releaseFile[self.releaseFile.find('_dists_')-6:].replace('_','/')[:-7] + 'main/binary-i386/Packages.bz2'
+        idx_path = '/' + self.releaseFile[self.releaseFile.find('_dists_')+1:].replace('_','/')[:-7] + 'main/binary-i386/Packages.bz2'
 
         d = self.client.findHash(idx_path)
         d.addCallback(self.verifyHash, idx_path, idx_hash)
@@ -412,7 +412,7 @@ class TestAptPackages(unittest.TestCase):
                             '/var/lib/apt/lists/' + self.packagesFile + 
                             ' | grep -E "^SHA1:" | head -n 1' + 
                             ' | cut -d\  -f 2').read().rstrip('\n')
-        pkg_path = os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
+        pkg_path = '/' + os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
                             '/var/lib/apt/lists/' + self.packagesFile + 
                             ' | grep -E "^Filename:" | head -n 1' + 
                             ' | cut -d\  -f 2').read().rstrip('\n')
@@ -426,7 +426,7 @@ class TestAptPackages(unittest.TestCase):
     def test_findSrcHash(self):
         lastDefer = defer.Deferred()
         
-        src_dir = os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
+        src_dir = '/' + os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
                             '/var/lib/apt/lists/' + self.sourcesFile + 
                             ' | grep -E "^Directory:" | head -n 1' + 
                             ' | cut -d\  -f 2').read().rstrip('\n')
@@ -453,7 +453,7 @@ class TestAptPackages(unittest.TestCase):
                             '/var/lib/apt/lists/' + self.releaseFile + 
                             ' | grep -E " main/binary-i386/Packages.bz2$"'
                             ' | head -n 1 | cut -d\  -f 2').read().rstrip('\n')
-        idx_path = self.releaseFile[self.releaseFile.find('_dists_')-6:].replace('_','/')[:-7] + 'main/binary-i386/Packages.bz2'
+        idx_path = '/' + self.releaseFile[self.releaseFile.find('_dists_')+1:].replace('_','/')[:-7] + 'main/binary-i386/Packages.bz2'
 
         d = self.client.findHash(idx_path)
         d.addCallback(self.verifyHash, idx_path, idx_hash)
@@ -462,7 +462,7 @@ class TestAptPackages(unittest.TestCase):
                             '/var/lib/apt/lists/' + self.packagesFile + 
                             ' | grep -E "^SHA1:" | head -n 1' + 
                             ' | cut -d\  -f 2').read().rstrip('\n')
-        pkg_path = os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
+        pkg_path = '/' + os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
                             '/var/lib/apt/lists/' + self.packagesFile + 
                             ' | grep -E "^Filename:" | head -n 1' + 
                             ' | cut -d\  -f 2').read().rstrip('\n')
@@ -470,7 +470,7 @@ class TestAptPackages(unittest.TestCase):
         d = self.client.findHash(pkg_path)
         d.addCallback(self.verifyHash, pkg_path, pkg_hash)
 
-        src_dir = os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
+        src_dir = '/' + os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
                             '/var/lib/apt/lists/' + self.sourcesFile + 
                             ' | grep -E "^Directory:" | head -n 1' + 
                             ' | cut -d\  -f 2').read().rstrip('\n')
