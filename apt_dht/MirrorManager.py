@@ -96,8 +96,8 @@ class TestMirrorManager(unittest.TestCase):
                     "%s hashes don't match: %s != %s" % (path, found_hash[0], true_hash))
 
     def test_findHash(self):
-        self.packagesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "Packages$" | tail -n 1').read().rstrip('\n')
-        self.sourcesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "Sources$" | tail -n 1').read().rstrip('\n')
+        self.packagesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Packages$" | tail -n 1').read().rstrip('\n')
+        self.sourcesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Sources$" | tail -n 1').read().rstrip('\n')
         for f in os.walk('/var/lib/apt/lists').next()[2]:
             if f[-7:] == "Release" and self.packagesFile.startswith(f[:-7]):
                 self.releaseFile = f
