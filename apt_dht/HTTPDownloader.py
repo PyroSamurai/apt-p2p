@@ -171,7 +171,7 @@ class TestClientManager(unittest.TestCase):
             d = self.client.get(path)
             d.addCallback(self.gotResp, num, expect)
             if last:
-                d.addCallback(lastDefer.callback)
+                d.addBoth(lastDefer.callback)
                 
         newRequest("/", 1, 3433)
         newRequest("/blog/", 2, 37121)
@@ -195,7 +195,7 @@ class TestClientManager(unittest.TestCase):
             d = self.client.get(path)
             d.addCallback(self.gotResp, num, expect)
             if last:
-                d.addCallback(lastDefer.callback)
+                d.addBoth(lastDefer.callback)
                 
         newRequest("/", 1, 3433)
         newRequest("/blog/", 2, 37121)

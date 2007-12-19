@@ -76,7 +76,7 @@ class TestPeerManager(unittest.TestCase):
             d = self.manager.get([(host, 80, path)])
             d.addCallback(self.gotResp, num, expect)
             if last:
-                d.addCallback(lastDefer.callback)
+                d.addBoth(lastDefer.callback)
                 
         newRequest('www.camrdale.org', "/", 1, 3433)
         newRequest('www.camrdale.org', "/blog/", 2, 37121)

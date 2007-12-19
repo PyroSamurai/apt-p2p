@@ -402,7 +402,7 @@ class TestAptPackages(unittest.TestCase):
         d = self.client.findHash(idx_path)
         d.addCallback(self.verifyHash, idx_path, idx_hash)
 
-        d.addCallback(lastDefer.callback)
+        d.addBoth(lastDefer.callback)
         return lastDefer
 
     def test_findPkgHash(self):
@@ -420,7 +420,7 @@ class TestAptPackages(unittest.TestCase):
         d = self.client.findHash(pkg_path)
         d.addCallback(self.verifyHash, pkg_path, pkg_hash)
 
-        d.addCallback(lastDefer.callback)
+        d.addBoth(lastDefer.callback)
         return lastDefer
 
     def test_findSrcHash(self):
@@ -443,7 +443,7 @@ class TestAptPackages(unittest.TestCase):
         d = self.client.findHash(src_dir + '/' + src_paths[i])
         d.addCallback(self.verifyHash, src_dir + '/' + src_paths[i], src_hashes[i])
             
-        d.addCallback(lastDefer.callback)
+        d.addBoth(lastDefer.callback)
         return lastDefer
 
     def test_multipleFindHash(self):
@@ -496,7 +496,7 @@ class TestAptPackages(unittest.TestCase):
         d = self.client.findHash(idx_path)
         d.addCallback(self.verifyHash, idx_path, idx_hash)
 
-        d.addCallback(lastDefer.callback)
+        d.addBoth(lastDefer.callback)
         return lastDefer
 
     def tearDown(self):

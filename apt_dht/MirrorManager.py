@@ -163,7 +163,7 @@ class TestMirrorManager(unittest.TestCase):
         d = self.client.findHash(idx_path)
         d.addCallback(self.verifyHash, idx_path, idx_hash)
 
-        d.addCallback(lastDefer.callback)
+        d.addBoth(lastDefer.callback)
         return lastDefer
 
     def tearDown(self):
