@@ -9,31 +9,33 @@ from zope.interface import Interface
 class IDHT(Interface):
     """An abstract interface for using a DHT implementation."""
     
-    def loadConfig(self, config):
+    def loadConfig(self, config, section):
         """Load the DHTs configuration from a dictionary.
         
-        @type config: C{dictionary}
+        @type config: C{SafeConfigParser}
         @param config: the dictionary of config values
         """
     
-    def join(self, bootstrap_nodes):
+    def join(self):
         """Bootstrap the new DHT node into the DHT.
         
-        @type bootstrap_nodes: C{list} of (C{string}, C{int})
-        @param bootstrap_nodes: a list of the nodes to contact to join the DHT
-        @rtype: C{Deffered}
+        @rtype: C{Deferred}
         @return: a deferred that will fire when the node has joined
         """
         
     def leave(self):
         """Depart gracefully from the DHT.
         
-        @rtype: C{Deffered}
-        @return: a deferred that will fire when the node has joined
+        @rtype: C{Deferred}
+        @return: a deferred that will fire when the node has left
         """
         
     def getValue(self, key):
-        """Get a value from the DHT for the specified key."""
+        """Get a value from the DHT for the specified key.
+
+        @rtype: C{Deferred}
+        @return: a deferred that will fire with the stored values
+        """
         
     def storeValue(self, key, value):
         """Store a value in the DHT for the specified key."""

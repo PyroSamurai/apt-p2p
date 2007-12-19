@@ -38,6 +38,10 @@ DEFAULTS = {
 }
 
 DHT_DEFAULTS = {
+    # bootstrap nodes to contact to join the DHT
+    'bootstrap': """www.camrdale.org:9977
+        steveholt.hopto.org:9977""",
+    
     # magic id to use before we know a peer's id
     'NULL_ID': 20 * '\0',
     
