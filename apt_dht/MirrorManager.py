@@ -9,6 +9,9 @@ from AptPackages import AptPackages
 
 aptpkg_dir='.apt-dht'
 
+class MirrorError(Exception):
+    """Exception raised when there's a problem with the mirror."""
+
 class MirrorManager:
     """Manages all requests for mirror objects."""
     
@@ -68,7 +71,7 @@ class MirrorManager:
         if site in self.apt_caches and baseDir in self.apt_caches[site]:
             return self.apt_caches[site][baseDir].findHash(path)
         d = defer.Deferred()
-        d.errback("Not Found")
+        d.errback(MirrorError("Site Not Found"))
         return d
 
 class TestMirrorManager(unittest.TestCase):
