@@ -10,10 +10,10 @@ from MirrorManager import MirrorManager
 class AptDHT:
     def __init__(self, dht):
         self.dht = dht
-        self.http_server = TopLevel(config.defaults()['cache_dir'], self)
+        self.http_server = TopLevel(config.get('DEFAULT', 'cache_dir'), self)
         self.http_site = server.Site(self.http_server)
         self.peers = PeerManager()
-        self.mirrors = MirrorManager(config.defaults()['cache_dir'])
+        self.mirrors = MirrorManager(config.get('DEFAULT', 'cache_dir'))
     
     def getSite(self):
         return self.http_site

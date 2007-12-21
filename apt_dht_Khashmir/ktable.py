@@ -4,16 +4,16 @@
 from time import time
 from bisect import bisect_left
 
-from const import K, HASH_LENGTH, NULL_ID, MAX_FAILURES
 import khash
-from node import Node
+from node import Node, NULL_ID
 
 class KTable:
     """local routing table for a kademlia like distributed hash table"""
-    def __init__(self, node):
+    def __init__(self, node, config):
         # this is the root node, a.k.a. US!
         self.node = node
-        self.buckets = [KBucket([], 0L, 2L**HASH_LENGTH)]
+        self.config = config
+        self.buckets = [KBucket([], 0L, 2L**self.config['HASH_LENGTH'])]
         self.insertNode(node)
         
     def _bucketIndexForInt(self, num):
@@ -116,7 +116,7 @@ class KTable:
             return
         
         # we don't have this node, check to see if the bucket is full
-        if len(self.buckets[i].l) < K:
+        if len(self.buckets[i].l) < self.config['K']:
             # no, append this node and return
             if contacted:
                 node.updateLastSeen()
@@ -129,7 +129,7 @@ class KTable:
             return self.buckets[i].l[0]
         
         # this bucket is full and contains our node, split the bucket
-        if len(self.buckets) >= HASH_LENGTH:
+        if len(self.buckets) >= self.config['HASH_LENGTH']:
             # our table is FULL, this is really unlikely
             print "Hash Table is FULL!  Increase K!"
             return
@@ -164,7 +164,7 @@ class KTable:
         except IndexError:
             return None
         else:
-            if n.msgFailed() >= MAX_FAILURES:
+            if n.msgFailed() >= self.config['MAX_FAILURES']:
                 self.invalidateNode(n)
                         
 class KBucket:
@@ -228,7 +228,7 @@ class TestKTable(unittest.TestCase):
 
     def testFail(self):
         self.testAddNode()
-        for i in range(MAX_FAILURES - 1):
+        for i in range(const.MAX_FAILURES - 1):
             self.t.nodeFailed(self.b)
             self.assertEqual(len(self.t.buckets[0].l), 1)
             self.assertEqual(self.t.buckets[0].l[0], self.b)

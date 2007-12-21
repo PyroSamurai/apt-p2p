@@ -6,6 +6,9 @@ from types import InstanceType
 
 import khash
 
+# magic id to use before we know a peer's id
+NULL_ID = 20 * '\0',
+
 class Node:
     """encapsulate contact info"""
     def __init__(self):

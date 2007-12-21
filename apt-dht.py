@@ -45,8 +45,8 @@ if __name__ == '__main__':
     config_file = opts.opts['config-file']
 
 config.read(config_file)
-if config.defaults()['username']:
-    uid,gid = pwd.getpwnam(config.defaults()['username'])[2:4]
+if config.has_option('DEFAULT', 'username') and config.get('DEFAULT', 'username'):
+    uid,gid = pwd.getpwnam(config.get('DEFAULT', 'username'))[2:4]
 else:
     uid,gid = None,None
 
@@ -54,7 +54,7 @@ application = service.Application("apt-dht", uid, gid)
 print service.IProcess(application).processName
 service.IProcess(application).processName = 'apt-dht'
 
-DHT = __import__(config.get('DEFAULT', 'DHT'), globals(), locals(), ['DHT'])
+DHT = __import__(config.get('DEFAULT', 'DHT')+'.DHT', globals(), locals(), ['DHT'])
 assert(IDHT.implementedBy(DHT.DHT), "You must provide a DHT implementation that implements the IDHT interface.")
 myDHT = DHT.DHT()
 myDHT.loadConfig(config)
@@ -64,7 +64,7 @@ if not config.getboolean('DEFAULT', 'DHT-only'):
     from apt_dht.apt_dht import AptDHT
     myapp = AptDHT(myDHT)
     site = myapp.getSite()
-    s = strports.service('tcp:'+config.defaults()['port'], channel.HTTPFactory(site))
+    s = strports.service('tcp:'+config.get('DEFAULT', 'port'), channel.HTTPFactory(site))
     s.setServiceParent(application)
 
 if __name__ == '__main__':

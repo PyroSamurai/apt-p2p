@@ -20,30 +20,27 @@ if home == '${HOME}' or not os.path.isdir(home):
 DEFAULTS = {
 
     # Port to listen on for all requests (TCP and UDP)
-    'port': '9977',
+    'PORT': '9977',
     
     # Directory to store the downloaded files in
-    'cache_dir': home + '/.apt-dht/cache',
+    'CACHE_DIR': home + '/.apt-dht/cache',
     
     # User name to try and run as
-    'username': '',
+    'USERNAME': '',
 
     # Which DHT implementation to use.
-    # It must be possile to do "from <DHT> import DHT" to get a class that
+    # It must be possile to do "from <DHT>.DHT import DHT" to get a class that
     # implements the IDHT interface.
-    'DHT': 'apt_dht_Khashmir.DHT',
+    'DHT': 'apt_dht_Khashmir',
 
     # Whether to only run the DHT (for providing a login node)
-    'DHT-only': 'no',
+    'DHT-ONLY': 'no',
 }
 
 DHT_DEFAULTS = {
     # bootstrap nodes to contact to join the DHT
-    'bootstrap': """www.camrdale.org:9977
+    'BOOTSTRAP': """www.camrdale.org:9977
         steveholt.hopto.org:9977""",
-    
-    # magic id to use before we know a peer's id
-    'NULL_ID': 20 * '\0',
     
     # Kademlia "K" constant, this should be an even number
     'K': '8',
@@ -107,6 +104,8 @@ class AptDHTConfigParser(SafeConfigParser):
         return self.get(section,option)
     def getstringlist(self, section, option):
         return self.get(section,option).split()
+    def optionxform(self, option):
+        return option.upper()
 
 config = AptDHTConfigParser(DEFAULTS)
 config.add_section(config.get('DEFAULT', 'DHT'))

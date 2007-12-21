@@ -3,15 +3,15 @@
 
 from time import time
 from random import randrange
+import os
 import sqlite  ## find this at http://pysqlite.sourceforge.net/
 
 from twisted.internet.defer import Deferred
 from twisted.internet import protocol
 from twisted.internet import reactor
 
-import const
 from ktable import KTable
-from knode import KNodeBase, KNodeRead, KNodeWrite
+from knode import KNodeBase, KNodeRead, KNodeWrite, NULL_ID
 from khash import newID, newIDInRange
 from actions import FindNode, GetValue, KeyExpirer, StoreValue
 import krpc
@@ -22,21 +22,23 @@ class KhashmirDBExcept(Exception):
 # this is the base class, has base functionality and find node, no key-value mappings
 class KhashmirBase(protocol.Factory):
     _Node = KNodeBase
-    def __init__(self, host, port, db='khashmir.db'):
-        self.setup(host, port, db)
+    def __init__(self, config, cache_dir='/tmp'):
+        self.config = None
+        self.setup(config, cache_dir)
         
-    def setup(self, host, port, db='khashmir.db'):
-        self._findDB(db)
-        self.port = port
-        self.node = self._loadSelfNode(host, port)
-        self.table = KTable(self.node)
+    def setup(self, config, cache_dir):
+        self.config = config
+        self._findDB(os.path.join(cache_dir, 'khashmir.db'))
+        self.port = config['PORT']
+        self.node = self._loadSelfNode('', self.port)
+        self.table = KTable(self.node, config)
         #self.app = service.Application("krpc")
         self.udp = krpc.hostbroker(self)
         self.udp.protocol = krpc.KRPC
         self.listenport = reactor.listenUDP(port, self.udp)
         self.last = time()
         self._loadRoutingTable()
-        KeyExpirer(store=self.store)
+        KeyExpirer(self.store, config)
         self.refreshTable(force=1)
         reactor.callLater(60, self.checkpoint, (1,))
 
@@ -68,10 +70,11 @@ class KhashmirBase(protocol.Factory):
         self._dumpRoutingTable()
         self.refreshTable()
         if auto:
-            reactor.callLater(randrange(int(const.CHECKPOINT_INTERVAL * .9), int(const.CHECKPOINT_INTERVAL * 1.1)), self.checkpoint, (1,))
+            reactor.callLater(randrange(int(self.config['CHECKPOINT_INTERVAL'] * .9), 
+                                        int(self.config['CHECKPOINT_INTERVAL'] * 1.1)), 
+                              self.checkpoint, (1,))
         
     def _findDB(self, db):
-        import os
         try:
             os.stat(db)
         except OSError:
@@ -132,7 +135,7 @@ class KhashmirBase(protocol.Factory):
         """
             ping this node and add the contact info to the table on pong!
         """
-        n =self.Node().init(const.NULL_ID, host, port) 
+        n =self.Node().init(NULL_ID, host, port) 
         n.conn = self.udp.connectionForAddr((n.host, n.port))
         self.sendPing(n, callback=callback)
 
@@ -150,7 +153,7 @@ class KhashmirBase(protocol.Factory):
             d.callback(nodes)
         else:
             # create our search state
-            state = FindNode(self, id, d.callback)
+            state = FindNode(self, id, d.callback, self.config)
             reactor.callLater(0, state.goWithNodes, nodes)
     
     def insertNode(self, n, contacted=1):
@@ -163,7 +166,7 @@ class KhashmirBase(protocol.Factory):
         method needs to be a properly formed Node object with a valid ID.
         """
         old = self.table.insertNode(n, contacted=contacted)
-        if old and (time() - old.lastSeen) > const.MIN_PING_INTERVAL and old.id != self.node.id:
+        if old and (time() - old.lastSeen) > self.config['MIN_PING_INTERVAL'] and old.id != self.node.id:
             # the bucket is full, check to see if old node is still around and if so, replace it
             
             ## these are the callbacks used when we ping the oldest node in a bucket
@@ -221,7 +224,7 @@ class KhashmirBase(protocol.Factory):
             pass
     
         for bucket in self.table.buckets:
-            if force or (time() - bucket.lastAccessed >= const.BUCKET_STALENESS):
+            if force or (time() - bucket.lastAccessed >= self.config['BUCKET_STALENESS']):
                 id = newIDInRange(bucket.min, bucket.max)
                 self.findNode(id, callback)
 
@@ -232,7 +235,7 @@ class KhashmirBase(protocol.Factory):
         num_nodes: number of nodes estimated in the entire dht
         """
         num_contacts = reduce(lambda a, b: a + len(b.l), self.table.buckets, 0)
-        num_nodes = const.K * (2**(len(self.table.buckets) - 1))
+        num_nodes = self.config['K'] * (2**(len(self.table.buckets) - 1))
         return (num_contacts, num_nodes)
 
     def krpc_ping(self, id, _krpc_sender):
@@ -286,7 +289,7 @@ class KhashmirRead(KhashmirBase):
             l = []
         
         # create our search state
-        state = GetValue(self, key, callback)
+        state = GetValue(self, key, callback, self.config)
         reactor.callLater(0, state.goWithNodes, nodes, l)
 
     def krpc_find_value(self, key, id, _krpc_sender):
@@ -321,7 +324,7 @@ class KhashmirWrite(KhashmirRead):
                 def _storedValueHandler(sender):
                     pass
                 response=_storedValueHandler
-            action = StoreValue(self.table, key, value, response)
+            action = StoreValue(self.table, key, value, response, self.config)
             reactor.callLater(0, action.goWithNodes, nodes)
             
         # this call is asynch

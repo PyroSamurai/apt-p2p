@@ -1,8 +1,7 @@
 ## Copyright 2002-2004 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
-from const import NULL_ID
-from node import Node
+from node import Node, NULL_ID
 
 class KNodeBase(Node):
     def checkSender(self, dict):
