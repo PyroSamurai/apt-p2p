@@ -4,10 +4,12 @@
 from time import time
 from types import InstanceType
 
+from twisted.trial import unittest
+
 import khash
 
 # magic id to use before we know a peer's id
-NULL_ID = 20 * '\0',
+NULL_ID = 20 * '\0'
 
 class Node:
     """encapsulate contact info"""
@@ -72,8 +74,6 @@ class Node:
             a = a.num
         return self.num != a
 
-
-import unittest
 
 class TestNode(unittest.TestCase):
     def setUp(self):

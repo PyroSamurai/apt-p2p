@@ -260,7 +260,7 @@ class KeyExpirer:
     def __init__(self, store, config):
         self.store = store
         self.config = config
-        reactor.callLater(self.config['KEINITIAL_DELAY'], self.doExpire)
+        self.next_expire = reactor.callLater(self.config['KEINITIAL_DELAY'], self.doExpire)
     
     def doExpire(self):
         self.cut = "%0.6f" % (time() - self.config['KE_AGE'])
@@ -270,4 +270,4 @@ class KeyExpirer:
         c = self.store.cursor()
         s = "delete from kv where time < '%s';" % self.cut
         c.execute(s)
-        reactor.callLater(self.config['KE_DELAY'], self.doExpire)
+        self.next_expire = reactor.callLater(self.config['KE_DELAY'], self.doExpire)

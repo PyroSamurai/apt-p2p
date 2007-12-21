@@ -7,8 +7,8 @@ import sys
 from traceback import format_exception
 
 from twisted.internet.defer import Deferred
-from twisted.internet import protocol
-from twisted.internet import reactor
+from twisted.internet import protocol, reactor
+from twisted.trial import unittest
 
 KRPC_TIMEOUT = 20
 
@@ -153,7 +153,105 @@ class KRPC:
                 del(tids[id])
                 print ">>>>>> KRPC_ERROR_TIMEOUT"
                 df.errback(KRPC_ERROR_TIMEOUT)
-        reactor.callLater(KRPC_TIMEOUT, timeOut)
+        later = reactor.callLater(KRPC_TIMEOUT, timeOut)
+        def dropTimeOut(dict, later_call = later):
+            if later_call.active():
+                later_call.cancel()
+            return dict
+        d.addBoth(dropTimeOut)
         self.transport.write(str, self.addr)
         return d
  
+def connectionForAddr(host, port):
+    return host
+    
+class Receiver(protocol.Factory):
+    protocol = KRPC
+    def __init__(self):
+        self.buf = []
+    def krpc_store(self, msg, _krpc_sender):
+        self.buf += [msg]
+    def krpc_echo(self, msg, _krpc_sender):
+        return msg
+
+def make(port):
+    af = Receiver()
+    a = hostbroker(af)
+    a.protocol = KRPC
+    p = reactor.listenUDP(port, a)
+    return af, a, p
+    
+class KRPCTests(unittest.TestCase):
+    def setUp(self):
+        KRPC.noisy = 0
+        self.af, self.a, self.ap = make(1180)
+        self.bf, self.b, self.bp = make(1181)
+
+    def tearDown(self):
+        self.ap.stopListening()
+        self.bp.stopListening()
+
+    def bufEquals(self, result, value):
+        self.assertEqual(self.bf.buf, value)
+
+    def testSimpleMessage(self):
+        d = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('store', {'msg' : "This is a test."})
+        d.addCallback(self.bufEquals, ["This is a test."])
+        return d
+
+    def testMessageBlast(self):
+        for i in range(100):
+            d = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('store', {'msg' : "This is a test."})
+        d.addCallback(self.bufEquals, ["This is a test."] * 100)
+        return d
+
+    def testEcho(self):
+        df = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('echo', {'msg' : "This is a test."})
+        df.addCallback(self.gotMsg, "This is a test.")
+        return df
+
+    def gotMsg(self, dict, should_be):
+        _krpc_sender = dict['_krpc_sender']
+        msg = dict['rsp']
+        self.assertEqual(msg, should_be)
+
+    def testManyEcho(self):
+        for i in xrange(100):
+            df = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('echo', {'msg' : "This is a test."})
+            df.addCallback(self.gotMsg, "This is a test.")
+        return df
+
+    def testMultiEcho(self):
+        df = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('echo', {'msg' : "This is a test."})
+        df.addCallback(self.gotMsg, "This is a test.")
+
+        df = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('echo', {'msg' : "This is another test."})
+        df.addCallback(self.gotMsg, "This is another test.")
+
+        df = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('echo', {'msg' : "This is yet another test."})
+        df.addCallback(self.gotMsg, "This is yet another test.")
+        
+        return df
+
+    def testEchoReset(self):
+        df = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('echo', {'msg' : "This is a test."})
+        df.addCallback(self.gotMsg, "This is a test.")
+
+        df = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('echo', {'msg' : "This is another test."})
+        df.addCallback(self.gotMsg, "This is another test.")
+        df.addCallback(self.echoReset)
+        return df
+    
+    def echoReset(self, dict):
+        del(self.a.connections[('127.0.0.1', 1181)])
+        df = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('echo', {'msg' : "This is yet another test."})
+        df.addCallback(self.gotMsg, "This is yet another test.")
+        return df
+
+    def testUnknownMeth(self):
+        df = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('blahblah', {'msg' : "This is a test."})
+        df.addErrback(self.gotErr, KRPC_ERROR_METHOD_UNKNOWN)
+        return df
+
+    def gotErr(self, err, should_be):
+        self.assertEqual(err.value, should_be)

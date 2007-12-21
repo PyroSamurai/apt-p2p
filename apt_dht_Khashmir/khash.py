@@ -4,6 +4,8 @@
 from sha import sha
 from os import urandom
 
+from twisted.trial import unittest
+
 def intify(hstr):
     """20 bit hash, big-endian -> long python integer"""
     assert len(hstr) == 20
@@ -39,17 +41,14 @@ def randRange(min, max):
 def newTID():
     return randRange(-2**30, 2**30)
 
-### Test Cases ###
-import unittest
-
-class NewID(unittest.TestCase):
+class TestNewID(unittest.TestCase):
     def testLength(self):
         self.assertEqual(len(newID()), 20)
     def testHundreds(self):
         for x in xrange(100):
             self.testLength
 
-class Intify(unittest.TestCase):
+class TestIntify(unittest.TestCase):
     known = [('\0' * 20, 0),
             ('\xff' * 20, 2L**160 - 1),
             ]
@@ -66,7 +65,7 @@ class Intify(unittest.TestCase):
         for x in xrange(100):
             self.testEndianessOnce()
 
-class Disantance(unittest.TestCase):
+class TestDisantance(unittest.TestCase):
     known = [
             (("\0" * 20, "\xff" * 20), 2**160L -1),
             ((sha("foo").digest(), sha("foo").digest()), 0),
@@ -80,7 +79,7 @@ class Disantance(unittest.TestCase):
             x, y, z = newID(), newID(), newID()
             self.assertEqual(distance(x,y) ^ distance(y, z), distance(x, z))
         
-class RandRange(unittest.TestCase):
+class TestRandRange(unittest.TestCase):
     def testOnce(self):
         a = intify(newID())
         b = intify(newID())
@@ -94,10 +93,3 @@ class RandRange(unittest.TestCase):
     def testOneHundredTimes(self):
         for i in xrange(100):
             self.testOnce()
-
-
-
-if __name__ == '__main__':
-    unittest.main()   
-
-    

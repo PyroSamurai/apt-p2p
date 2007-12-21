@@ -4,6 +4,8 @@
 from time import time
 from bisect import bisect_left
 
+from twisted.trial import unittest
+
 import khash
 from node import Node, NULL_ID
 
@@ -47,11 +49,11 @@ class KTable:
             
         # don't have the node, get the K closest nodes
         nodes = nodes + self.buckets[i].l
-        if len(nodes) < K:
+        if len(nodes) < self.config['K']:
             # need more nodes
             min = i - 1
             max = i + 1
-            while len(nodes) < K and (min >= 0 or max < len(self.buckets)):
+            while len(nodes) < self.config['K'] and (min >= 0 or max < len(self.buckets)):
                 #ASw: note that this requires K be even
                 if min >= 0:
                     nodes = nodes + self.buckets[min].l
@@ -61,7 +63,7 @@ class KTable:
                 max = max + 1
     
         nodes.sort(lambda a, b, num=num: cmp(num ^ a.num, num ^ b.num))
-        return nodes[:K]
+        return nodes[:self.config['K']]
         
     def _splitBucket(self, a):
         diff = (a.max - a.min) / 2
@@ -206,14 +208,10 @@ class KBucket:
         if isinstance(a, Node): a = a.num
         return self.min >= a or self.max < a
 
-
-### UNIT TESTS ###
-import unittest
-
 class TestKTable(unittest.TestCase):
     def setUp(self):
         self.a = Node().init(khash.newID(), 'localhost', 2002)
-        self.t = KTable(self.a)
+        self.t = KTable(self.a, {'HASH_LENGTH': 160, 'K': 8, 'MAX_FAILURES': 3})
 
     def testAddNode(self):
         self.b = Node().init(khash.newID(), 'localhost', 2003)
@@ -228,14 +226,10 @@ class TestKTable(unittest.TestCase):
 
     def testFail(self):
         self.testAddNode()
-        for i in range(const.MAX_FAILURES - 1):
+        for i in range(self.t.config['MAX_FAILURES'] - 1):
             self.t.nodeFailed(self.b)
             self.assertEqual(len(self.t.buckets[0].l), 1)
             self.assertEqual(self.t.buckets[0].l[0], self.b)
             
         self.t.nodeFailed(self.b)
         self.assertEqual(len(self.t.buckets[0].l), 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
