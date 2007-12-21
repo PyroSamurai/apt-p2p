@@ -56,7 +56,7 @@ class hostbroker(protocol.DatagramProtocol):
 
 ## connection
 class KRPC:
-    noisy = 1
+    noisy = 0
     def __init__(self, addr, server, transport):
         self.transport = transport
         self.factory = server

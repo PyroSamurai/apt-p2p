@@ -1,6 +1,9 @@
 ## Copyright 2002-2004 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
+import warnings
+warnings.simplefilter("ignore", DeprecationWarning)
+
 from time import time
 from random import randrange
 from sha import sha
@@ -362,6 +365,7 @@ class SimpleTests(unittest.TestCase):
                     'KE_AGE': 3600, }
 
     def setUp(self):
+        krpc.KRPC.noisy = 0
         d = self.DHT_DEFAULTS.copy()
         d['PORT'] = 4044
         self.a = Khashmir(d)
