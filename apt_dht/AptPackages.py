@@ -377,7 +377,7 @@ class TestAptPackages(unittest.TestCase):
     def test_index_hash(self):
         self.client._load()
 
-        indexhash = self.client.indexrecords[self.releaseFile[self.releaseFile.find('_dists_')-6:].replace('_','/')]['main/binary-i386/Packages.bz2']['SHA1'][0]
+        indexhash = self.client.indexrecords[self.releaseFile[self.releaseFile.find('_dists_'):].replace('_','/')]['main/binary-i386/Packages.bz2']['SHA1'][0]
 
         idx_hash = os.popen('grep -A 3000 -E "^SHA1:" ' + 
                             '/var/lib/apt/lists/' + self.releaseFile + 
@@ -491,7 +491,7 @@ class TestAptPackages(unittest.TestCase):
                             '/var/lib/apt/lists/' + self.releaseFile + 
                             ' | grep -E " main/source/Sources.bz2$"'
                             ' | head -n 1 | cut -d\  -f 2').read().rstrip('\n')
-        idx_path = self.releaseFile[self.releaseFile.find('_dists_')-6:].replace('_','/')[:-7] + 'main/source/Sources.bz2'
+        idx_path = '/' + self.releaseFile[self.releaseFile.find('_dists_')+1:].replace('_','/')[:-7] + 'main/source/Sources.bz2'
 
         d = self.client.findHash(idx_path)
         d.addCallback(self.verifyHash, idx_path, idx_hash)
