@@ -357,6 +357,8 @@ class Khashmir(KhashmirWrite):
     _Node = KNodeWrite
 
 class SimpleTests(unittest.TestCase):
+    
+    timeout = 10
     DHT_DEFAULTS = {'PORT': 9977, 'K': 8, 'HASH_LENGTH': 160,
                     'CHECKPOINT_INTERVAL': 900, 'CONCURRENT_REQS': 4,
                     'STORE_REDUNDANCY': 3, 'MAX_FAILURES': 3,
@@ -446,6 +448,8 @@ class SimpleTests(unittest.TestCase):
 
 
 class MultiTest(unittest.TestCase):
+    
+    timeout = 30
     num = 20
     DHT_DEFAULTS = {'PORT': 9977, 'K': 8, 'HASH_LENGTH': 160,
                     'CHECKPOINT_INTERVAL': 900, 'CONCURRENT_REQS': 4,

@@ -77,6 +77,7 @@ class MirrorManager:
 class TestMirrorManager(unittest.TestCase):
     """Unit tests for the mirror manager."""
     
+    timeout = 20
     pending_calls = []
     client = None
     
