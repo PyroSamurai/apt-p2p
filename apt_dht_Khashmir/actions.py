@@ -271,3 +271,9 @@ class KeyExpirer:
         s = "delete from kv where time < '%s';" % self.cut
         c.execute(s)
         self.next_expire = reactor.callLater(self.config['KE_DELAY'], self.doExpire)
+        
+    def shutdown(self):
+        try:
+            self.next_expire.cancel()
+        except:
+            pass

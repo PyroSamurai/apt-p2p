@@ -242,6 +242,16 @@ class KhashmirBase(protocol.Factory):
         num_contacts = reduce(lambda a, b: a + len(b.l), self.table.buckets, 0)
         num_nodes = self.config['K'] * (2**(len(self.table.buckets) - 1))
         return (num_contacts, num_nodes)
+    
+    def shutdown(self):
+        """Closes the port and cancels pending later calls."""
+        self.listenport.stopListening()
+        try:
+            self.next_checkpoint.cancel()
+        except:
+            pass
+        self.expirer.shutdown()
+        self.store.close()
 
     def krpc_ping(self, id, _krpc_sender):
         sender = {'id' : id}
@@ -376,26 +386,8 @@ class SimpleTests(unittest.TestCase):
         self.b = Khashmir(d)
         
     def tearDown(self):
-        self.a.listenport.stopListening()
-        self.b.listenport.stopListening()
-        try:
-            self.a.next_checkpoint.cancel()
-        except:
-            pass
-        try:
-            self.b.next_checkpoint.cancel()
-        except:
-            pass
-        try:
-            self.a.expirer.next_expire.cancel()
-        except:
-            pass
-        try:
-            self.b.expirer.next_expire.cancel()
-        except:
-            pass
-        self.a.store.close()
-        self.b.store.close()
+        self.a.shutdown()
+        self.b.shutdown()
         os.unlink(self.a.db)
         os.unlink(self.b.db)
 
@@ -492,16 +484,7 @@ class MultiTest(unittest.TestCase):
 
     def tearDown(self):
         for i in self.l:
-            i.listenport.stopListening()
-            try:
-                i.next_checkpoint.cancel()
-            except:
-                pass
-            try:
-                i.expirer.next_expire.cancel()
-            except:
-                pass
-            i.store.close()
+            i.shutdown()
             os.unlink(i.db)
             
         reactor.iterate()
