@@ -33,7 +33,7 @@ DEFAULTS = {
     # implements the IDHT interface.
     'DHT': 'apt_dht_Khashmir',
 
-    # Whether to only run the DHT (for providing a login node)
+    # Whether to only run the DHT (for providing only a bootstrap node)
     'DHT-ONLY': 'no',
 }
 
@@ -41,6 +41,9 @@ DHT_DEFAULTS = {
     # bootstrap nodes to contact to join the DHT
     'BOOTSTRAP': """www.camrdale.org:9977
         steveholt.hopto.org:9977""",
+    
+    # whether this node is a bootstrap node
+    'BOOTSTRAP_NODE': "no",
     
     # Kademlia "K" constant, this should be an even number
     'K': '8',
