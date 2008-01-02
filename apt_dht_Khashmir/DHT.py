@@ -47,6 +47,8 @@ class DHT:
         """See L{apt_dht.interfaces.IDHT}."""
         if self.config is None:
             raise DHTError, "configuration not loaded"
+        if self.joining:
+            raise DHTError, "a join is already in progress"
 
         self.khashmir = Khashmir(self.config, self.cache_dir)
         
@@ -67,16 +69,23 @@ class DHT:
         if not self.joined:
             self.joined = True
             if len(result) > 0 or self.bootstrap_node:
-                self.joining.callback(result)
+                df = self.joining
+                self.joining = None
+                df.callback(result)
             else:
-                self.joining.errback(DHTError('could not find any nodes to bootstrap to'))
+                df = self.joining
+                self.joining = None
+                df.errback(DHTError('could not find any nodes to bootstrap to'))
         
     def leave(self):
         """See L{apt_dht.interfaces.IDHT}."""
         if self.config is None:
             raise DHTError, "configuration not loaded"
         
-        if self.joined:
+        if self.joined or self.joining:
+            if self.joining:
+                self.joining.errback(DHTError('still joining when leave was called'))
+                self.joining = None
             self.joined = False
             self.khashmir.shutdown()
         
