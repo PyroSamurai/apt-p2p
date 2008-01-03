@@ -299,7 +299,7 @@ class KhashmirRead(KhashmirBase):
         if searchlocal:
             l = self.retrieveValues(key)
             if len(l) > 0:
-                reactor.callLater(0, callback, (l))
+                reactor.callLater(0, callback, key, l)
         else:
             l = []
         
@@ -336,7 +336,7 @@ class KhashmirWrite(KhashmirRead):
         def _storeValueForKey(nodes, key=key, value=value, response=callback , table=self.table):
             if not response:
                 # default callback
-                def _storedValueHandler(sender):
+                def _storedValueHandler(key, value, sender):
                     pass
                 response=_storedValueHandler
             action = StoreValue(self.table, key, value, response, self.config)
@@ -432,7 +432,7 @@ class SimpleTests(unittest.TestCase):
         reactor.iterate()
         reactor.iterate()
 
-    def _cb(self, val):
+    def _cb(self, key, val):
         if not val:
             self.assertEqual(self.got, 1)
         elif 'foobar' in val:
@@ -496,14 +496,14 @@ class MultiTest(unittest.TestCase):
             
             for a in range(3):
                 self.done = 0
-                def _scb(val):
+                def _scb(key, value, result):
                     self.done = 1
                 self.l[randrange(0, self.num)].storeValueForKey(K, V, _scb)
                 while not self.done:
                     reactor.iterate()
 
 
-                def _rcb(val):
+                def _rcb(key, val):
                     if not val:
                         self.done = 1
                         self.assertEqual(self.got, 1)

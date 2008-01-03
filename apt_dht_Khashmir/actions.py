@@ -149,7 +149,7 @@ class GetValue(FindNode):
             z = len(dict['values'])
             v = filter(None, map(x, dict['values']))
             if(len(v)):
-                reactor.callLater(0, self.callback, v)
+                reactor.callLater(0, self.callback, self.target, v)
         self.schedule()
         
     ## get value
@@ -178,7 +178,7 @@ class GetValue(FindNode):
         if self.outstanding == 0:
             ## all done, didn't find it!!
             self.finished=1
-            reactor.callLater(0, self.callback,[])
+            reactor.callLater(0, self.callback, self.target, [])
 
     ## get value
     def goWithNodes(self, nodes, found=None):
@@ -210,7 +210,7 @@ class StoreValue(ActionBase):
         self.stored.append(t)
         if len(self.stored) >= self.config['STORE_REDUNDANCY']:
             self.finished=1
-            self.callback(self.stored)
+            self.callback(self.target, self.value, self.stored)
         else:
             if not len(self.stored) + self.outstanding >= self.config['STORE_REDUNDANCY']:
                 self.schedule()
@@ -237,7 +237,7 @@ class StoreValue(ActionBase):
             except IndexError:
                 if self.outstanding == 0:
                     self.finished = 1
-                    self.callback(self.stored)
+                    self.callback(self.target, self.value, self.stored)
             else:
                 if not node.id == self.table.node.id:
                     self.outstanding += 1
