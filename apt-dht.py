@@ -57,7 +57,7 @@ service.IProcess(application).processName = 'apt-dht'
 DHT = __import__(config.get('DEFAULT', 'DHT')+'.DHT', globals(), locals(), ['DHT'])
 assert(IDHT.implementedBy(DHT.DHT), "You must provide a DHT implementation that implements the IDHT interface.")
 myDHT = DHT.DHT()
-myDHT.loadConfig(config)
+myDHT.loadConfig(config, config.get('DEFAULT', 'DHT'))
 myDHT.join()
 
 if not config.getboolean('DEFAULT', 'DHT-only'):

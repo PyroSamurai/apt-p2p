@@ -30,7 +30,7 @@ class DHT:
         """See L{apt_dht.interfaces.IDHT}."""
         self.config_parser = config
         self.section = section
-        self.config = []
+        self.config = {}
         self.cache_dir = self.config_parser.get('DEFAULT', 'cache_dir')
         self.bootstrap = self.config_parser.getstringlist(section, 'BOOTSTRAP')
         self.bootstrap_node = self.config_parser.getboolean(section, 'BOOTSTRAP_NODE')
@@ -105,7 +105,7 @@ class DHT:
         self.retrieving.setdefault(key, []).append(d)
         return d
         
-    def _getValue(self, key, result = -1):
+    def _getValue(self, key, result):
         if result:
             self.retrieved.setdefault(key, []).extend(result)
         else:
