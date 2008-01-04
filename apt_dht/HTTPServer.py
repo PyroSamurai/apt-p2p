@@ -1,5 +1,6 @@
 import os.path, time
 
+from twisted.python import log
 from twisted.web2 import server, http, resource, channel
 from twisted.web2 import static, http_headers, responsecode
 
@@ -10,13 +11,17 @@ class FileDownloader(static.File):
         super(FileDownloader, self).__init__(path, defaultType, ignoredExts, processors, indexNames)
         
     def render(self, req):
+        log.msg('Got request for %s from %s' % (req.uri, req.remoteAddr))
         resp = super(FileDownloader, self).render(req)
+        log.msg('Initial response to %s: %r' % (req.uri, resp))
         
         if self.manager:
             path = 'http:/' + req.uri
             if resp != responsecode.NOT_FOUND:
+                log.msg('Checking freshness of %s' % req.uri)
                 return self.manager.check_freshness(path, resp.headers.getHeader('Last-Modified'), resp)
             
+            log.msg('Not found, trying other methods for %s' % req.uri)
             return self.manager.get_resp(path)
         
         return resp
@@ -24,6 +29,8 @@ class FileDownloader(static.File):
     def createSimilarFile(self, path):
         return self.__class__(path, self.manager, self.defaultType, self.ignoredExts,
                               self.processors, self.indexNames[:])
+        
+        
 class TopLevel(resource.Resource):
     addSlash = True
     
@@ -55,13 +62,20 @@ class TopLevel(resource.Resource):
             try:
                 loc = int(name[1:])
             except:
+                log.msg('Not found: %s from %s' % (request.uri, request.remoteAddr))
                 return None, ()
             
             if loc >= 0 and loc < len(self.subdirs) and self.subdirs[loc]:
+                log.msg('Sharing %s with %s' % (request.uri, request.remoteAddr))
                 return static.File(self.subdirs[loc]), segments[1:]
             else:
+                log.msg('Not found: %s from %s' % (request.uri, request.remoteAddr))
                 return None, ()
         
+        if request.remoteAddr.host != "127.0.0.1":
+            log.msg('Blocked illegal access to %s from %s' % (request.uri, request.remoteAddr))
+            return None, ()
+            
         if len(name) > 1:
             return FileDownloader(self.directory, self.manager), segments[0:]
         else:

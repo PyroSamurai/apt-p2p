@@ -3,8 +3,10 @@ from random import choice
 from urlparse import urlparse, urlunparse
 
 from twisted.internet import reactor, defer
+from twisted.python import log
 from twisted.trial import unittest
 from twisted.web2 import stream as stream_mod
+from twisted.web2.http import splitHostPort
 
 from HTTPDownloader import HTTPClientManager
 
@@ -19,17 +21,12 @@ class PeerManager:
         @var locations: a list of the locations where the file can be found
         """
         url = choice(locations)
+        log.msg('Downloading %s' % url)
         parsed = urlparse(url)
         assert(parsed[0] == "http", "Only HTTP is supported, not '%s'" % parsed[0])
-        host = parsed[1]
+        host, port = splitHostPort(parsed[0], parsed[1])
         path = urlunparse(('', '') + parsed[2:])
-        
-        # Make sure a port is included for consistency
-        if host.find(':') >= 0:
-            host, port = host.split(':', 1)
-            port = int(port)
-        else:
-            port = 80
+
         return self.getPeer(host, port, path, method, modtime)
         
     def getPeer(self, host, port, path, method="GET", modtime=None):
