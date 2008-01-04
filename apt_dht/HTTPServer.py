@@ -13,10 +13,11 @@ class FileDownloader(static.File):
         resp = super(FileDownloader, self).render(req)
         
         if self.manager:
+            path = 'http:/' + req.uri
             if resp != responsecode.NOT_FOUND:
-                return self.manager.check_freshness(req.uri, resp.headers.getHeader('Last-Modified'), resp)
+                return self.manager.check_freshness(path, resp.headers.getHeader('Last-Modified'), resp)
             
-            return self.manager.get_resp(req.uri)
+            return self.manager.get_resp(path)
         
         return resp
 

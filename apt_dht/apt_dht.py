@@ -19,19 +19,7 @@ class AptDHT:
         return self.http_site
     
     def check_freshness(self, path, modtime, resp):
-        host, path = path.split('/',1)
-        if not host:
-            host, path = path.split('/',1)
-        path = '/'+path
-        
-        # Make sure a port is included for consistency
-        if host.find(':') >= 0:
-            host, port = host.split(':', 1)
-            port = int(port)
-        else:
-            port = 80
-        
-        d = self.peers.get([(host, port, path)], "HEAD", modtime)
+        d = self.peers.get([path], "HEAD", modtime)
         d.addCallback(self.check_freshness_done, path, resp)
         return d
     
@@ -51,17 +39,19 @@ class AptDHT:
         
     def findHash_done(self, (hash, size), path, d):
         if hash is None:
-            host, path = path.split('/',1)
-            if not host:
-                host, path = path.split('/',1)
-            path = '/'+path
+            getDefer = self.peers.get([path])
+            getDefer.addCallback(d.callback)
+        else:
+            # Lookup hash from DHT
+            lookupDefer = self.dht.getValue(hash)
+            lookupDefer.addCallback(self.lookupHash_done, hash, size, path, d)
             
-            # Make sure a port is included for consistency
-            if host.find(':') >= 0:
-                host, port = host.split(':', 1)
-                port = int(port)
-            else:
-                port = 80
-            getDefer = self.peers.get([(host, port, path)])
+    def lookupHash_done(self, locations, hash, size, path, d):
+        if not locations:
+            getDefer = self.peers.get([path])
+            getDefer.addCallback(d.callback)
+        else:
+            # Download from the found peers
+            getDefer = self.peers.get(locations)
             getDefer.addCallback(d.callback)
             

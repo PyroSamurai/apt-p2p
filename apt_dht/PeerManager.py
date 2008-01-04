@@ -1,5 +1,6 @@
 
 from random import choice
+from urlparse import urlparse, urlunparse
 
 from twisted.internet import reactor, defer
 from twisted.trial import unittest
@@ -11,13 +12,24 @@ class PeerManager:
     def __init__(self):
         self.clients = {}
         
-    def get(self, location_list, method="GET", modtime=None):
+    def get(self, locations, method="GET", modtime=None):
         """Download from a list of peers.
         
-        @type location_list: C{list} of (C{string}, C{int}, C{string})
-        @var location_list: a list of the locations where the file can be found
+        @type locations: C{list} of C{string}
+        @var locations: a list of the locations where the file can be found
         """
-        host, port, path = choice(location_list)
+        url = choice(locations)
+        parsed = urlparse(url)
+        assert(parsed[0] == "http", "Only HTTP is supported, not '%s'" % parsed[0])
+        host = parsed[1]
+        path = urlunparse(('', '') + parsed[2:])
+        
+        # Make sure a port is included for consistency
+        if host.find(':') >= 0:
+            host, port = host.split(':', 1)
+            port = int(port)
+        else:
+            port = 80
         return self.getPeer(host, port, path, method, modtime)
         
     def getPeer(self, host, port, path, method="GET", modtime=None):
@@ -54,7 +66,7 @@ class TestPeerManager(unittest.TestCase):
         self.timeout = 10
         
         host = 'www.camrdale.org'
-        d = self.manager.get([(host, 80, '/robots.txt')])
+        d = self.manager.get(['http://' + host + '/robots.txt'])
         d.addCallback(self.gotResp, 1, 309)
         return d
         
@@ -63,7 +75,7 @@ class TestPeerManager(unittest.TestCase):
         self.timeout = 10
         
         host = 'www.camrdale.org'
-        d = self.manager.get([(host, 80, '/robots.txt')], "HEAD")
+        d = self.manager.get(['http://' + host + '/robots.txt'], "HEAD")
         d.addCallback(self.gotResp, 1, 0)
         return d
         
@@ -73,7 +85,7 @@ class TestPeerManager(unittest.TestCase):
         lastDefer = defer.Deferred()
         
         def newRequest(host, path, num, expect, last=False):
-            d = self.manager.get([(host, 80, path)])
+            d = self.manager.get(['http://' + host + ':' + str(80) + path])
             d.addCallback(self.gotResp, num, expect)
             if last:
                 d.addBoth(lastDefer.callback)
