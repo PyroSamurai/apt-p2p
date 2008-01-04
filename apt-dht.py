@@ -50,10 +50,12 @@ if config.has_option('DEFAULT', 'username') and config.get('DEFAULT', 'username'
 else:
     uid,gid = None,None
 
+log.msg('Starting application')
 application = service.Application("apt-dht", uid, gid)
-print service.IProcess(application).processName
-service.IProcess(application).processName = 'apt-dht'
+#print service.IProcess(application).processName
+#service.IProcess(application).processName = 'apt-dht'
 
+log.msg('Starting DHT')
 DHT = __import__(config.get('DEFAULT', 'DHT')+'.DHT', globals(), locals(), ['DHT'])
 assert(IDHT.implementedBy(DHT.DHT), "You must provide a DHT implementation that implements the IDHT interface.")
 myDHT = DHT.DHT()
@@ -61,6 +63,7 @@ myDHT.loadConfig(config, config.get('DEFAULT', 'DHT'))
 myDHT.join()
 
 if not config.getboolean('DEFAULT', 'DHT-only'):
+    log.msg('Starting main application server')
     from apt_dht.apt_dht import AptDHT
     myapp = AptDHT(myDHT)
     site = myapp.getSite()

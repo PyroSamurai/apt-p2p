@@ -1,7 +1,8 @@
 
 import os, sha, random
 
-from twisted.internet import defer
+from twisted.internet import defer, reactor
+from twisted.internet.abstract import isIPAddress
 from twisted.trial import unittest
 from zope.interface import implements
 
@@ -59,9 +60,16 @@ class DHT:
         for node in self.bootstrap:
             host, port = node.rsplit(':', 1)
             port = int(port)
-            self.khashmir.addContact(host, port, self._join_single)
+            if isIPAddress(host):
+                self._join_gotIP(host, port)
+            else:
+                reactor.resolve(host).addCallback(self._join_gotIP, port)
         
         return self.joining
+
+    def _join_gotIP(self, ip, port):
+        """Called after an IP address has been found for a single bootstrap node."""
+        self.khashmir.addContact(ip, port, self._join_single)
     
     def _join_single(self):
         """Called when a single bootstrap node has been added."""

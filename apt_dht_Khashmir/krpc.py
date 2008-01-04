@@ -56,7 +56,7 @@ class hostbroker(protocol.DatagramProtocol):
 
 ## connection
 class KRPC:
-    noisy = 0
+    noisy = 1
     def __init__(self, addr, server, transport):
         self.transport = transport
         self.factory = server
@@ -72,8 +72,8 @@ class KRPC:
             if self.noisy:
                 print "response decode error: " + `e`
         else:
-            #if self.noisy:
-            #    print msg
+            if self.noisy:
+                print msg
             # look at msg type
             if msg[TYP]  == REQ:
                 ilen = len(str)

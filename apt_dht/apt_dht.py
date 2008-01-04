@@ -1,6 +1,7 @@
 
 from twisted.internet import defer
 from twisted.web2 import server, http, http_headers
+from twisted.python import log
 
 from apt_dht_conf import config
 from PeerManager import PeerManager
@@ -9,6 +10,7 @@ from MirrorManager import MirrorManager
 
 class AptDHT:
     def __init__(self, dht):
+        log.msg('Initializing the main apt_dht application')
         self.dht = dht
         self.http_server = TopLevel(config.get('DEFAULT', 'cache_dir'), self)
         self.http_site = server.Site(self.http_server)
