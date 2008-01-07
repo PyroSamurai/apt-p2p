@@ -17,6 +17,8 @@ from apt import OpProgress
 
 apt_pkg.init()
 
+TRACKED_FILES = ['release', 'sources', 'packages']
+
 class PackageFileList(DictMixin):
     """Manages a list of package files belonging to a backend.
     
@@ -48,7 +50,7 @@ class PackageFileList(DictMixin):
         fake lists and sources.list.
         """
         filename = cache_path.split('/')[-1]
-        if filename=="Packages" or filename=="Release" or filename=="Sources":
+        if filename.lower() in TRACKED_FILES:
             log.msg("Registering package file: "+cache_path)
             self.packages[cache_path] = file_path
             return True
