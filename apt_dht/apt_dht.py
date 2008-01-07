@@ -45,13 +45,13 @@ class AptDHT:
         return d
     
     def findHash_error(self, failure, path, d):
+        log.err(failure)
         self.findHash_done((None, None), path, d)
         
     def findHash_done(self, (hash, size), path, d):
         if hash is None:
             log.msg('Hash for %s was not found' % path)
-            getDefer = self.peers.get([path])
-            getDefer.addCallback(d.callback)
+            self.download_file([path], hash, size, path, d)
         else:
             log.msg('Found hash %s for %s' % (hash, path))
             # Lookup hash from DHT
@@ -61,11 +61,14 @@ class AptDHT:
     def lookupHash_done(self, locations, hash, size, path, d):
         if not locations:
             log.msg('Peers for %s were not found' % path)
-            getDefer = self.peers.get([path])
-            getDefer.addCallback(d.callback)
+            self.download_file([path], hash, size, path, d)
         else:
             log.msg('Found peers for $s: %r' % (path, locations))
             # Download from the found peers
-            getDefer = self.peers.get(locations)
-            getDefer.addCallback(d.callback)
+            self.download_file(locations, hash, size, path, d)
             
+    def download_file(self, locations, hash, size, path, d):
+        getDefer = self.peers.get(locations)
+        getDefer.addCallback(self.mirrors.save_file, hash, size, path)
+        getDefer.addErrback(self.mirrors.save_error, path)
+        getDefer.addCallbacks(d.callback, d.errback)

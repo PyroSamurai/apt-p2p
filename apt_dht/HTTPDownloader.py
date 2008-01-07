@@ -2,6 +2,7 @@
 from twisted.internet import reactor, defer, protocol
 from twisted.internet.protocol import ClientFactory
 from twisted import version as twisted_version
+from twisted.python import log
 from twisted.web2.client.interfaces import IHTTPClientManager
 from twisted.web2.client.http import ProtocolError, ClientRequest, HTTPClientProtocol
 from twisted.web2 import stream as stream_mod, http_headers
@@ -80,10 +81,12 @@ class HTTPClientManager(ClientFactory):
 
     def requestComplete(self, resp):
         req = self.response_queue.pop(0)
+        log.msg('Download of %s completed with code %d' % (req.uri, resp.code))
         req.deferRequest.callback(resp)
 
     def requestError(self, error):
         req = self.response_queue.pop(0)
+        log.msg('Download of %s generated error %r' % (req.uri, error))
         req.deferRequest.errback(error)
 
     def clientBusy(self, proto):
