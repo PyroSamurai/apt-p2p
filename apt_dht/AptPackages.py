@@ -208,6 +208,7 @@ class AptPackages:
                                         self.apt_config['Dir::Etc::sourcelist'])
         sources = open(sources_filename, 'w')
         sources_count = 0
+        deb_src_added = False
         self.packages.check_files()
         self.indexrecords = {}
         for f in self.packages:
@@ -219,6 +220,7 @@ class AptPackages:
             fake_uri='http://apt-dht'+f
             fake_dirname = '/'.join(fake_uri.split('/')[:-1])
             if f.endswith('Sources'):
+                deb_src_added = True
                 source_line='deb-src '+fake_dirname+'/ /'
             else:
                 source_line='deb '+fake_dirname+'/ /'
@@ -247,7 +249,10 @@ class AptPackages:
 
         self.cache = apt_pkg.GetCache(OpProgress())
         self.records = apt_pkg.GetPkgRecords(self.cache)
-        self.srcrecords = apt_pkg.GetPkgSrcRecords()
+        if deb_src_added:
+            self.srcrecords = apt_pkg.GetPkgSrcRecords()
+        else:
+            self.srcrecords = None
 
         self.loaded = 1
         return True
@@ -275,8 +280,15 @@ class AptPackages:
 
         deferLoad = self.load()
         deferLoad.addCallback(self._findHash, path, d)
+        deferLoad.addErrback(self._findHash_error, path, d)
         
         return d
+
+    def _findHash_error(self, failure, path, d):
+        """An error occurred while trying to find a hash."""
+        log.msg('An error occurred while looking up a hash for: %s' % path)
+        log.err(failure)
+        d.callback((None, None))
 
     def _findHash(self, loadResult, path, d):
         """Really find the hash for a path.
@@ -311,12 +323,13 @@ class AptPackages:
             pass
 
         # Check the source packages' files
-        self.srcrecords.Restart()
-        if self.srcrecords.Lookup(package):
-            for f in self.srcrecords.Files:
-                if path == '/' + f[2]:
-                    d.callback((f[0], f[1]))
-                    return loadResult
+        if self.srcrecords:
+            self.srcrecords.Restart()
+            if self.srcrecords.Lookup(package):
+                for f in self.srcrecords.Files:
+                    if path == '/' + f[2]:
+                        d.callback((f[0], f[1]))
+                        return loadResult
         
         d.callback((None, None))
         return loadResult
