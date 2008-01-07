@@ -76,12 +76,11 @@ class HTTPClientManager(ClientFactory):
         req = self.request_queue.pop(0)
         self.response_queue.append(req)
         req.deferResponse = self.proto.submitRequest(req, False)
-        req.deferResponse.addCallback(self.requestComplete)
-        req.deferResponse.addErrback(self.requestError)
+        req.deferResponse.addCallbacks(self.requestComplete, self.requestError)
 
     def requestComplete(self, resp):
         req = self.response_queue.pop(0)
-        log.msg('Download of %s completed with code %d' % (req.uri, resp.code))
+        log.msg('%s of %s completed with code %d' % (req.method, req.uri, resp.code))
         req.deferRequest.callback(resp)
 
     def requestError(self, error):

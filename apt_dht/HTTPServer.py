@@ -1,6 +1,7 @@
 import os.path, time
 
 from twisted.python import log
+from twisted.internet import defer
 from twisted.web2 import server, http, resource, channel
 from twisted.web2 import static, http_headers, responsecode
 
@@ -10,15 +11,21 @@ class FileDownloader(static.File):
         self.manager = manager
         super(FileDownloader, self).__init__(path, defaultType, ignoredExts, processors, indexNames)
         
-    def render(self, req):
+    def renderHTTP(self, req):
         log.msg('Got request for %s from %s' % (req.uri, req.remoteAddr))
-        resp = super(FileDownloader, self).render(req)
+        resp = super(FileDownloader, self).renderHTTP(req)
+        if isinstance(resp, defer.Deferred):
+            resp.addCallback(self._renderHTTP_done, req)
+        else:
+            resp = self._renderHTTP_done(resp, req)
+        return resp
+        
+    def _renderHTTP_done(self, resp, req):
         log.msg('Initial response to %s: %r' % (req.uri, resp))
         
         if self.manager:
             path = 'http:/' + req.uri
-            if resp != responsecode.NOT_FOUND:
-                log.msg('Checking freshness of %s' % req.uri)
+            if resp.code >= 200 and resp.code < 400:
                 return self.manager.check_freshness(path, resp.headers.getHeader('Last-Modified'), resp)
             
             log.msg('Not found, trying other methods for %s' % req.uri)

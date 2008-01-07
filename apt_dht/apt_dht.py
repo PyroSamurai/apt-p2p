@@ -21,14 +21,14 @@ class AptDHT:
         return self.http_site
     
     def check_freshness(self, path, modtime, resp):
-        log.msg('Checking if %s is still fresh: %r' % (path, modtime))
+        log.msg('Checking if %s is still fresh' % path)
         d = self.peers.get([path], "HEAD", modtime)
         d.addCallback(self.check_freshness_done, path, resp)
         return d
     
     def check_freshness_done(self, resp, path, orig_resp):
-        if resp.code == "304":
-            log.msg('Still fresh: %s' % path)
+        if resp.code == 304:
+            log.msg('Still fresh, returning: %s' % path)
             return orig_resp
         else:
             log.msg('Stale, need to redownload: %s' % path)

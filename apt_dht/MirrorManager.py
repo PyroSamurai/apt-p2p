@@ -18,26 +18,33 @@ class MirrorError(Exception):
 class ProxyFileStream(stream.SimpleStream):
     """Saves a stream to a file while providing a new stream."""
     
-    def __init__(self, stream, outFile):
+    def __init__(self, stream, outFile, modtime = None):
         """Initializes the proxy.
         
         @type stream: C{twisted.web2.stream.IByteStream}
         @param stream: the input stream to read from
         @type outFile: C{twisted.python.filepath.FilePath}
         @param outFile: the file to write to
+        @type modtime: C{int}
+        @param modtime: the modification time to set for the file
         """
         self.stream = stream
-        self.outFile = outFile.open('w')
+        self.outFile = outFile
+        self.openFile = outFile.open('w')
+        self.modtime = modtime
         self.length = self.stream.length
         self.start = 0
 
     def _done(self):
         """Close the output file."""
-        self.outFile.close()
+        if not self.openFile.closed:
+            self.openFile.close()
+            if self.modtime:
+                os.utime(self.outFile.path, (self.modtime, self.modtime))
     
     def read(self):
         """Read some data from the stream."""
-        if self.outFile.closed:
+        if self.openFile.closed:
             return None
         
         data = self.stream.read()
@@ -54,7 +61,7 @@ class ProxyFileStream(stream.SimpleStream):
             self._done()
             return data
         
-        self.outFile.write(data)
+        self.openFile.write(data)
         return data
     
     def close(self):
@@ -99,7 +106,6 @@ class MirrorManager:
                         baseDir = base_match
             log.msg("Settled on baseDir: %s" % baseDir)
         
-        log.msg("Parsing '%s' gave '%s', '%s', '%s'" % (url, site, baseDir, path))
         return site, baseDir, path
         
     def init(self, site, baseDir):
@@ -116,7 +122,6 @@ class MirrorManager:
         self.apt_caches[site][baseDir].file_updated(path, file_path)
     
     def findHash(self, url):
-        log.msg('Trying to find hash for %s' % url)
         site, baseDir, path = self.extractPath(url)
         if site in self.apt_caches and baseDir in self.apt_caches[site]:
             return self.apt_caches[site][baseDir].findHash(path)
@@ -130,18 +135,16 @@ class MirrorManager:
         
         parsed = urlparse(url)
         destFile = self.cache.preauthChild(parsed[1] + parsed[2])
-        log.msg('Cache file: %s' % destFile.path)
+        log.msg('Saving returned %r byte file to cache: %s' % (response.stream.length, destFile.path))
         
         if destFile.exists():
-            log.err('File already exists: %s', destFile.path)
-            d.callback(response)
-            return
-        
-        destFile.parent().makedirs()
-        log.msg('Saving returned %i byte file to: %s' % (response.stream.length, destFile.path))
+            log.msg('File already exists, removing: %s' % destFile.path)
+            destFile.remove()
+        else:
+            destFile.parent().makedirs()
         
         orig_stream = response.stream
-        response.stream = ProxyFileStream(orig_stream, destFile)
+        response.stream = ProxyFileStream(orig_stream, destFile, response.headers.getHeader('Last-Modified'))
         return response
 
     def save_error(self, failure, url):
