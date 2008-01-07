@@ -1,6 +1,4 @@
 
-from binascii import a2b_hex
-
 from twisted.internet import defer
 from twisted.web2 import server, http, http_headers
 from twisted.python import log
@@ -57,7 +55,7 @@ class AptDHT:
         else:
             log.msg('Found hash %s for %s' % (hash, path))
             # Lookup hash from DHT
-            lookupDefer = self.dht.getValue(a2b_hex(hash))
+            lookupDefer = self.dht.getValue(hash)
             lookupDefer.addCallback(self.lookupHash_done, hash, size, path, d)
             
     def lookupHash_done(self, locations, hash, size, path, d):

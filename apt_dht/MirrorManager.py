@@ -3,6 +3,7 @@ from bz2 import BZ2Decompressor
 from zlib import decompressobj, MAX_WBITS
 from gzip import FCOMMENT, FEXTRA, FHCRC, FNAME, FTEXT
 from urlparse import urlparse
+from binascii import a2b_hex
 import os
 
 from twisted.python import log, filepath
@@ -189,10 +190,18 @@ class MirrorManager:
     def findHash(self, url):
         site, baseDir, path = self.extractPath(url)
         if site in self.apt_caches and baseDir in self.apt_caches[site]:
-            return self.apt_caches[site][baseDir].findHash(path)
+            d = self.apt_caches[site][baseDir].findHash(path)
+            d.addCallback(self.translateHash)
+            return d
         d = defer.Deferred()
         d.errback(MirrorError("Site Not Found"))
         return d
+    
+    def translateHash(self, (hash, size)):
+        """Translate a hash from apt's hex encoding to a string."""
+        if hash:
+            hash = a2b_hex(hash)
+        return (hash, size)
 
     def save_file(self, response, hash, size, url):
         """Save a downloaded file to the cache and stream it."""
@@ -303,7 +312,7 @@ class TestMirrorManager(unittest.TestCase):
         idx_path = 'http://' + self.releaseFile.replace('_','/')[:-7] + 'main/binary-i386/Packages.bz2'
 
         d = self.client.findHash(idx_path)
-        d.addCallback(self.verifyHash, idx_path, idx_hash)
+        d.addCallback(self.verifyHash, idx_path, a2b_hex(idx_hash))
 
         pkg_hash = os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
                             '/var/lib/apt/lists/' + self.packagesFile + 
@@ -316,7 +325,7 @@ class TestMirrorManager(unittest.TestCase):
                             ' | cut -d\  -f 2').read().rstrip('\n')
 
         d = self.client.findHash(pkg_path)
-        d.addCallback(self.verifyHash, pkg_path, pkg_hash)
+        d.addCallback(self.verifyHash, pkg_path, a2b_hex(pkg_hash))
 
         src_dir = os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
                             '/var/lib/apt/lists/' + self.sourcesFile + 
@@ -334,7 +343,7 @@ class TestMirrorManager(unittest.TestCase):
         for i in range(len(src_hashes)):
             src_path = 'http://' + self.releaseFile[:self.releaseFile.find('_dists_')+1].replace('_','/') + src_dir + '/' + src_paths[i]
             d = self.client.findHash(src_path)
-            d.addCallback(self.verifyHash, src_path, src_hashes[i])
+            d.addCallback(self.verifyHash, src_path, a2b_hex(src_hashes[i]))
             
         idx_hash = os.popen('grep -A 3000 -E "^SHA1:" ' + 
                             '/var/lib/apt/lists/' + self.releaseFile + 
@@ -343,7 +352,7 @@ class TestMirrorManager(unittest.TestCase):
         idx_path = 'http://' + self.releaseFile.replace('_','/')[:-7] + 'main/source/Sources.bz2'
 
         d = self.client.findHash(idx_path)
-        d.addCallback(self.verifyHash, idx_path, idx_hash)
+        d.addCallback(self.verifyHash, idx_path, a2b_hex(idx_hash))
 
         d.addBoth(lastDefer.callback)
         return lastDefer
