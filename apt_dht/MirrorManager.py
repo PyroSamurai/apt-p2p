@@ -18,33 +18,29 @@ class MirrorError(Exception):
 class ProxyFileStream(stream.SimpleStream):
     """Saves a stream to a file while providing a new stream."""
     
-    def __init__(self, stream, outFile, modtime = None):
+    def __init__(self, stream, outFile):
         """Initializes the proxy.
         
         @type stream: C{twisted.web2.stream.IByteStream}
         @param stream: the input stream to read from
         @type outFile: C{twisted.python.filepath.FilePath}
         @param outFile: the file to write to
-        @type modtime: C{int}
-        @param modtime: the modification time to set for the file
         """
         self.stream = stream
-        self.outFile = outFile
-        self.openFile = outFile.open('w')
-        self.modtime = modtime
+        self.outFile = outFile.open('w')
         self.length = self.stream.length
         self.start = 0
+        self.doneDefer = defer.Deferred()
 
     def _done(self):
         """Close the output file."""
-        if not self.openFile.closed:
-            self.openFile.close()
-            if self.modtime:
-                os.utime(self.outFile.path, (self.modtime, self.modtime))
+        if not self.outFile.closed:
+            self.outFile.close()
+            self.doneDefer.callback(1)
     
     def read(self):
         """Read some data from the stream."""
-        if self.openFile.closed:
+        if self.outFile.closed:
             return None
         
         data = self.stream.read()
@@ -61,7 +57,7 @@ class ProxyFileStream(stream.SimpleStream):
             self._done()
             return data
         
-        self.openFile.write(data)
+        self.outFile.write(data)
         return data
     
     def close(self):
@@ -144,8 +140,20 @@ class MirrorManager:
             destFile.parent().makedirs()
         
         orig_stream = response.stream
-        response.stream = ProxyFileStream(orig_stream, destFile, response.headers.getHeader('Last-Modified'))
+        response.stream = ProxyFileStream(orig_stream, destFile)
+        response.stream.doneDefer.addCallback(self.save_complete, url, destFile,
+                                              response.headers.getHeader('Last-Modified'))
+        response.stream.doneDefer.addErrback(self.save_error, url)
         return response
+
+    def save_complete(self, result, url, destFile, modtime = None):
+        """Update the modification time and AptPackages."""
+        if modtime:
+            os.utime(destFile.path, (modtime, modtime))
+            
+        site, baseDir, path = self.extractPath(url)
+        self.init(site, baseDir)
+        self.apt_caches[site][baseDir].file_updated(path, destFile.path)
 
     def save_error(self, failure, url):
         """An error has occurred in downloadign or saving the file."""
