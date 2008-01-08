@@ -187,6 +187,11 @@ class MirrorManager:
             site_cache = os.path.join(self.cache_dir, aptpkg_dir, 'mirrors', site + baseDir.replace('/', '_'))
             self.apt_caches[site][baseDir] = AptPackages(site_cache)
     
+    def updatedFile(self, url, file_path):
+        site, baseDir, path = self.extractPath(url)
+        self.init(site, baseDir)
+        self.apt_caches[site][baseDir].file_updated(path, file_path)
+
     def findHash(self, url):
         site, baseDir, path = self.extractPath(url)
         if site in self.apt_caches and baseDir in self.apt_caches[site]:
@@ -244,11 +249,9 @@ class MirrorManager:
             if ext:
                 os.utime(decFile.path, (modtime, modtime))
             
-        site, baseDir, path = self.extractPath(url)
-        self.init(site, baseDir)
-        self.apt_caches[site][baseDir].file_updated(path, destFile.path)
+        self.updatedFile(url, destFile.path)
         if ext:
-            self.apt_caches[site][baseDir].file_updated(path[:-len(ext)], decFile.path)
+            self.updatedFile(url[:-len(ext)], decFile.path)
 
     def save_error(self, failure, url):
         """An error has occurred in downloadign or saving the file."""
