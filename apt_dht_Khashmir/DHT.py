@@ -253,12 +253,12 @@ class TestSimpleDHT(unittest.TestCase):
     def tearDown(self):
         self.a.leave()
         try:
-            os.unlink(self.a.khashmir.db)
+            os.unlink(self.a.khashmir.store.db)
         except:
             pass
         self.b.leave()
         try:
-            os.unlink(self.b.khashmir.db)
+            os.unlink(self.b.khashmir.store.db)
         except:
             pass
 
@@ -322,7 +322,7 @@ class TestMultiDHT(unittest.TestCase):
     def get_values(self):
         self.checked = 0
         for i in range(len(self.l)):
-            for j in random.sample(xrange(len(self.l)), 4):
+            for j in random.sample(xrange(len(self.l)), max(len(self.l), 4)):
                 self.checked += 1
                 d = self.l[i].getValue(sha.new(str(self.startport+j)).digest())
                 check = []
@@ -349,6 +349,6 @@ class TestMultiDHT(unittest.TestCase):
         for i in self.l:
             try:
                 i.leave()
-                os.unlink(i.khashmir.db)
+                os.unlink(i.khashmir.store.db)
             except:
                 pass

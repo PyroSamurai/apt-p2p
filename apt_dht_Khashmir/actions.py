@@ -263,13 +263,7 @@ class KeyExpirer:
         self.next_expire = reactor.callLater(self.config['KEINITIAL_DELAY'], self.doExpire)
     
     def doExpire(self):
-        self.cut = "%0.6f" % (time() - self.config['KE_AGE'])
-        self._expire()
-    
-    def _expire(self):
-        c = self.store.cursor()
-        s = "delete from kv where time < '%s';" % self.cut
-        c.execute(s)
+        self.store.expireValues(time() - self.config['KE_AGE'])
         self.next_expire = reactor.callLater(self.config['KE_DELAY'], self.doExpire)
         
     def shutdown(self):
