@@ -76,6 +76,11 @@ class KhashmirBase(protocol.Factory):
             n.conn = self.udp.connectionForAddr((n.host, n.port))
             self.table.insertNode(n, contacted=0)
             
+    def _update_node(self, id, host, port):
+        n = self.Node().init(id, host, port)
+        n.conn = self.udp.connectionForAddr((host, port))
+        self.insertNode(n, contacted=0)
+    
 
     #######
     #######  LOCAL INTERFACE    - use these methods!
@@ -199,24 +204,15 @@ class KhashmirBase(protocol.Factory):
         self.expirer.shutdown()
         self.store.close()
 
+    #### Remote Interface - called by remote nodes
     def krpc_ping(self, id, _krpc_sender):
-        sender = {'id' : id}
-        sender['host'] = _krpc_sender[0]
-        sender['port'] = _krpc_sender[1]        
-        n = self.Node().initWithDict(sender)
-        n.conn = self.udp.connectionForAddr((n.host, n.port))
-        self.insertNode(n, contacted=0)
+        self._update_node(id, _krpc_sender[0], _krpc_sender[1])
         return {"id" : self.node.id}
         
     def krpc_find_node(self, target, id, _krpc_sender):
+        self._update_node(id, _krpc_sender[0], _krpc_sender[1])
         nodes = self.table.findNodes(target)
         nodes = map(lambda node: node.senderDict(), nodes)
-        sender = {'id' : id}
-        sender['host'] = _krpc_sender[0]
-        sender['port'] = _krpc_sender[1]        
-        n = self.Node().initWithDict(sender)
-        n.conn = self.udp.connectionForAddr((n.host, n.port))
-        self.insertNode(n, contacted=0)
         return {"nodes" : nodes, "id" : self.node.id}
 
 
@@ -245,13 +241,9 @@ class KhashmirRead(KhashmirBase):
         state = GetValue(self, key, callback, self.config)
         reactor.callLater(0, state.goWithNodes, nodes, l)
 
+    #### Remote Interface - called by remote nodes
     def krpc_find_value(self, key, id, _krpc_sender):
-        sender = {'id' : id}
-        sender['host'] = _krpc_sender[0]
-        sender['port'] = _krpc_sender[1]        
-        n = self.Node().initWithDict(sender)
-        n.conn = self.udp.connectionForAddr((n.host, n.port))
-        self.insertNode(n, contacted=0)
+        self._update_node(id, _krpc_sender[0], _krpc_sender[1])
     
         l = self.store.retrieveValues(key)
         if len(l) > 0:
@@ -283,14 +275,10 @@ class KhashmirWrite(KhashmirRead):
         # this call is asynch
         self.findNode(key, _storeValueForKey)
                     
+    #### Remote Interface - called by remote nodes
     def krpc_store_value(self, key, value, id, _krpc_sender):
+        self._update_node(id, _krpc_sender[0], _krpc_sender[1])
         self.store.storeValue(key, value)
-        sender = {'id' : id}
-        sender['host'] = _krpc_sender[0]
-        sender['port'] = _krpc_sender[1]        
-        n = self.Node().initWithDict(sender)
-        n.conn = self.udp.connectionForAddr((n.host, n.port))
-        self.insertNode(n, contacted=0)
         return {"id" : self.node.id}
 
 # the whole shebang, for testing
