@@ -27,7 +27,7 @@ Anything later that version 1.0.3 should work
 """
 
 try:
-    import sqlite
+    import pysqlite2
 except ImportError:
     raise SystemExit, """\
 You don't have PySQLite installed.

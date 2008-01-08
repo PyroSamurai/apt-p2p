@@ -1,6 +1,6 @@
 
 from time import time
-import sqlite  ## find this at http://pysqlite.sourceforge.net/
+from pysqlite2 import dbapi2 as sqlite
 import os
 
 class DBExcept(Exception):
@@ -17,91 +17,81 @@ class DB:
             self._createNewDB(db)
         else:
             self._loadDB(db)
+        self.conn.text_factory = str
         
     def _loadDB(self, db):
         try:
-            self.store = sqlite.connect(db=db)
-            #self.store.autocommit = 0
+            self.conn = sqlite.connect(database=db, detect_types=sqlite.PARSE_DECLTYPES)
         except:
             import traceback
             raise DBExcept, "Couldn't open DB", traceback.format_exc()
         
     def _createNewDB(self, db):
-        self.store = sqlite.connect(db=db)
-        s = """
-            create table kv (key binary, value binary, time timestamp, primary key (key, value));
-            create index kv_key on kv(key);
-            create index kv_timestamp on kv(time);
-            
-            create table nodes (id binary primary key, host text, port number);
-            
-            create table self (num number primary key, id binary);
-            """
-        c = self.store.cursor()
-        c.execute(s)
-        self.store.commit()
+        self.conn = sqlite.connect(database=db)
+        c = self.conn.cursor()
+        c.execute("CREATE TABLE kv (key TEXT, value TEXT, time TIMESTAMP, PRIMARY KEY (key, value))")
+        c.execute("CREATE INDEX kv_key ON kv(key)")
+        c.execute("CREATE INDEX kv_timestamp ON kv(time)")
+        c.execute("CREATE TABLE nodes (id TEXT PRIMARY KEY, host TEXT, port NUMBER)")
+        c.execute("CREATE TABLE self (num NUMBER PRIMARY KEY, id TEXT)")
+        self.conn.commit()
 
     def getSelfNode(self):
-        c = self.store.cursor()
-        c.execute('select id from self where num = 0;')
+        c = self.conn.cursor()
+        c.execute('SELECT id FROM self WHERE num = 0')
         if c.rowcount > 0:
             return c.fetchone()[0]
         else:
             return None
         
     def saveSelfNode(self, id):
-        c = self.store.cursor()
-        c.execute('delete from self where num = 0;')
-        c.execute("insert into self values (0, %s);", sqlite.encode(id))
-        self.store.commit()
+        c = self.conn.cursor()
+        c.execute("INSERT OR REPLACE INTO self VALUES (0, ?)", (id,))
+        self.conn.commit()
         
     def dumpRoutingTable(self, buckets):
         """
             save routing table nodes to the database
         """
-        c = self.store.cursor()
-        c.execute("delete from nodes where id not NULL;")
+        c = self.conn.cursor()
+        c.execute("DELETE FROM nodes WHERE id NOT NULL")
         for bucket in buckets:
             for node in bucket.l:
-                c.execute("insert into nodes values (%s, %s, %s);", (sqlite.encode(node.id), node.host, node.port))
-        self.store.commit()
+                c.execute("INSERT INTO nodes VALUES (?, ?, ?)", (node.id, node.host, node.port))
+        self.conn.commit()
         
     def getRoutingTable(self):
         """
             load routing table nodes from database
             it's usually a good idea to call refreshTable(force=1) after loading the table
         """
-        c = self.store.cursor()
-        c.execute("select * from nodes;")
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM nodes")
         return c.fetchall()
             
     def retrieveValues(self, key):
-        c = self.store.cursor()
-        c.execute("select value from kv where key = %s;", sqlite.encode(key))
+        c = self.conn.cursor()
+        c.execute("SELECT value FROM kv WHERE key = ?", (key,))
         t = c.fetchone()
         l = []
         while t:
-            l.append(t['value'])
+            l.append(t[0])
             t = c.fetchone()
         return l
 
     def storeValue(self, key, value):
         """Store or update a key and value."""
         t = "%0.6f" % time()
-        c = self.store.cursor()
-        try:
-            c.execute("insert into kv values (%s, %s, %s);", (sqlite.encode(key), sqlite.encode(value), t))
-        except sqlite.IntegrityError, reason:
-            # update last insert time
-            c.execute("update kv set time = %s where key = %s and value = %s;", (t, sqlite.encode(key), sqlite.encode(value)))
-        self.store.commit()
+        c = self.conn.cursor()
+        c.execute("INSERT OR REPLACE INTO kv VALUES (?, ?, ?)", (key, value, t))
+        self.conn.commit()
 
     def expireValues(self, expireTime):
         """Expire older values than expireTime."""
         t = "%0.6f" % expireTime
-        c = self.store.cursor()
-        s = "delete from kv where time < '%s';" % t
-        c.execute(s)
+        c = self.conn.cursor()
+        c.execute("DELETE FROM kv WHERE time < ?", (t, ))
+        self.conn.commit()
         
     def close(self):
-        self.store.close()
+        self.conn.close()
