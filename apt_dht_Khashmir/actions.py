@@ -1,8 +1,6 @@
 ## Copyright 2002-2004 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
-from time import time
-
 from twisted.internet import reactor
 
 from khash import intify
@@ -263,7 +261,7 @@ class KeyExpirer:
         self.next_expire = reactor.callLater(self.config['KEINITIAL_DELAY'], self.doExpire)
     
     def doExpire(self):
-        self.store.expireValues(time() - self.config['KE_AGE'])
+        self.store.expireValues(self.config['KE_AGE'])
         self.next_expire = reactor.callLater(self.config['KE_DELAY'], self.doExpire)
         
     def shutdown(self):

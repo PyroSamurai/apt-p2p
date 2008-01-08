@@ -1,5 +1,5 @@
 
-from time import time
+from datetime import datetime, timedelta
 from pysqlite2 import dbapi2 as sqlite
 import os
 
@@ -81,14 +81,13 @@ class DB:
 
     def storeValue(self, key, value):
         """Store or update a key and value."""
-        t = "%0.6f" % time()
         c = self.conn.cursor()
-        c.execute("INSERT OR REPLACE INTO kv VALUES (?, ?, ?)", (key, value, t))
+        c.execute("INSERT OR REPLACE INTO kv VALUES (?, ?, ?)", (key, value, datetime.now()))
         self.conn.commit()
 
-    def expireValues(self, expireTime):
-        """Expire older values than expireTime."""
-        t = "%0.6f" % expireTime
+    def expireValues(self, expireAfter):
+        """Expire older values after expireAfter seconds."""
+        t = datetime.now() - timedelta(seconds=expireAfter)
         c = self.conn.cursor()
         c.execute("DELETE FROM kv WHERE time < ?", (t, ))
         self.conn.commit()

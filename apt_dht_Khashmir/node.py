@@ -1,7 +1,7 @@
 ## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
-from time import time
+from datetime import datetime, MINYEAR
 from types import InstanceType
 
 from twisted.trial import unittest
@@ -15,7 +15,7 @@ class Node:
     """encapsulate contact info"""
     def __init__(self):
         self.fails = 0
-        self.lastSeen = 0
+        self.lastSeen = datetime(MINYEAR, 1, 1)
         self.id = self.host = self.port = ''
     
     def init(self, id, host, port):
@@ -35,7 +35,7 @@ class Node:
         return self
     
     def updateLastSeen(self):
-        self.lastSeen = time()
+        self.lastSeen = datetime.now()
         self.fails = 0
     
     def msgFailed(self):

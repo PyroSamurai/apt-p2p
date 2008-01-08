@@ -1,7 +1,7 @@
 ## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
-from time import time
+from datetime import datetime
 from bisect import bisect_left
 
 from twisted.trial import unittest
@@ -174,10 +174,10 @@ class KBucket:
         self.l = contents
         self.min = min
         self.max = max
-        self.lastAccessed = time()
+        self.lastAccessed = datetime.now()
         
     def touch(self):
-        self.lastAccessed = time()
+        self.lastAccessed = datetime.now()
     
     def getNodeWithInt(self, num):
         if num in self.l: return num

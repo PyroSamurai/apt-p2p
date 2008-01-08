@@ -4,7 +4,7 @@
 import warnings
 warnings.simplefilter("ignore", DeprecationWarning)
 
-from time import time
+from datetime import datetime, timedelta
 from random import randrange
 from sha import sha
 import os
@@ -37,7 +37,6 @@ class KhashmirBase(protocol.Factory):
         self.udp = krpc.hostbroker(self)
         self.udp.protocol = krpc.KRPC
         self.listenport = reactor.listenUDP(self.port, self.udp)
-        self.last = time()
         self._loadRoutingTable()
         self.expirer = KeyExpirer(self.store, config)
         self.refreshTable(force=1)
@@ -115,7 +114,9 @@ class KhashmirBase(protocol.Factory):
         method needs to be a properly formed Node object with a valid ID.
         """
         old = self.table.insertNode(n, contacted=contacted)
-        if old and (time() - old.lastSeen) > self.config['MIN_PING_INTERVAL'] and old.id != self.node.id:
+        if (old and old.id != self.node.id and
+            (datetime.now() - old.lastSeen) > 
+             timedelta(seconds=self.config['MIN_PING_INTERVAL'])):
             # the bucket is full, check to see if old node is still around and if so, replace it
             
             ## these are the callbacks used when we ping the oldest node in a bucket
@@ -173,7 +174,8 @@ class KhashmirBase(protocol.Factory):
             pass
     
         for bucket in self.table.buckets:
-            if force or (time() - bucket.lastAccessed >= self.config['BUCKET_STALENESS']):
+            if force or (datetime.now() - bucket.lastAccessed > 
+                         timedelta(seconds=self.config['BUCKET_STALENESS'])):
                 id = newIDInRange(bucket.min, bucket.max)
                 self.findNode(id, callback)
 
