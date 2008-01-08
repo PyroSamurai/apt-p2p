@@ -32,7 +32,7 @@ class DHT:
         self.config_parser = config
         self.section = section
         self.config = {}
-        self.cache_dir = self.config_parser.get('DEFAULT', 'cache_dir')
+        self.cache_dir = self.config_parser.get(section, 'cache_dir')
         self.bootstrap = self.config_parser.getstringlist(section, 'BOOTSTRAP')
         self.bootstrap_node = self.config_parser.getboolean(section, 'BOOTSTRAP_NODE')
         for k in self.config_parser.options(section):
@@ -44,8 +44,6 @@ class DHT:
                 self.config[k] = self.config_parser.gettime(section, k)
             else:
                 self.config[k] = self.config_parser.get(section, k)
-        if 'PORT' not in self.config:
-            self.config['PORT'] = self.config_parser.getint('DEFAULT', 'PORT')
     
     def join(self):
         """See L{apt_dht.interfaces.IDHT}."""
