@@ -296,37 +296,32 @@ class TestMultiDHT(unittest.TestCase):
         d.addCallback(self.node_join, 1)
         return self.lastDefer
         
-    def value_stored(self, result, value):
-        self.stored -= 1
-        if self.stored == 0:
+    def store_values(self, result, i = 0, j = 0):
+        if j > i:
+            j -= i+1
+            i += 1
+        if i == len(self.l):
             self.get_values()
-        
-    def store_values(self, result):
-        self.stored = 0
-        for i in range(len(self.l)):
-            for j in range(0, i+1):
-                self.stored += 1
-                d = self.l[j].storeValue(sha.new(str(self.startport+i)).digest(), str((self.startport+i)*(j+1)))
-                d.addCallback(self.value_stored, self.startport+i)
+        else:
+            d = self.l[j].storeValue(sha.new(str(self.startport+i)).digest(), str((self.startport+i)*(j+1)))
+            d.addCallback(self.store_values, i, j+1)
     
-    def check_values(self, result, values):
-        self.checked -= 1
-        self.failUnless(len(result) == len(values))
-        for v in result:
-            self.failUnless(v in values)
-        if self.checked == 0:
+    def get_values(self, result = None, check = None, i = 0, j = 0):
+        if result is not None:
+            self.failUnless(len(result) == len(check))
+            for v in result:
+                self.failUnless(v in check)
+        if j >= len(self.l):
+            j -= len(self.l)
+            i += 1
+        if i == len(self.l):
             self.lastDefer.callback(1)
-    
-    def get_values(self):
-        self.checked = 0
-        for i in range(len(self.l)):
-            for j in random.sample(xrange(len(self.l)), max(len(self.l), 4)):
-                self.checked += 1
-                d = self.l[i].getValue(sha.new(str(self.startport+j)).digest())
-                check = []
-                for k in range(self.startport+j, (self.startport+j)*(j+1)+1, self.startport+j):
-                    check.append(str(k))
-                d.addCallback(self.check_values, check)
+        else:
+            d = self.l[i].getValue(sha.new(str(self.startport+j)).digest())
+            check = []
+            for k in range(self.startport+j, (self.startport+j)*(j+1)+1, self.startport+j):
+                check.append(str(k))
+            d.addCallback(self.get_values, check, i, j + random.randrange(1, min(len(self.l), 10)))
 
     def store_join(self, result, next_node):
         d = self.l[next_node].join()
