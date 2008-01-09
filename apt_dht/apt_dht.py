@@ -1,4 +1,6 @@
 
+from binascii import b2a_hex
+
 from twisted.internet import defer
 from twisted.web2 import server, http, http_headers
 from twisted.python import log
@@ -53,7 +55,7 @@ class AptDHT:
             log.msg('Hash for %s was not found' % path)
             self.download_file([path], hash, size, path, d)
         else:
-            log.msg('Found hash %s for %s' % (hash, path))
+            log.msg('Found hash %s for %s' % (b2a_hex(hash), path))
             # Lookup hash from DHT
             lookupDefer = self.dht.getValue(hash)
             lookupDefer.addCallback(self.lookupHash_done, hash, size, path, d)
@@ -63,7 +65,7 @@ class AptDHT:
             log.msg('Peers for %s were not found' % path)
             self.download_file([path], hash, size, path, d)
         else:
-            log.msg('Found peers for $s: %r' % (path, locations))
+            log.msg('Found peers for %s: %r' % (path, locations))
             # Download from the found peers
             self.download_file(locations, hash, size, path, d)
             
