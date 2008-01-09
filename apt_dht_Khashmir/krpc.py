@@ -64,7 +64,7 @@ class hostbroker(protocol.DatagramProtocol):
 
 ## connection
 class KRPC:
-    noisy = 1
+    noisy = 0
     def __init__(self, addr, server, transport):
         self.transport = transport
         self.factory = server
@@ -85,7 +85,7 @@ class KRPC:
                 print "response decode error: " + `e`
         else:
             if self.noisy:
-                print msg
+                print self.factory.port, "received from", addr, self.addr, ":", msg
             # look at msg type
             if msg[TYP]  == REQ:
                 ilen = len(str)
@@ -100,6 +100,8 @@ class KRPC:
                         ## send error
                         out = bencode({TID:msg[TID], TYP:ERR, ERR :`format_exception(type(e), e, sys.exc_info()[2])`})
                         olen = len(out)
+                        if self.noisy:
+                            print self.factory.port, "responding to", addr, self.addr, ":", out
                         self.transport.write(out, addr)
                     else:
                         if ret:
@@ -109,6 +111,8 @@ class KRPC:
                             out = bencode({TID : msg[TID], TYP : RSP, RSP : {}})
                         #	send response
                         olen = len(out)
+                        if self.noisy:
+                            print self.factory.port, "responding to", addr, self.addr, ":", out
                         self.transport.write(out, addr)
 
                 else:
@@ -117,6 +121,8 @@ class KRPC:
                     # unknown method
                     out = bencode({TID:msg[TID], TYP:ERR, ERR : KRPC_ERROR_METHOD_UNKNOWN})
                     olen = len(out)
+                    if self.noisy:
+                        print self.factory.port, "responding to", addr, self.addr, ":", out
                     self.transport.write(out, addr)
                 if self.noisy:
                     print "%s %s >>> %s - %s %s %s" % (asctime(), addr, self.factory.node.port, 
@@ -158,6 +164,8 @@ class KRPC:
         # send it
         msg = {TID : chr(self.mtid), TYP : REQ,  REQ : method, ARG : args}
         self.mtid = (self.mtid + 1) % 256
+        if self.noisy:
+            print self.factory.port, "sending to", self.addr, ":", msg
         str = bencode(msg)
         d = Deferred()
         self.tids[msg[TID]] = d
