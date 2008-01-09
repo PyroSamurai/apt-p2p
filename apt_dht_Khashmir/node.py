@@ -13,26 +13,23 @@ NULL_ID = 20 * '\0'
 
 class Node:
     """encapsulate contact info"""
-    def __init__(self):
+    def __init__(self, id, host = None, port = None):
         self.fails = 0
         self.lastSeen = datetime(MINYEAR, 1, 1)
-        self.id = self.host = self.port = ''
-    
-    def init(self, id, host, port):
+
+        # Alternate method, init Node from dictionary
+        if isinstance(id, dict):
+            host = id['host']
+            port = id['port']
+            id = id['id']
+
+        assert(isinstance(id, str))
+        assert(isinstance(host, str))
         self.id = id
         self.num = khash.intify(id)
         self.host = host
-        self.port = port
+        self.port = int(port)
         self._senderDict = {'id': self.id, 'port' : self.port, 'host' : self.host}
-        return self
-    
-    def initWithDict(self, dict):
-        self._senderDict = dict
-        self.id = dict['id']
-        self.num = khash.intify(self.id)
-        self.port = dict['port']
-        self.host = dict['host']
-        return self
     
     def updateLastSeen(self):
         self.lastSeen = datetime.now()
@@ -77,7 +74,7 @@ class Node:
 
 class TestNode(unittest.TestCase):
     def setUp(self):
-        self.node = Node().init(khash.newID(), 'localhost', 2002)
+        self.node = Node(khash.newID(), 'localhost', 2002)
     def testUpdateLastSeen(self):
         t = self.node.lastSeen
         self.node.updateLastSeen()

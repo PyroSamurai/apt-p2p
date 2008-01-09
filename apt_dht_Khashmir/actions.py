@@ -7,8 +7,8 @@ from khash import intify
 
 class ActionBase:
     """ base class for some long running asynchronous proccesses like finding nodes or values """
-    def __init__(self, table, target, callback, config):
-        self.table = table
+    def __init__(self, caller, target, callback, config):
+        self.caller = caller
         self.target = target
         self.config = config
         self.num = intify(target)
@@ -41,21 +41,16 @@ class FindNode(ActionBase):
     def handleGotNodes(self, dict):
         _krpc_sender = dict['_krpc_sender']
         dict = dict['rsp']
+        n = self.caller.Node(dict["id"], _krpc_sender[0], _krpc_sender[1])
+        self.caller.insertNode(n)
         l = dict["nodes"]
-        sender = {'id' : dict["id"]}
-        sender['port'] = _krpc_sender[1]        
-        sender['host'] = _krpc_sender[0]        
-        sender = self.table.Node().initWithDict(sender)
-        sender.conn = self.table.udp.connectionForAddr((sender.host, sender.port))
-        self.table.table.insertNode(sender)
-        if self.finished or self.answered.has_key(sender.id):
+        if self.finished or self.answered.has_key(dict["id"]):
             # a day late and a dollar short
             return
         self.outstanding = self.outstanding - 1
-        self.answered[sender.id] = 1
+        self.answered[dict["id"]] = 1
         for node in l:
-            n = self.table.Node().initWithDict(node)
-            n.conn = self.table.udp.connectionForAddr((n.host, n.port))
+            n = self.caller.Node(node)
             if not self.found.has_key(n.id):
                 self.found[n.id] = n
         self.schedule()
@@ -72,9 +67,9 @@ class FindNode(ActionBase):
             if node.id == self.target:
                 self.finished=1
                 return self.callback([node])
-            if (not self.queried.has_key(node.id)) and node.id != self.table.node.id:
+            if (not self.queried.has_key(node.id)) and node.id != self.caller.node.id:
                 #xxxx t.timeout = time.time() + FIND_NODE_TIMEOUT
-                df = node.findNode(self.target, self.table.node.id)
+                df = node.findNode(self.target, self.caller.node.id)
                 df.addCallbacks(self.handleGotNodes, self.makeMsgFailed(node))
                 self.outstanding = self.outstanding + 1
                 self.queried[node.id] = 1
@@ -88,8 +83,8 @@ class FindNode(ActionBase):
     
     def makeMsgFailed(self, node):
         def defaultGotNodes(err, self=self, node=node):
-            print ">>> find failed %s/%s" % (node.host, node.port), err
-            self.table.table.nodeFailed(node)
+            print ">>> find failed (%s) %s/%s" % (self.config['PORT'], node.host, node.port), err
+            self.caller.table.nodeFailed(node)
             self.outstanding = self.outstanding - 1
             self.schedule()
         return defaultGotNodes
@@ -100,7 +95,7 @@ class FindNode(ActionBase):
             it's a transaction since we got called from the dispatcher
         """
         for node in nodes:
-            if node.id == self.table.node.id:
+            if node.id == self.caller.node.id:
                 continue
             else:
                 self.found[node.id] = node
@@ -110,31 +105,26 @@ class FindNode(ActionBase):
 
 get_value_timeout = 15
 class GetValue(FindNode):
-    def __init__(self, table, target, callback, config, find="findValue"):
-        FindNode.__init__(self, table, target, callback, config)
+    def __init__(self, caller, target, callback, config, find="findValue"):
+        FindNode.__init__(self, caller, target, callback, config)
         self.findValue = find
             
     """ get value task """
     def handleGotNodes(self, dict):
         _krpc_sender = dict['_krpc_sender']
         dict = dict['rsp']
-        sender = {'id' : dict["id"]}
-        sender['port'] = _krpc_sender[1]
-        sender['host'] = _krpc_sender[0]                
-        sender = self.table.Node().initWithDict(sender)
-        sender.conn = self.table.udp.connectionForAddr((sender.host, sender.port))
-        self.table.table.insertNode(sender)
-        if self.finished or self.answered.has_key(sender.id):
+        n = self.caller.Node(dict["id"], _krpc_sender[0], _krpc_sender[1])
+        self.caller.insertNode(n)
+        if self.finished or self.answered.has_key(dict["id"]):
             # a day late and a dollar short
             return
         self.outstanding = self.outstanding - 1
-        self.answered[sender.id] = 1
+        self.answered[dict["id"]] = 1
         # go through nodes
         # if we have any closer than what we already got, query them
         if dict.has_key('nodes'):
             for node in dict['nodes']:
-                n = self.table.Node().initWithDict(node)
-                n.conn = self.table.udp.connectionForAddr((n.host, n.port))
+                n = self.caller.Node(node)
                 if not self.found.has_key(n.id):
                     self.found[n.id] = n
         elif dict.has_key('values'):
@@ -158,14 +148,14 @@ class GetValue(FindNode):
         l.sort(self.sort)
         
         for node in l[:self.config['K']]:
-            if (not self.queried.has_key(node.id)) and node.id != self.table.node.id:
+            if (not self.queried.has_key(node.id)) and node.id != self.caller.node.id:
                 #xxx t.timeout = time.time() + GET_VALUE_TIMEOUT
                 try:
                     f = getattr(node, self.findValue)
                 except AttributeError:
                     print ">>> findValue %s doesn't have a %s method!" % (node, self.findValue)
                 else:
-                    df = f(self.target, self.table.node.id)
+                    df = f(self.target, self.caller.node.id)
                     df.addCallback(self.handleGotNodes)
                     df.addErrback(self.makeMsgFailed(node))
                     self.outstanding = self.outstanding + 1
@@ -185,7 +175,7 @@ class GetValue(FindNode):
             for n in found:
                 self.results[n] = 1
         for node in nodes:
-            if node.id == self.table.node.id:
+            if node.id == self.caller.node.id:
                 continue
             else:
                 self.found[node.id] = node
@@ -194,15 +184,15 @@ class GetValue(FindNode):
 
 
 class StoreValue(ActionBase):
-    def __init__(self, table, target, value, callback, config, store="storeValue"):
-        ActionBase.__init__(self, table, target, callback, config)
+    def __init__(self, caller, target, value, callback, config, store="storeValue"):
+        ActionBase.__init__(self, caller, target, callback, config)
         self.value = value
         self.stored = []
         self.store = store
         
     def storedValue(self, t, node):
         self.outstanding -= 1
-        self.table.insertNode(node)
+        self.caller.insertNode(node)
         if self.finished:
             return
         self.stored.append(t)
@@ -216,7 +206,7 @@ class StoreValue(ActionBase):
     
     def storeFailed(self, t, node):
         print ">>> store failed %s/%s" % (node.host, node.port)
-        self.table.nodeFailed(node)
+        self.caller.nodeFailed(node)
         self.outstanding -= 1
         if self.finished:
             return t
@@ -237,14 +227,14 @@ class StoreValue(ActionBase):
                     self.finished = 1
                     self.callback(self.target, self.value, self.stored)
             else:
-                if not node.id == self.table.node.id:
+                if not node.id == self.caller.node.id:
                     self.outstanding += 1
                     try:
                         f = getattr(node, self.store)
                     except AttributeError:
                         print ">>> %s doesn't have a %s method!" % (node, self.store)
                     else:
-                        df = f(self.target, self.value, self.table.node.id)
+                        df = f(self.target, self.value, self.caller.node.id)
                         df.addCallback(self.storedValue, node=node)
                         df.addErrback(self.storeFailed, node=node)
                     

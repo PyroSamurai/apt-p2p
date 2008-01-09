@@ -13,10 +13,10 @@ class KTable:
     """local routing table for a kademlia like distributed hash table"""
     def __init__(self, node, config):
         # this is the root node, a.k.a. US!
+        assert node.id != NULL_ID
         self.node = node
         self.config = config
         self.buckets = [KBucket([], 0L, 2L**self.config['HASH_LENGTH'])]
-        self.insertNode(node)
         
     def _bucketIndexForInt(self, num):
         """the index of the bucket that should hold int"""
@@ -210,11 +210,11 @@ class KBucket:
 
 class TestKTable(unittest.TestCase):
     def setUp(self):
-        self.a = Node().init(khash.newID(), 'localhost', 2002)
+        self.a = Node(khash.newID(), 'localhost', 2002)
         self.t = KTable(self.a, {'HASH_LENGTH': 160, 'K': 8, 'MAX_FAILURES': 3})
 
     def testAddNode(self):
-        self.b = Node().init(khash.newID(), 'localhost', 2003)
+        self.b = Node(khash.newID(), 'localhost', 2003)
         self.t.insertNode(self.b)
         self.assertEqual(len(self.t.buckets[0].l), 1)
         self.assertEqual(self.t.buckets[0].l[0], self.b)

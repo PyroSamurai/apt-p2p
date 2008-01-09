@@ -42,9 +42,11 @@ class KhashmirBase(protocol.Factory):
         self.refreshTable(force=1)
         self.next_checkpoint = reactor.callLater(60, self.checkpoint, (1,))
 
-    def Node(self):
-        n = self._Node()
+    def Node(self, id, host = None, port = None):
+        """Create a new node."""
+        n = self._Node(id, host, port)
         n.table = self.table
+        n.conn = self.udp.connectionForAddr((n.host, n.port))
         return n
     
     def __del__(self):
@@ -54,7 +56,7 @@ class KhashmirBase(protocol.Factory):
         id = self.store.getSelfNode()
         if not id:
             id = newID()
-        return self._Node().init(id, host, port)
+        return self._Node(id, host, port)
         
     def checkpoint(self, auto=0):
         self.store.saveSelfNode(self.node.id)
@@ -72,15 +74,9 @@ class KhashmirBase(protocol.Factory):
         """
         nodes = self.store.getRoutingTable()
         for rec in nodes:
-            n = self.Node().initWithDict({'id':rec[0], 'host':rec[1], 'port':int(rec[2])})
-            n.conn = self.udp.connectionForAddr((n.host, n.port))
+            n = self.Node(rec[0], rec[1], int(rec[2]))
             self.table.insertNode(n, contacted=0)
             
-    def _update_node(self, id, host, port):
-        n = self.Node().init(id, host, port)
-        n.conn = self.udp.connectionForAddr((host, port))
-        self.insertNode(n, contacted=0)
-    
 
     #######
     #######  LOCAL INTERFACE    - use these methods!
@@ -88,8 +84,7 @@ class KhashmirBase(protocol.Factory):
         """
             ping this node and add the contact info to the table on pong!
         """
-        n =self.Node().init(NULL_ID, host, port) 
-        n.conn = self.udp.connectionForAddr((n.host, n.port))
+        n = self.Node(NULL_ID, host, port)
         self.sendPing(n, callback=callback)
 
     ## this call is async!
@@ -144,15 +139,9 @@ class KhashmirBase(protocol.Factory):
         """
         df = node.ping(self.node.id)
         ## these are the callbacks we use when we issue a PING
-        def _pongHandler(dict, node=node, table=self.table, callback=callback):
-            _krpc_sender = dict['_krpc_sender']
-            dict = dict['rsp']
-            sender = {'id' : dict['id']}
-            sender['host'] = _krpc_sender[0]
-            sender['port'] = _krpc_sender[1]
-            n = self.Node().initWithDict(sender)
-            n.conn = self.udp.connectionForAddr((n.host, n.port))
-            table.insertNode(n)
+        def _pongHandler(dict, node=node, self=self, callback=callback):
+            n = self.Node(dict['rsp']['id'], dict['_krpc_sender'][0], dict['_krpc_sender'][1])
+            self.insertNode(n)
             if callback:
                 callback()
         def _defaultPong(err, node=node, table=self.table, callback=callback):
@@ -206,11 +195,13 @@ class KhashmirBase(protocol.Factory):
 
     #### Remote Interface - called by remote nodes
     def krpc_ping(self, id, _krpc_sender):
-        self._update_node(id, _krpc_sender[0], _krpc_sender[1])
+        n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
+        self.insertNode(n, contacted=0)
         return {"id" : self.node.id}
         
     def krpc_find_node(self, target, id, _krpc_sender):
-        self._update_node(id, _krpc_sender[0], _krpc_sender[1])
+        n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
+        self.insertNode(n, contacted=0)
         nodes = self.table.findNodes(target)
         nodes = map(lambda node: node.senderDict(), nodes)
         return {"nodes" : nodes, "id" : self.node.id}
@@ -243,7 +234,8 @@ class KhashmirRead(KhashmirBase):
 
     #### Remote Interface - called by remote nodes
     def krpc_find_value(self, key, id, _krpc_sender):
-        self._update_node(id, _krpc_sender[0], _krpc_sender[1])
+        n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
+        self.insertNode(n, contacted=0)
     
         l = self.store.retrieveValues(key)
         if len(l) > 0:
@@ -277,7 +269,8 @@ class KhashmirWrite(KhashmirRead):
                     
     #### Remote Interface - called by remote nodes
     def krpc_store_value(self, key, value, id, _krpc_sender):
-        self._update_node(id, _krpc_sender[0], _krpc_sender[1])
+        n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
+        self.insertNode(n, contacted=0)
         self.store.storeValue(key, value)
         return {"id" : self.node.id}
 
