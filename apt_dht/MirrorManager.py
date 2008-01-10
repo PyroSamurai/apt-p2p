@@ -3,8 +3,7 @@ from bz2 import BZ2Decompressor
 from zlib import decompressobj, MAX_WBITS
 from gzip import FCOMMENT, FEXTRA, FHCRC, FNAME, FTEXT
 from urlparse import urlparse
-from binascii import a2b_hex, b2a_hex
-import os, sha, md5
+import os
 
 from twisted.python import log, filepath
 from twisted.internet import defer
@@ -252,7 +251,7 @@ class MirrorManager:
             if result:
                 log.msg('Hashes match: %s' % url)
             else:
-                log.msg('Hashed file to %s: %s' % (b2a_hex(result), url))
+                log.msg('Hashed file to %s: %s' % (hash.hexdigest(), url))
                 
             self.updatedFile(url, destFile.path)
             if ext:
@@ -294,7 +293,7 @@ class TestMirrorManager(unittest.TestCase):
 
     def verifyHash(self, found_hash, path, true_hash):
         self.failUnless(found_hash.hexexpected() == true_hash, 
-                    "%s hashes don't match: %s != %s" % (path, found_hash[0], true_hash))
+                    "%s hashes don't match: %s != %s" % (path, found_hash.hexexpected(), true_hash))
 
     def test_findHash(self):
         self.packagesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Packages$" | tail -n 1').read().rstrip('\n')
@@ -322,7 +321,7 @@ class TestMirrorManager(unittest.TestCase):
         idx_path = 'http://' + self.releaseFile.replace('_','/')[:-7] + 'main/binary-i386/Packages.bz2'
 
         d = self.client.findHash(idx_path)
-        d.addCallback(self.verifyHash, idx_path, a2b_hex(idx_hash))
+        d.addCallback(self.verifyHash, idx_path, idx_hash)
 
         pkg_hash = os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
                             '/var/lib/apt/lists/' + self.packagesFile + 
@@ -335,7 +334,7 @@ class TestMirrorManager(unittest.TestCase):
                             ' | cut -d\  -f 2').read().rstrip('\n')
 
         d = self.client.findHash(pkg_path)
-        d.addCallback(self.verifyHash, pkg_path, a2b_hex(pkg_hash))
+        d.addCallback(self.verifyHash, pkg_path, pkg_hash)
 
         src_dir = os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
                             '/var/lib/apt/lists/' + self.sourcesFile + 
@@ -353,7 +352,7 @@ class TestMirrorManager(unittest.TestCase):
         for i in range(len(src_hashes)):
             src_path = 'http://' + self.releaseFile[:self.releaseFile.find('_dists_')+1].replace('_','/') + src_dir + '/' + src_paths[i]
             d = self.client.findHash(src_path)
-            d.addCallback(self.verifyHash, src_path, a2b_hex(src_hashes[i]))
+            d.addCallback(self.verifyHash, src_path, src_hashes[i])
             
         idx_hash = os.popen('grep -A 3000 -E "^SHA1:" ' + 
                             '/var/lib/apt/lists/' + self.releaseFile + 
@@ -362,7 +361,7 @@ class TestMirrorManager(unittest.TestCase):
         idx_path = 'http://' + self.releaseFile.replace('_','/')[:-7] + 'main/source/Sources.bz2'
 
         d = self.client.findHash(idx_path)
-        d.addCallback(self.verifyHash, idx_path, a2b_hex(idx_hash))
+        d.addCallback(self.verifyHash, idx_path, idx_hash)
 
         d.addBoth(lastDefer.callback)
         return lastDefer

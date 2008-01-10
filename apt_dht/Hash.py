@@ -144,7 +144,7 @@ class HashObject:
         """
         self.hashTypeNum = self.ORDER.index(hashType)    # error if not found
         self.expHex = hashHex
-        self.expSize = size
+        self.expSize = int(size)
         self.expHash = a2b_hex(self.expHex)
         
     def setFromIndexRecord(self, record):
@@ -195,24 +195,24 @@ class TestHashObject(unittest.TestCase):
     
     def test_normalize(self):
         h = HashObject()
-        h.set(h.ORDER[0], b2a_hex('12345678901234567890'), 0)
+        h.set(h.ORDER[0], b2a_hex('12345678901234567890'), '0')
         self.failUnless(h.normexpected(bits = 160) == '12345678901234567890')
         h = HashObject()
-        h.set(h.ORDER[0], b2a_hex('12345678901234567'), 0)
+        h.set(h.ORDER[0], b2a_hex('12345678901234567'), '0')
         self.failUnless(h.normexpected(bits = 160) == '12345678901234567\000\000\000')
         h = HashObject()
-        h.set(h.ORDER[0], b2a_hex('1234567890123456789012345'), 0)
+        h.set(h.ORDER[0], b2a_hex('1234567890123456789012345'), '0')
         self.failUnless(h.normexpected(bytes = 20) == '12345678901234567890')
         h = HashObject()
-        h.set(h.ORDER[0], b2a_hex('1234567890123456789'), 0)
+        h.set(h.ORDER[0], b2a_hex('1234567890123456789'), '0')
         self.failUnless(h.normexpected(bytes = 20) == '1234567890123456789\000')
         h = HashObject()
-        h.set(h.ORDER[0], b2a_hex('123456789012345678901'), 0)
+        h.set(h.ORDER[0], b2a_hex('123456789012345678901'), '0')
         self.failUnless(h.normexpected(bits = 160) == '12345678901234567890')
 
     def test_failure(self):
         h = HashObject()
-        h.set(h.ORDER[0], b2a_hex('12345678901234567890'), 0)
+        h.set(h.ORDER[0], b2a_hex('12345678901234567890'), '0')
         self.failUnlessRaises(AssertionError, h.normexpected)
         self.failUnlessRaises(AssertionError, h.digest)
         self.failUnlessRaises(AssertionError, h.hexdigest)
@@ -226,7 +226,7 @@ class TestHashObject(unittest.TestCase):
                 found = True
                 break
         self.failUnless(found == True)
-        h.set(hashType, 'c722df87e1acaa64b27aac4e174077afc3623540', 19)
+        h.set(hashType, 'c722df87e1acaa64b27aac4e174077afc3623540', '19')
         h.new()
         h.update('apt-dht is the best')
         self.failUnless(h.hexdigest() == 'c722df87e1acaa64b27aac4e174077afc3623540')
@@ -241,7 +241,7 @@ class TestHashObject(unittest.TestCase):
                 found = True
                 break
         self.failUnless(found == True)
-        h.set(hashType, '2a586bcd1befc5082c872dcd96a01403', 19)
+        h.set(hashType, '2a586bcd1befc5082c872dcd96a01403', '19')
         h.new()
         h.update('apt-dht is the best')
         self.failUnless(h.hexdigest() == '2a586bcd1befc5082c872dcd96a01403')
@@ -256,7 +256,7 @@ class TestHashObject(unittest.TestCase):
                 found = True
                 break
         self.failUnless(found == True)
-        h.set(hashType, '55b971f64d9772f733de03f23db39224f51a455cc5ad4c2db9d5740d2ab259a7', 19)
+        h.set(hashType, '55b971f64d9772f733de03f23db39224f51a455cc5ad4c2db9d5740d2ab259a7', '19')
         h.new()
         h.update('apt-dht is the best')
         self.failUnless(h.hexdigest() == '55b971f64d9772f733de03f23db39224f51a455cc5ad4c2db9d5740d2ab259a7')

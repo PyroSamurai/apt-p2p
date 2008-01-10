@@ -9,6 +9,7 @@ from apt_dht_conf import config
 from PeerManager import PeerManager
 from HTTPServer import TopLevel
 from MirrorManager import MirrorManager
+from Hash import HashObject
 
 class AptDHT:
     def __init__(self, dht):
@@ -42,13 +43,14 @@ class AptDHT:
         log.msg('Trying to find hash for %s' % path)
         findDefer = self.mirrors.findHash(path)
         
-        findDefer.addCallback(self.findHash_done, path, d)
-        findDefer.addErrback(self.findHash_error, path, d)
+        findDefer.addCallbacks(self.findHash_done, self.findHash_error, 
+                               callbackArgs=(path, d), errbackArgs=(path, d))
+        findDefer.addErrback(log.err)
         return d
     
     def findHash_error(self, failure, path, d):
         log.err(failure)
-        self.findHash_done((None, None), path, d)
+        self.findHash_done(HashObject(), path, d)
         
     def findHash_done(self, hash, path, d):
         if hash.expected() is None:

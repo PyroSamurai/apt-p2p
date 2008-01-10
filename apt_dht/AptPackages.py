@@ -410,8 +410,8 @@ class TestAptPackages(unittest.TestCase):
         self.failUnless(indexhash == idx_hash, "Hashes don't match: %s != %s" % (indexhash, idx_hash))
 
     def verifyHash(self, found_hash, path, true_hash):
-        self.failUnless(found_hash[0] == true_hash, 
-                    "%s hashes don't match: %s != %s" % (path, found_hash[0], true_hash))
+        self.failUnless(found_hash.hexexpected() == true_hash, 
+                    "%s hashes don't match: %s != %s" % (path, found_hash.hexexpected(), true_hash))
 
     def test_findIndexHash(self):
         lastDefer = defer.Deferred()
