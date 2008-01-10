@@ -41,6 +41,7 @@ class HashObject:
         self.fileHex = None
         self.fileNormHash = None
         self.done = True
+        self.result = None
         if sys.version_info < (2, 5):
             # sha256 is not available in python before 2.5, remove it
             for hashType in self.ORDER:
@@ -80,25 +81,31 @@ class HashObject:
         return self.expNormHash
 
     #### Methods for hashing data
-    def new(self):
-        """Generate a new hashing object suitable for hashing a file."""
-        self.size = 0
-        self.done = False
-        if sys.version_info < (2, 5):
-            mod = __import__(self.ORDER[self.hashTypeNum]['old_module'], globals(), locals(), [])
-            self.fileHasher = mod.new()
-        else:
-            import hashlib
-            func = getattr(hashlib, self.ORDER[self.hashTypeNum]['hashlib_func'])
-            self.fileHasher = func()
-        return self.fileHasher
+    def new(self, force = False):
+        """Generate a new hashing object suitable for hashing a file.
+        
+        @param force: set to True to force creating a new hasher even if
+            the hash has been verified already
+        """
+        if self.result is None or force == True:
+            self.result = None
+            self.size = 0
+            self.done = False
+            if sys.version_info < (2, 5):
+                mod = __import__(self.ORDER[self.hashTypeNum]['old_module'], globals(), locals(), [])
+                self.fileHasher = mod.new()
+            else:
+                import hashlib
+                func = getattr(hashlib, self.ORDER[self.hashTypeNum]['hashlib_func'])
+                self.fileHasher = func()
 
     def update(self, data):
         """Add more data to the file hasher."""
-        assert self.done == False, "Already done, you can't add more data after calling digest() or verify()"
-        assert self.fileHasher is not None, "file hasher not initialized"
-        self.fileHasher.update(data)
-        self.size += len(data)
+        if self.result is None:
+            assert self.done == False, "Already done, you can't add more data after calling digest() or verify()"
+            assert self.fileHasher is not None, "file hasher not initialized"
+            self.fileHasher.update(data)
+            self.size += len(data)
         
     def digest(self):
         """Get the hash of the added file data."""
@@ -125,9 +132,9 @@ class HashObject:
 
     def verify(self):
         """Verify that the added file data hash matches the expected hash."""
-        if self.fileHash == None:
-            return None
-        return (self.fileHash == self.expHash and self.size == self.expSize)
+        if self.result is None and self.fileHash is not None and self.expHash is not None:
+            self.result = (self.fileHash == self.expHash and self.size == self.expSize)
+        return self.result
     
     #### Methods for setting the expected hash
     def set(self, hashType, hashHex, size):
@@ -257,4 +264,4 @@ class TestHashObject(unittest.TestCase):
         self.failUnless(h.verify() == True)
 
     if sys.version_info < (2, 5):
-        test_sha256.skip = "SHA256 hashes are not supported on python until version 2.5"
+        test_sha256.skip = "SHA256 hashes are not supported by Python until version 2.5"
