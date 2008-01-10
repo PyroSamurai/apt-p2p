@@ -34,7 +34,7 @@ class KhashmirBase(protocol.Factory):
         self.node = self._loadSelfNode('', self.port)
         self.table = KTable(self.node, config)
         #self.app = service.Application("krpc")
-        self.udp = krpc.hostbroker(self)
+        self.udp = krpc.hostbroker(self, config)
         self.udp.protocol = krpc.KRPC
         self.listenport = reactor.listenUDP(self.port, self.udp)
         self._loadRoutingTable()
@@ -286,7 +286,7 @@ class SimpleTests(unittest.TestCase):
                     'STORE_REDUNDANCY': 3, 'MAX_FAILURES': 3,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
                     'KEINITIAL_DELAY': 15, 'KE_DELAY': 1200,
-                    'KE_AGE': 3600, }
+                    'KE_AGE': 3600, 'SPEW': False, }
 
     def setUp(self):
         krpc.KRPC.noisy = 0
@@ -304,11 +304,11 @@ class SimpleTests(unittest.TestCase):
         os.unlink(self.b.store.db)
 
     def testAddContact(self):
-        self.assertEqual(len(self.a.table.buckets), 1)
-        self.assertEqual(len(self.a.table.buckets[0].l), 0)
+        self.failUnlessEqual(len(self.a.table.buckets), 1)
+        self.failUnlessEqual(len(self.a.table.buckets[0].l), 0)
 
-        self.assertEqual(len(self.b.table.buckets), 1)
-        self.assertEqual(len(self.b.table.buckets[0].l), 0)
+        self.failUnlessEqual(len(self.b.table.buckets), 1)
+        self.failUnlessEqual(len(self.b.table.buckets[0].l), 0)
 
         self.a.addContact('127.0.0.1', 4045)
         reactor.iterate()
@@ -316,10 +316,10 @@ class SimpleTests(unittest.TestCase):
         reactor.iterate()
         reactor.iterate()
 
-        self.assertEqual(len(self.a.table.buckets), 1)
-        self.assertEqual(len(self.a.table.buckets[0].l), 1)
-        self.assertEqual(len(self.b.table.buckets), 1)
-        self.assertEqual(len(self.b.table.buckets[0].l), 1)
+        self.failUnlessEqual(len(self.a.table.buckets), 1)
+        self.failUnlessEqual(len(self.a.table.buckets[0].l), 1)
+        self.failUnlessEqual(len(self.b.table.buckets), 1)
+        self.failUnlessEqual(len(self.b.table.buckets[0].l), 1)
 
     def testStoreRetrieve(self):
         self.a.addContact('127.0.0.1', 4045)
@@ -346,7 +346,7 @@ class SimpleTests(unittest.TestCase):
 
     def _cb(self, key, val):
         if not val:
-            self.assertEqual(self.got, 1)
+            self.failUnlessEqual(self.got, 1)
         elif 'foobar' in val:
             self.got = 1
 
@@ -360,7 +360,7 @@ class MultiTest(unittest.TestCase):
                     'STORE_REDUNDANCY': 3, 'MAX_FAILURES': 3,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
                     'KEINITIAL_DELAY': 15, 'KE_DELAY': 1200,
-                    'KE_AGE': 3600, }
+                    'KE_AGE': 3600, 'SPEW': False, }
 
     def _done(self, val):
         self.done = 1
@@ -418,7 +418,7 @@ class MultiTest(unittest.TestCase):
                 def _rcb(key, val):
                     if not val:
                         self.done = 1
-                        self.assertEqual(self.got, 1)
+                        self.failUnlessEqual(self.got, 1)
                     elif V in val:
                         self.got = 1
                 for x in range(3):

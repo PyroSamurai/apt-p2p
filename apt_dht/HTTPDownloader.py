@@ -36,7 +36,7 @@ class HTTPClientManager(ClientFactory):
         self.connector = None
         
     def connect(self):
-        assert(self.closed and not self.connecting)
+        assert self.closed and not self.connecting
         self.connecting = True
         d = protocol.ClientCreator(reactor, HTTPClientProtocol, self).connectTCP(self.host, self.port)
         d.addCallback(self.connected)
@@ -176,15 +176,15 @@ class TestClientManager(unittest.TestCase):
                 d.addBoth(lastDefer.callback)
                 
         newRequest("/", 1, 3433)
-        newRequest("/blog/", 2, 37121)
+        newRequest("/blog/", 2, 39152)
         newRequest("/camrdale.html", 3, 2234)
         self.pending_calls.append(reactor.callLater(1, newRequest, '/robots.txt', 4, 309))
         self.pending_calls.append(reactor.callLater(10, newRequest, '/wikilink.html', 5, 3084))
-        self.pending_calls.append(reactor.callLater(30, newRequest, '/sitemap.html', 6, 4750))
+        self.pending_calls.append(reactor.callLater(30, newRequest, '/sitemap.html', 6, 4756))
         self.pending_calls.append(reactor.callLater(31, newRequest, '/PlanetLab.html', 7, 2783))
         self.pending_calls.append(reactor.callLater(32, newRequest, '/openid.html', 8, 2525))
         self.pending_calls.append(reactor.callLater(32, newRequest, '/subpage.html', 9, 2381))
-        self.pending_calls.append(reactor.callLater(62, newRequest, '/sitemap2.rss', 0, 302362, True))
+        self.pending_calls.append(reactor.callLater(62, newRequest, '/sitemap2.rss', 0, 313470, True))
         return lastDefer
         
     def test_multiple_quick_downloads(self):
@@ -200,15 +200,15 @@ class TestClientManager(unittest.TestCase):
                 d.addBoth(lastDefer.callback)
                 
         newRequest("/", 1, 3433)
-        newRequest("/blog/", 2, 37121)
+        newRequest("/blog/", 2, 39152)
         newRequest("/camrdale.html", 3, 2234)
         self.pending_calls.append(reactor.callLater(0, newRequest, '/robots.txt', 4, 309))
         self.pending_calls.append(reactor.callLater(0, newRequest, '/wikilink.html', 5, 3084))
-        self.pending_calls.append(reactor.callLater(0, newRequest, '/sitemap.html', 6, 4750))
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/sitemap.html', 6, 4756))
         self.pending_calls.append(reactor.callLater(0, newRequest, '/PlanetLab.html', 7, 2783))
         self.pending_calls.append(reactor.callLater(0, newRequest, '/openid.html', 8, 2525))
         self.pending_calls.append(reactor.callLater(0, newRequest, '/subpage.html', 9, 2381))
-        self.pending_calls.append(reactor.callLater(0, newRequest, '/sitemap2.rss', 0, 302362, True))
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/sitemap2.rss', 0, 313470, True))
         return lastDefer
         
     def test_range(self):

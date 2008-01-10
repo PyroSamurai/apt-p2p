@@ -216,20 +216,20 @@ class TestKTable(unittest.TestCase):
     def testAddNode(self):
         self.b = Node(khash.newID(), 'localhost', 2003)
         self.t.insertNode(self.b)
-        self.assertEqual(len(self.t.buckets[0].l), 1)
-        self.assertEqual(self.t.buckets[0].l[0], self.b)
+        self.failUnlessEqual(len(self.t.buckets[0].l), 1)
+        self.failUnlessEqual(self.t.buckets[0].l[0], self.b)
 
     def testRemove(self):
         self.testAddNode()
         self.t.invalidateNode(self.b)
-        self.assertEqual(len(self.t.buckets[0].l), 0)
+        self.failUnlessEqual(len(self.t.buckets[0].l), 0)
 
     def testFail(self):
         self.testAddNode()
         for i in range(self.t.config['MAX_FAILURES'] - 1):
             self.t.nodeFailed(self.b)
-            self.assertEqual(len(self.t.buckets[0].l), 1)
-            self.assertEqual(self.t.buckets[0].l[0], self.b)
+            self.failUnlessEqual(len(self.t.buckets[0].l), 1)
+            self.failUnlessEqual(self.t.buckets[0].l[0], self.b)
             
         self.t.nodeFailed(self.b)
-        self.assertEqual(len(self.t.buckets[0].l), 0)
+        self.failUnlessEqual(len(self.t.buckets[0].l), 0)

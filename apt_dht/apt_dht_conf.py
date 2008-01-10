@@ -80,6 +80,9 @@ DHT_DEFAULTS = {
     
     # expire entries older than this
     'KE_AGE': '1h', # 60 minutes
+    
+    # whether to spew info about the requests/responses in the protocol
+    'SPEW': 'yes',
 }
 
 class AptDHTConfigParser(SafeConfigParser):

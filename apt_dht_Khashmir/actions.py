@@ -75,7 +75,7 @@ class FindNode(ActionBase):
                 self.queried[node.id] = 1
             if self.outstanding >= self.config['CONCURRENT_REQS']:
                 break
-        assert(self.outstanding) >=0
+        assert self.outstanding >=0
         if self.outstanding == 0:
             ## all done!!
             self.finished=1
@@ -162,7 +162,7 @@ class GetValue(FindNode):
                     self.queried[node.id] = 1
             if self.outstanding >= self.config['CONCURRENT_REQS']:
                 break
-        assert(self.outstanding) >=0
+        assert self.outstanding >=0
         if self.outstanding == 0:
             ## all done, didn't find it!!
             self.finished=1

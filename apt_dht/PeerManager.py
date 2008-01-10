@@ -23,7 +23,7 @@ class PeerManager:
         url = choice(locations)
         log.msg('Downloading %s' % url)
         parsed = urlparse(url)
-        assert(parsed[0] == "http", "Only HTTP is supported, not '%s'" % parsed[0])
+        assert parsed[0] == "http", "Only HTTP is supported, not '%s'" % parsed[0]
         host, port = splitHostPort(parsed[0], parsed[1])
         path = urlunparse(('', '') + parsed[2:])
 
@@ -88,11 +88,11 @@ class TestPeerManager(unittest.TestCase):
                 d.addBoth(lastDefer.callback)
                 
         newRequest('www.camrdale.org', "/", 1, 3433)
-        newRequest('www.camrdale.org', "/blog/", 2, 37121)
+        newRequest('www.camrdale.org', "/blog/", 2, 39152)
         newRequest('www.google.ca', "/", 3, None)
         self.pending_calls.append(reactor.callLater(1, newRequest, 'www.sfu.ca', '/', 4, None))
         self.pending_calls.append(reactor.callLater(10, newRequest, 'www.camrdale.org', '/wikilink.html', 5, 3084))
-        self.pending_calls.append(reactor.callLater(30, newRequest, 'www.camrdale.org', '/sitemap.html', 6, 4750))
+        self.pending_calls.append(reactor.callLater(30, newRequest, 'www.camrdale.org', '/sitemap.html', 6, 4756))
         self.pending_calls.append(reactor.callLater(31, newRequest, 'www.sfu.ca', '/studentcentral/index.html', 7, None))
         self.pending_calls.append(reactor.callLater(32, newRequest, 'www.camrdale.org', '/openid.html', 8, 2525))
         self.pending_calls.append(reactor.callLater(32, newRequest, 'www.camrdale.org', '/subpage.html', 9, 2381))

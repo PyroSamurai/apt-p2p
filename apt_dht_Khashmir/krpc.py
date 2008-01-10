@@ -29,8 +29,9 @@ class ProtocolError(Exception):
     pass
 
 class hostbroker(protocol.DatagramProtocol):       
-    def __init__(self, server):
+    def __init__(self, server, config):
         self.server = server
+        self.config = config
         # this should be changed to storage that drops old entries
         self.connections = {}
         
@@ -46,7 +47,7 @@ class hostbroker(protocol.DatagramProtocol):
         if addr == self.addr:
             raise Exception
         if not self.connections.has_key(addr):
-            conn = self.protocol(addr, self.server, self.transport)
+            conn = self.protocol(addr, self.server, self.transport, self.config['SPEW'])
             self.connections[addr] = conn
         else:
             conn = self.connections[addr]
@@ -64,11 +65,11 @@ class hostbroker(protocol.DatagramProtocol):
 
 ## connection
 class KRPC:
-    noisy = 0
-    def __init__(self, addr, server, transport):
+    def __init__(self, addr, server, transport, spew = False):
         self.transport = transport
         self.factory = server
         self.addr = addr
+        self.noisy = spew
         self.tids = {}
         self.mtid = 0
         self.stopped = False
@@ -95,35 +96,16 @@ class KRPC:
                 msg[ARG]['_krpc_sender'] =  self.addr
                 if f and callable(f):
                     try:
-                        ret = apply(f, (), msg[ARG])
+                        ret = f(*(), **msg[ARG])
                     except Exception, e:
-                        ## send error
-                        out = bencode({TID:msg[TID], TYP:ERR, ERR :`format_exception(type(e), e, sys.exc_info()[2])`})
-                        olen = len(out)
-                        if self.noisy:
-                            print self.factory.port, "responding to", addr, self.addr, ":", out
-                        self.transport.write(out, addr)
+                        olen = self._sendResponse(addr, msg[TID], ERR, `format_exception(type(e), e, sys.exc_info()[2])`)
                     else:
-                        if ret:
-                            #	make response
-                            out = bencode({TID : msg[TID], TYP : RSP, RSP : ret})
-                        else:
-                            out = bencode({TID : msg[TID], TYP : RSP, RSP : {}})
-                        #	send response
-                        olen = len(out)
-                        if self.noisy:
-                            print self.factory.port, "responding to", addr, self.addr, ":", out
-                        self.transport.write(out, addr)
-
+                        olen = self._sendResponse(addr, msg[TID], RSP, ret)
                 else:
                     if self.noisy:
                         print "don't know about method %s" % msg[REQ]
                     # unknown method
-                    out = bencode({TID:msg[TID], TYP:ERR, ERR : KRPC_ERROR_METHOD_UNKNOWN})
-                    olen = len(out)
-                    if self.noisy:
-                        print self.factory.port, "responding to", addr, self.addr, ":", out
-                    self.transport.write(out, addr)
+                    olen = self._sendResponse(addr, msg[TID], ERR, KRPC_ERROR_METHOD_UNKNOWN)
                 if self.noisy:
                     print "%s %s >>> %s - %s %s %s" % (asctime(), addr, self.factory.node.port, 
                                                     ilen, msg[REQ], olen)
@@ -157,6 +139,19 @@ class KRPC:
                 df.errback(KRPC_ERROR_RECEIVED_UNKNOWN)
                 del(self.tids[msg[TID]])
                 
+    def _sendResponse(self, addr, tid, msgType, response):
+        if not response:
+            response = {}
+            
+        msg = {TID : tid, TYP : msgType, msgType : response}
+
+        if self.noisy:
+            print self.factory.port, "responding to", addr, ":", msg
+
+        out = bencode(msg)
+        self.transport.write(out, addr)
+        return len(out)
+    
     def sendRequest(self, method, args):
         if self.stopped:
             raise ProtocolError, "connection has been stopped"
@@ -205,14 +200,13 @@ class Receiver(protocol.Factory):
 
 def make(port):
     af = Receiver()
-    a = hostbroker(af)
+    a = hostbroker(af, {'SPEW': False})
     a.protocol = KRPC
     p = reactor.listenUDP(port, a)
     return af, a, p
     
 class KRPCTests(unittest.TestCase):
     def setUp(self):
-        KRPC.noisy = 0
         self.af, self.a, self.ap = make(1180)
         self.bf, self.b, self.bp = make(1181)
 
@@ -221,7 +215,7 @@ class KRPCTests(unittest.TestCase):
         self.bp.stopListening()
 
     def bufEquals(self, result, value):
-        self.assertEqual(self.bf.buf, value)
+        self.failUnlessEqual(self.bf.buf, value)
 
     def testSimpleMessage(self):
         d = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('store', {'msg' : "This is a test."})
@@ -242,7 +236,7 @@ class KRPCTests(unittest.TestCase):
     def gotMsg(self, dict, should_be):
         _krpc_sender = dict['_krpc_sender']
         msg = dict['rsp']
-        self.assertEqual(msg, should_be)
+        self.failUnlessEqual(msg, should_be)
 
     def testManyEcho(self):
         for i in xrange(100):
@@ -283,4 +277,4 @@ class KRPCTests(unittest.TestCase):
         return df
 
     def gotErr(self, err, should_be):
-        self.assertEqual(err.value, should_be)
+        self.failUnlessEqual(err.value, should_be)

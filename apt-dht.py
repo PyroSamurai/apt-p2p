@@ -57,7 +57,7 @@ application = service.Application("apt-dht", uid, gid)
 
 log.msg('Starting DHT')
 DHT = __import__(config.get('DEFAULT', 'DHT')+'.DHT', globals(), locals(), ['DHT'])
-assert(IDHT.implementedBy(DHT.DHT), "You must provide a DHT implementation that implements the IDHT interface.")
+assert IDHT.implementedBy(DHT.DHT), "You must provide a DHT implementation that implements the IDHT interface."
 myDHT = DHT.DHT()
 myDHT.loadConfig(config, config.get('DEFAULT', 'DHT'))
 myDHT.join()

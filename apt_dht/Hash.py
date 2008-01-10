@@ -53,7 +53,7 @@ class HashObject:
         if bits is not None:
             bytes = (bits - 1) // 8 + 1
         else:
-            assert(bytes is not None)
+            assert bytes is not None, "you must specify one of bits or bytes"
         if len(hashString) < bytes:
             hashString = hashString + '\000'*(bytes - len(hashString))
         elif len(hashString) > bytes:

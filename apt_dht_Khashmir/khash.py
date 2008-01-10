@@ -43,7 +43,7 @@ def newTID():
 
 class TestNewID(unittest.TestCase):
     def testLength(self):
-        self.assertEqual(len(newID()), 20)
+        self.failUnlessEqual(len(newID()), 20)
     def testHundreds(self):
         for x in xrange(100):
             self.testLength
@@ -54,13 +54,13 @@ class TestIntify(unittest.TestCase):
             ]
     def testKnown(self):
         for str, value in self.known: 
-            self.assertEqual(intify(str),  value)
+            self.failUnlessEqual(intify(str),  value)
     def testEndianessOnce(self):
         h = newID()
         while h[-1] == '\xff':
             h = newID()
         k = h[:-1] + chr(ord(h[-1]) + 1)
-        self.assertEqual(intify(k) - intify(h), 1)
+        self.failUnlessEqual(intify(k) - intify(h), 1)
     def testEndianessLots(self):
         for x in xrange(100):
             self.testEndianessOnce()
@@ -73,11 +73,11 @@ class TestDisantance(unittest.TestCase):
             ]
     def testKnown(self):
         for pair, dist in self.known:
-            self.assertEqual(distance(pair[0], pair[1]), dist)
+            self.failUnlessEqual(distance(pair[0], pair[1]), dist)
     def testCommutitive(self):
         for i in xrange(100):
             x, y, z = newID(), newID(), newID()
-            self.assertEqual(distance(x,y) ^ distance(y, z), distance(x, z))
+            self.failUnlessEqual(distance(x,y) ^ distance(y, z), distance(x, z))
         
 class TestRandRange(unittest.TestCase):
     def testOnce(self):
@@ -85,10 +85,10 @@ class TestRandRange(unittest.TestCase):
         b = intify(newID())
         if a < b:
             c = randRange(a, b)
-            self.assertEqual(a <= c < b, 1, "output out of range %d  %d  %d" % (b, c, a))
+            self.failUnlessEqual(a <= c < b, True, "output out of range %d  %d  %d" % (b, c, a))
         else:
             c = randRange(b, a)
-            assert b <= c < a, "output out of range %d  %d  %d" % (b, c, a)
+            self.failUnlessEqual(b <= c < a, True, "output out of range %d  %d  %d" % (b, c, a))
 
     def testOneHundredTimes(self):
         for i in xrange(100):

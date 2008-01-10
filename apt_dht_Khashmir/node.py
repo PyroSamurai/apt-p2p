@@ -23,8 +23,8 @@ class Node:
             port = id['port']
             id = id['id']
 
-        assert(isinstance(id, str))
-        assert(isinstance(host, str))
+        assert isinstance(id, str)
+        assert isinstance(host, str)
         self.id = id
         self.num = khash.intify(id)
         self.host = host
@@ -78,5 +78,5 @@ class TestNode(unittest.TestCase):
     def testUpdateLastSeen(self):
         t = self.node.lastSeen
         self.node.updateLastSeen()
-        assert t < self.node.lastSeen
+        self.failUnless(t < self.node.lastSeen)
     
