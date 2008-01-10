@@ -15,6 +15,8 @@ from twisted.trial import unittest
 import apt_pkg, apt_inst
 from apt import OpProgress
 
+from Hash import HashObject
+
 apt_pkg.init()
 
 TRACKED_FILES = ['release', 'sources', 'packages']
@@ -290,7 +292,7 @@ class AptPackages:
         """An error occurred while trying to find a hash."""
         log.msg('An error occurred while looking up a hash for: %s' % path)
         log.err(failure)
-        d.callback((None, None))
+        d.callback(HashObject())
 
     def _findHash(self, loadResult, path, d):
         """Really find the hash for a path.
@@ -299,7 +301,7 @@ class AptPackages:
         function are pending.
         """
         if not loadResult:
-            d.callback((None, None))
+            d.callback(HashObject())
             return loadResult
         
         # First look for the path in the cache of index files
@@ -307,7 +309,9 @@ class AptPackages:
             if path.startswith(release[:-7]):
                 for indexFile in self.indexrecords[release]:
                     if release[:-7] + indexFile == path:
-                        d.callback(self.indexrecords[release][indexFile]['SHA1'])
+                        h = HashObject()
+                        h.setFromIndexRecord(self.indexrecords[release][indexFile])
+                        d.callback(h)
                         return loadResult
         
         package = path.split('/')[-1].split('_')[0]
@@ -319,7 +323,9 @@ class AptPackages:
                 for verFile in version.FileList:
                     if self.records.Lookup(verFile):
                         if '/' + self.records.FileName == path:
-                            d.callback((self.records.SHA1Hash, size))
+                            h = HashObject()
+                            h.setFromPkgRecord(self.records, size)
+                            d.callback(h)
                             return loadResult
         except KeyError:
             pass
@@ -330,10 +336,12 @@ class AptPackages:
             if self.srcrecords.Lookup(package):
                 for f in self.srcrecords.Files:
                     if path == '/' + f[2]:
-                        d.callback((f[0], f[1]))
+                        h = HashObject()
+                        h.setFromSrcRecord(f)
+                        d.callback(h)
                         return loadResult
         
-        d.callback((None, None))
+        d.callback(HashObject())
         return loadResult
 
 class TestAptPackages(unittest.TestCase):

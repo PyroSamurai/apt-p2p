@@ -50,27 +50,28 @@ class AptDHT:
         log.err(failure)
         self.findHash_done((None, None), path, d)
         
-    def findHash_done(self, (hash, size), path, d):
-        if hash is None:
+    def findHash_done(self, hash, path, d):
+        if hash.expected() is None:
             log.msg('Hash for %s was not found' % path)
-            self.download_file([path], hash, size, path, d)
+            self.download_file([path], hash, path, d)
         else:
-            log.msg('Found hash %s for %s' % (b2a_hex(hash), path))
+            log.msg('Found hash %s for %s' % (hash.hexexpected(), path))
             # Lookup hash from DHT
-            lookupDefer = self.dht.getValue(hash)
-            lookupDefer.addCallback(self.lookupHash_done, hash, size, path, d)
+            key = hash.normexpected(bits = config.getint(config.get('DEFAULT', 'DHT'), 'HASH_LENGTH'))
+            lookupDefer = self.dht.getValue(key)
+            lookupDefer.addCallback(self.lookupHash_done, hash, path, d)
             
-    def lookupHash_done(self, locations, hash, size, path, d):
+    def lookupHash_done(self, locations, hash, path, d):
         if not locations:
             log.msg('Peers for %s were not found' % path)
-            self.download_file([path], hash, size, path, d)
+            self.download_file([path], hash, path, d)
         else:
             log.msg('Found peers for %s: %r' % (path, locations))
             # Download from the found peers
-            self.download_file(locations, hash, size, path, d)
+            self.download_file(locations, hash, path, d)
             
-    def download_file(self, locations, hash, size, path, d):
+    def download_file(self, locations, hash, path, d):
         getDefer = self.peers.get(locations)
-        getDefer.addCallback(self.mirrors.save_file, hash, size, path)
+        getDefer.addCallback(self.mirrors.save_file, hash, path)
         getDefer.addErrback(self.mirrors.save_error, path)
         getDefer.addCallbacks(d.callback, d.errback)

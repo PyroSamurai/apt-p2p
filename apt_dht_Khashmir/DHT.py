@@ -98,15 +98,6 @@ class DHT:
             self.joined = False
             self.khashmir.shutdown()
         
-    def normalizeKey(self, key):
-        """Normalize a key's length suitable for insertion in the DHT."""
-        key_bytes = (self.config['HASH_LENGTH'] - 1) // 8 + 1
-        if len(key) < key_bytes:
-            key = key + '\000'*(key_bytes - len(key))
-        elif len(key) > key_bytes:
-            key = key[:key_bytes]
-        return key
-    
     def getValue(self, key):
         """See L{apt_dht.interfaces.IDHT}."""
         if self.config is None:
@@ -115,7 +106,6 @@ class DHT:
             raise DHTError, "have not joined a network yet"
 
         d = defer.Deferred()
-        key = self.normalizeKey(key)
         if key not in self.retrieving:
             self.khashmir.valueForKey(key, self._getValue)
         self.retrieving.setdefault(key, []).append(d)
@@ -141,7 +131,6 @@ class DHT:
         if not self.joined:
             raise DHTError, "have not joined a network yet"
 
-        key = self.normalizeKey(key)
         if key in self.storing and value in self.storing[key]:
             raise DHTError, "already storing that key with the same value"
 
@@ -184,13 +173,6 @@ class TestSimpleDHT(unittest.TestCase):
         self.b.bootstrap = ["127.0.0.1:4044"]
         self.b.cache_dir = '/tmp'
         
-    def test_normalizeKey(self):
-        self.failUnless(self.a.normalizeKey('12345678901234567890') == '12345678901234567890')
-        self.failUnless(self.a.normalizeKey('12345678901234567') == '12345678901234567\000\000\000')
-        self.failUnless(self.a.normalizeKey('1234567890123456789012345') == '12345678901234567890')
-        self.failUnless(self.a.normalizeKey('1234567890123456789') == '1234567890123456789\000')
-        self.failUnless(self.a.normalizeKey('123456789012345678901') == '12345678901234567890')
-    
     def test_bootstrap_join(self):
         d = self.a.join()
         return d

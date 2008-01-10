@@ -25,16 +25,15 @@ class MirrorError(Exception):
 class ProxyFileStream(stream.SimpleStream):
     """Saves a stream to a file while providing a new stream."""
     
-    def __init__(self, stream, outFile, hashType = "sha1", decompress = None, decFile = None):
+    def __init__(self, stream, outFile, hash, decompress = None, decFile = None):
         """Initializes the proxy.
         
         @type stream: C{twisted.web2.stream.IByteStream}
         @param stream: the input stream to read from
         @type outFile: C{twisted.python.filepath.FilePath}
         @param outFile: the file to write to
-        @type hashType: C{string}
-        @param hashType: also hash the file using this hashing function
-            (currently only 'sha1' and 'md5' are supported)
+        @type hash: L{Hash.HashObject}
+        @param hash: the hash object to use for the file
         @type decompress: C{string}
         @param decompress: also decompress the file as this type
             (currently only '.gz' and '.bz2' are supported)
@@ -43,11 +42,8 @@ class ProxyFileStream(stream.SimpleStream):
         """
         self.stream = stream
         self.outFile = outFile.open('w')
-        self.hasher = None
-        if hashType == "sha1":
-            self.hasher = sha.new()
-        elif hashType == "md5":
-            self.hasher = md5.new()
+        self.hash = hash
+        self.hash.new()
         self.gzfile = None
         self.bz2file = None
         if decompress == ".gz":
@@ -65,9 +61,7 @@ class ProxyFileStream(stream.SimpleStream):
         """Close the output file."""
         if not self.outFile.closed:
             self.outFile.close()
-            fileHash = None
-            if self.hasher:
-                fileHash = self.hasher.digest()
+            self.hash.digest()
             if self.gzfile:
                 data_dec = self.gzdec.flush()
                 self.gzfile.write(data_dec)
@@ -77,7 +71,7 @@ class ProxyFileStream(stream.SimpleStream):
                 self.bz2file.close()
                 self.bz2file = None
                 
-            self.doneDefer.callback(fileHash)
+            self.doneDefer.callback(self.hash)
     
     def read(self):
         """Read some data from the stream."""
@@ -99,8 +93,7 @@ class ProxyFileStream(stream.SimpleStream):
             return data
         
         self.outFile.write(data)
-        if self.hasher:
-            self.hasher.update(data)
+        self.hash.update(data)
         if self.gzfile:
             if self.gzheader:
                 self.gzheader = False
@@ -208,20 +201,12 @@ class MirrorManager:
     def findHash(self, url):
         site, baseDir, path = self.extractPath(url)
         if site in self.apt_caches and baseDir in self.apt_caches[site]:
-            d = self.apt_caches[site][baseDir].findHash(path)
-            d.addCallback(self.translateHash)
-            return d
+            return self.apt_caches[site][baseDir].findHash(path)
         d = defer.Deferred()
         d.errback(MirrorError("Site Not Found"))
         return d
     
-    def translateHash(self, (hash, size)):
-        """Translate a hash from apt's hex encoding to a string."""
-        if hash:
-            hash = a2b_hex(hash)
-        return (hash, size)
-
-    def save_file(self, response, hash, size, url):
+    def save_file(self, response, hash, url):
         """Save a downloaded file to the cache and stream it."""
         log.msg('Returning file: %s' % url)
         
@@ -247,28 +232,24 @@ class MirrorManager:
             ext = None
             decFile = None
             
-        if hash and len(hash) == 16:
-            hashType = "md5"
-        else:
-            hashType = "sha1"
-        
         orig_stream = response.stream
-        response.stream = ProxyFileStream(orig_stream, destFile, hashType, ext, decFile)
-        response.stream.doneDefer.addCallback(self.save_complete, hash, size, url, destFile,
+        response.stream = ProxyFileStream(orig_stream, destFile, hash, ext, decFile)
+        response.stream.doneDefer.addCallback(self.save_complete, url, destFile,
                                               response.headers.getHeader('Last-Modified'),
                                               ext, decFile)
         response.stream.doneDefer.addErrback(self.save_error, url)
         return response
 
-    def save_complete(self, result, hash, size, url, destFile, modtime = None, ext = None, decFile = None):
+    def save_complete(self, hash, url, destFile, modtime = None, ext = None, decFile = None):
         """Update the modification time and AptPackages."""
         if modtime:
             os.utime(destFile.path, (modtime, modtime))
             if ext:
                 os.utime(decFile.path, (modtime, modtime))
         
-        if not hash or result == hash:
-            if hash:
+        result = hash.verify()
+        if result or result is None:
+            if result:
                 log.msg('Hashes match: %s' % url)
             else:
                 log.msg('Hashed file to %s: %s' % (b2a_hex(result), url))
@@ -277,7 +258,7 @@ class MirrorManager:
             if ext:
                 self.updatedFile(url[:-len(ext)], decFile.path)
         else:
-            log.msg("Hashes don't match %s != %s: %s" % (b2a_hex(hash), b2a_hex(result), url))
+            log.msg("Hashes don't match %s != %s: %s" % (hash.hexexpected(), hash.hexdigest(), url))
 
     def save_error(self, failure, url):
         """An error has occurred in downloadign or saving the file."""
@@ -312,7 +293,7 @@ class TestMirrorManager(unittest.TestCase):
         self.failUnless(path == "/dists/unstable/Release", "no match: %s" % path)
 
     def verifyHash(self, found_hash, path, true_hash):
-        self.failUnless(found_hash[0] == true_hash, 
+        self.failUnless(found_hash.hexexpected() == true_hash, 
                     "%s hashes don't match: %s != %s" % (path, found_hash[0], true_hash))
 
     def test_findHash(self):
