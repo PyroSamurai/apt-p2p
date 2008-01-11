@@ -1,5 +1,6 @@
 
 from binascii import b2a_hex
+import os.path
 
 from twisted.internet import defer
 from twisted.web2 import server, http, http_headers
@@ -18,7 +19,7 @@ class AptDHT:
         self.http_server = TopLevel(config.get('DEFAULT', 'cache_dir'), self)
         self.http_site = server.Site(self.http_server)
         self.peers = PeerManager()
-        self.mirrors = MirrorManager(config.get('DEFAULT', 'cache_dir'))
+        self.mirrors = MirrorManager(self, config.get('DEFAULT', 'cache_dir'))
     
     def getSite(self):
         return self.http_site
@@ -77,3 +78,16 @@ class AptDHT:
         getDefer.addCallback(self.mirrors.save_file, hash, path)
         getDefer.addErrback(self.mirrors.save_error, path)
         getDefer.addCallbacks(d.callback, d.errback)
+        
+    def download_complete(self, hash, url, file_path):
+        assert file_path.startswith(config.get('DEFAULT', 'cache_dir'))
+        directory = file_path[:len(config.get('DEFAULT', 'cache_dir'))]
+        url_path = file_path[len(config.get('DEFAULT', 'cache_dir')):]
+        if url_path[0] == '/':
+            url_path = url_path[1:]
+        top_directory = url_path.split('/',1)[0]
+        url_path = url_path[len(top_directory):]
+        http_dir = os.path.join(directory, top_directory)
+        new_top = self.http_server.addDirectory(http_dir)
+        url_path = '/' + new_top + url_path
+        log.msg('now avaliable at %s: %s' % (url_path, url))

@@ -47,8 +47,13 @@ class TopLevel(resource.Resource):
         self.subdirs = []
 
     def addDirectory(self, directory):
-        path = "~" + str(len(self.subdirs))
-        self.subdirs.append(directory)
+        assert directory
+        try:
+            idx = self.subdirs.index(directory)
+        except ValueError:
+            idx = len(self.subdirs)
+            self.subdirs.append(directory)
+        path = "~" + str(idx)
         return path
     
     def removeDirectory(self, directory):
