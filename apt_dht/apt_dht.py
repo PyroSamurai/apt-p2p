@@ -157,7 +157,7 @@ class AptDHT:
     def findHash_done(self, hash, path, d):
         if hash.expected() is None:
             log.msg('Hash for %s was not found' % path)
-            self.download_file([path], hash, path, d)
+            self.lookupHash_done([], hash, path, d)
         else:
             log.msg('Found hash %s for %s' % (hash.hexexpected(), path))
             # Lookup hash from DHT
@@ -168,17 +168,25 @@ class AptDHT:
     def lookupHash_done(self, locations, hash, path, d):
         if not locations:
             log.msg('Peers for %s were not found' % path)
-            self.download_file([path], hash, path, d)
+            getDefer = self.peers.get([path])
+            getDefer.addCallback(self.mirrors.save_file, hash, path)
+            getDefer.addErrback(self.mirrors.save_error, path)
+            getDefer.addCallbacks(d.callback, d.errback)
         else:
             log.msg('Found peers for %s: %r' % (path, locations))
             # Download from the found peers
-            self.download_file(locations, hash, path, d)
+            getDefer = self.peers.get(locations)
+            getDefer.addCallback(self.check_response, hash, path)
+            getDefer.addCallback(self.mirrors.save_file, hash, path)
+            getDefer.addErrback(self.mirrors.save_error, path)
+            getDefer.addCallbacks(d.callback, d.errback)
             
-    def download_file(self, locations, hash, path, d):
-        getDefer = self.peers.get(locations)
-        getDefer.addCallback(self.mirrors.save_file, hash, path)
-        getDefer.addErrback(self.mirrors.save_error, path)
-        getDefer.addCallbacks(d.callback, d.errback)
+    def check_response(self, response, hash, path):
+        if response.code < 200 or response.code >= 300:
+            log.msg('Download from peers failed, going to direct download: %s' % path)
+            getDefer = self.peers.get([path])
+            return getDefer
+        return response
         
     def download_complete(self, hash, url, file_path):
         assert file_path.startswith(config.get('DEFAULT', 'cache_dir'))

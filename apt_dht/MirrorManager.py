@@ -208,6 +208,10 @@ class MirrorManager:
     
     def save_file(self, response, hash, url):
         """Save a downloaded file to the cache and stream it."""
+        if response.code != 200:
+            log.msg('File was not found (%r): %s' % (response, url))
+            return response
+        
         log.msg('Returning file: %s' % url)
         
         parsed = urlparse(url)
