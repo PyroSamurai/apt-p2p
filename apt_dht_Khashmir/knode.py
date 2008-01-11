@@ -26,6 +26,13 @@ class KNodeBase(Node):
         df.addErrback(self.errBack)
         df.addCallback(self.checkSender)
         return df
+    
+    def join(self, id):
+        df = self.conn.sendRequest('join', {"id":id})
+        df.addErrback(self.errBack)
+        df.addCallback(self.checkSender)
+        return df
+    
     def findNode(self, target, id):
         df = self.conn.sendRequest('find_node', {"target" : target, "id": id})
         df.addErrback(self.errBack)

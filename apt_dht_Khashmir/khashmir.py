@@ -85,7 +85,7 @@ class KhashmirBase(protocol.Factory):
             ping this node and add the contact info to the table on pong!
         """
         n = self.Node(NULL_ID, host, port)
-        self.sendPing(n, callback=callback)
+        self.sendJoin(n, callback=callback)
 
     ## this call is async!
     def findNode(self, id, callback, errback=None):
@@ -133,21 +133,21 @@ class KhashmirBase(protocol.Factory):
             df = old.ping(self.node.id)
             df.addCallbacks(_notStaleNodeHandler, _staleNodeHandler)
 
-    def sendPing(self, node, callback=None):
+    def sendJoin(self, node, callback=None):
         """
             ping a node
         """
-        df = node.ping(self.node.id)
+        df = node.join(self.node.id)
         ## these are the callbacks we use when we issue a PING
         def _pongHandler(dict, node=node, self=self, callback=callback):
             n = self.Node(dict['rsp']['id'], dict['_krpc_sender'][0], dict['_krpc_sender'][1])
             self.insertNode(n)
             if callback:
-                callback()
+                callback((dict['rsp']['ip_addr'], dict['rsp']['port']))
         def _defaultPong(err, node=node, table=self.table, callback=callback):
             table.nodeFailed(node)
             if callback:
-                callback()
+                callback(None)
         
         df.addCallbacks(_pongHandler,_defaultPong)
 
@@ -198,6 +198,11 @@ class KhashmirBase(protocol.Factory):
         n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
         self.insertNode(n, contacted=0)
         return {"id" : self.node.id}
+        
+    def krpc_join(self, id, _krpc_sender):
+        n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
+        self.insertNode(n, contacted=0)
+        return {"ip_addr" : _krpc_sender[0], "port" : _krpc_sender[1], "id" : self.node.id}
         
     def krpc_find_node(self, target, id, _krpc_sender):
         n = self.Node(id, _krpc_sender[0], _krpc_sender[1])

@@ -3,6 +3,7 @@ import os, sha, random
 
 from twisted.internet import defer, reactor
 from twisted.internet.abstract import isIPAddress
+from twisted.python import log
 from twisted.trial import unittest
 from zope.interface import implements
 
@@ -23,6 +24,7 @@ class DHT:
         self.bootstrap_node = False
         self.joining = None
         self.joined = False
+        self.foundAddrs = []
         self.storing = {}
         self.retrieving = {}
         self.retrieved = {}
@@ -71,22 +73,26 @@ class DHT:
         """Called after an IP address has been found for a single bootstrap node."""
         self.khashmir.addContact(ip, port, self._join_single)
     
-    def _join_single(self):
+    def _join_single(self, addr):
         """Called when a single bootstrap node has been added."""
+        if addr:
+            self.foundAddrs.append(addr)
+        log.msg('Got back from bootstrap node: %r' % (addr,))
         self.khashmir.findCloseNodes(self._join_complete)
     
     def _join_complete(self, result):
         """Called when the tables have been initialized with nodes."""
         if not self.joined:
             self.joined = True
+            df = self.joining
+            self.joining = None
             if len(result) > 0 or self.bootstrap_node:
-                df = self.joining
-                self.joining = None
                 df.callback(result)
             else:
-                df = self.joining
-                self.joining = None
                 df.errback(DHTError('could not find any nodes to bootstrap to'))
+        
+    def getAddrs(self):
+        return self.foundAddrs
         
     def leave(self):
         """See L{apt_dht.interfaces.IDHT}."""
