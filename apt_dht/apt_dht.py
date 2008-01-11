@@ -1,5 +1,6 @@
 
 from binascii import b2a_hex
+from urlparse import urlunparse
 import os, re
 
 from twisted.internet import defer
@@ -191,3 +192,15 @@ class AptDHT:
         new_top = self.http_server.addDirectory(http_dir)
         url_path = '/' + new_top + url_path
         log.msg('now avaliable at %s: %s' % (url_path, url))
+
+        if self.my_addr:
+            site = self.my_addr + ':' + str(config.getint('DEFAULT', 'PORT'))
+            full_path = urlunparse(('http', site, url_path, None, None, None))
+            key = hash.norm(bits = config.getint(config.get('DEFAULT', 'DHT'), 'HASH_LENGTH'))
+            storeDefer = self.dht.storeValue(key, full_path)
+            storeDefer.addCallback(self.store_done, full_path)
+            storeDefer.addErrback(log.err)
+
+    def store_done(self, result, path):
+        log.msg('Added %s to the DHT: %r' % (path, result))
+        
