@@ -28,7 +28,11 @@ class DB:
             self._createNewDB(db)
         else:
             self._loadDB(db)
-        self.conn.text_factory = str
+        if sqlite.version_info < (2, 1):
+            sqlite.register_converter("TEXT", str)
+            sqlite.register_converter("text", str)
+        else:
+            self.conn.text_factory = str
         
     def _loadDB(self, db):
         try:
