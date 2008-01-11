@@ -1,16 +1,12 @@
-Upgrade the security in khashmir by using longer TIDs.
-
-The TIDs sent with every request that must be echoed on response are 
-very short (one char). They should be lengthened to 20 using the NewID() 
-function from khash.
-
-
 Hashes of files need to be stored permanently.
 
 A new database of files and their hashes is needed. It should store the 
 location and hash of the file as well as the modtime and other details 
 so we can check if a file needs to be rehashed on startup. The DB can 
 also be used to store info needed to manage the values stored in the DHT.
+
+
+Change all print statements to log.msg() calls.
 
 
 Add ability to search and hash and DHT-store other directories.

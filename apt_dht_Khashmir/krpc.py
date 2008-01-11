@@ -10,6 +10,8 @@ from twisted.internet.defer import Deferred
 from twisted.internet import protocol, reactor
 from twisted.trial import unittest
 
+from khash import newID
+
 KRPC_TIMEOUT = 20
 
 KRPC_ERROR = 1
@@ -71,7 +73,6 @@ class KRPC:
         self.addr = addr
         self.noisy = spew
         self.tids = {}
-        self.mtid = 0
         self.stopped = False
 
     def datagramReceived(self, str, addr):
@@ -157,8 +158,7 @@ class KRPC:
             raise ProtocolError, "connection has been stopped"
         # make message
         # send it
-        msg = {TID : chr(self.mtid), TYP : REQ,  REQ : method, ARG : args}
-        self.mtid = (self.mtid + 1) % 256
+        msg = {TID : newID(), TYP : REQ,  REQ : method, ARG : args}
         if self.noisy:
             print self.factory.port, "sending to", self.addr, ":", msg
         str = bencode(msg)
