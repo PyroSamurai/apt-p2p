@@ -1,0 +1,34 @@
+Upgrade the security in khashmir by using longer TIDs.
+
+The TIDs sent with every request that must be echoed on response are 
+very short (one char). They should be lengthened to 20 using the NewID() 
+function from khash.
+
+
+Hashes of files need to be stored permanently.
+
+A new database of files and their hashes is needed. It should store the 
+location and hash of the file as well as the modtime and other details 
+so we can check if a file needs to be rehashed on startup. The DB can 
+also be used to store info needed to manage the values stored in the DHT.
+
+
+Add ability to search and hash and DHT-store other directories.
+
+The user should be able to specify a list of directories that will be 
+searched for files to hash and add to the DHT.
+
+
+Missing Kademlia implementation details are needed.
+
+The current implementation is missing some important features, mostly 
+focussed on storing values:
+ - values need to be republished (every hour?)
+ - original publishers need to republish values (every 24 hours)
+ - when a new node is found that is closer to some values, replicate the 
+   values there without deleting them
+ - when a value lookup succeeds, store the value in the closest node 
+   found that didn't have it
+ - make the expiration time of a value exponentially inversely 
+   proportional to the number of nodes between the current node and the 
+   node closest to the value
