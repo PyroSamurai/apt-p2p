@@ -24,6 +24,7 @@ class DHT:
         self.bootstrap_node = False
         self.joining = None
         self.joined = False
+        self.outstandingJoins = 0
         self.foundAddrs = []
         self.storing = {}
         self.retrieving = {}
@@ -71,23 +72,35 @@ class DHT:
 
     def _join_gotIP(self, ip, port):
         """Called after an IP address has been found for a single bootstrap node."""
-        self.khashmir.addContact(ip, port, self._join_single)
+        self.outstandingJoins += 1
+        self.khashmir.addContact(ip, port, self._join_single, self._join_error)
     
     def _join_single(self, addr):
         """Called when a single bootstrap node has been added."""
+        self.outstandingJoins -= 1
         if addr:
             self.foundAddrs.append(addr)
+        if addr or self.outstandingJoins <= 0:
+            self.khashmir.findCloseNodes(self._join_complete, self._join_complete)
         log.msg('Got back from bootstrap node: %r' % (addr,))
-        self.khashmir.findCloseNodes(self._join_complete)
     
+    def _join_error(self, failure = None):
+        """Called when a single bootstrap node has failed."""
+        self.outstandingJoins -= 1
+        log.msg("bootstrap node could not be reached")
+        if self.outstandingJoins <= 0:
+            self.khashmir.findCloseNodes(self._join_complete, self._join_complete)
+
     def _join_complete(self, result):
         """Called when the tables have been initialized with nodes."""
-        if not self.joined:
+        if not self.joined and len(result) > 0:
             self.joined = True
+        if self.joining and self.outstandingJoins <= 0:
             df = self.joining
             self.joining = None
-            if len(result) > 0 or self.bootstrap_node:
-                df.callback(result)
+            if self.joined or self.bootstrap_node:
+                self.joined = True
+                df.callback(self.foundAddrs)
             else:
                 df.errback(DHTError('could not find any nodes to bootstrap to'))
         

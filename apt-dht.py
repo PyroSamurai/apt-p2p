@@ -59,8 +59,6 @@ log.msg('Starting DHT')
 DHT = __import__(config.get('DEFAULT', 'DHT')+'.DHT', globals(), locals(), ['DHT'])
 assert IDHT.implementedBy(DHT.DHT), "You must provide a DHT implementation that implements the IDHT interface."
 myDHT = DHT.DHT()
-myDHT.loadConfig(config, config.get('DEFAULT', 'DHT'))
-myDHT.join()
 
 if not config.getboolean('DEFAULT', 'DHT-only'):
     log.msg('Starting main application server')
@@ -69,6 +67,9 @@ if not config.getboolean('DEFAULT', 'DHT-only'):
     site = myapp.getSite()
     s = strports.service('tcp:'+config.get('DEFAULT', 'port'), channel.HTTPFactory(site))
     s.setServiceParent(application)
+else:
+    myDHT.loadConfig(config, config.get('DEFAULT', 'DHT'))
+    myDHT.join()
 
 if __name__ == '__main__':
     # Run on command line

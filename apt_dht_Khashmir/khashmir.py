@@ -80,12 +80,12 @@ class KhashmirBase(protocol.Factory):
 
     #######
     #######  LOCAL INTERFACE    - use these methods!
-    def addContact(self, host, port, callback=None):
+    def addContact(self, host, port, callback=None, errback=None):
         """
             ping this node and add the contact info to the table on pong!
         """
         n = self.Node(NULL_ID, host, port)
-        self.sendJoin(n, callback=callback)
+        self.sendJoin(n, callback=callback, errback=errback)
 
     ## this call is async!
     def findNode(self, id, callback, errback=None):
@@ -133,7 +133,7 @@ class KhashmirBase(protocol.Factory):
             df = old.ping(self.node.id)
             df.addCallbacks(_notStaleNodeHandler, _staleNodeHandler)
 
-    def sendJoin(self, node, callback=None):
+    def sendJoin(self, node, callback=None, errback=None):
         """
             ping a node
         """
@@ -144,21 +144,23 @@ class KhashmirBase(protocol.Factory):
             self.insertNode(n)
             if callback:
                 callback((dict['rsp']['ip_addr'], dict['rsp']['port']))
-        def _defaultPong(err, node=node, table=self.table, callback=callback):
+        def _defaultPong(err, node=node, table=self.table, callback=callback, errback=errback):
             table.nodeFailed(node)
-            if callback:
+            if errback:
+                errback()
+            else:
                 callback(None)
         
         df.addCallbacks(_pongHandler,_defaultPong)
 
-    def findCloseNodes(self, callback=lambda a: None):
+    def findCloseNodes(self, callback=lambda a: None, errback = None):
         """
             This does a findNode on the ID one away from our own.  
             This will allow us to populate our table with nodes on our network closest to our own.
             This is called as soon as we start up with an empty table
         """
         id = self.node.id[:-1] + chr((ord(self.node.id[-1]) + 1) % 256)
-        self.findNode(id, callback)
+        self.findNode(id, callback, errback)
 
     def refreshTable(self, force=0):
         """

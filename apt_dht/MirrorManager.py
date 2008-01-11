@@ -149,7 +149,7 @@ class ProxyFileStream(stream.SimpleStream):
 class MirrorManager:
     """Manages all requests for mirror objects."""
     
-    def __init__(self, manager, cache_dir):
+    def __init__(self, cache_dir, manager = None):
         self.manager = manager
         self.cache_dir = cache_dir
         self.cache = filepath.FilePath(self.cache_dir)
@@ -257,8 +257,9 @@ class MirrorManager:
             self.updatedFile(url, destFile.path)
             if ext:
                 self.updatedFile(url[:-len(ext)], decFile.path)
-                
-            self.manager.download_complete(hash, url, destFile.path)
+            
+            if self.manager:
+                self.manager.download_complete(hash, url, destFile.path)
         else:
             log.msg("Hashes don't match %s != %s: %s" % (hash.hexexpected(), hash.hexdigest(), url))
 
