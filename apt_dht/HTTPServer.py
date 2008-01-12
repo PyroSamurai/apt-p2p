@@ -44,22 +44,15 @@ class TopLevel(resource.Resource):
     def __init__(self, directory, manager):
         self.directory = directory
         self.manager = manager
-        self.subdirs = []
+        self.subdirs = {}
 
-    def addDirectory(self, directory):
-        assert directory
-        try:
-            idx = self.subdirs.index(directory)
-        except ValueError:
-            idx = len(self.subdirs)
-            self.subdirs.append(directory)
-        path = "~" + str(idx)
-        return path
+    def setDirectories(self, dirs):
+        self.subdirs = {}
+        for k in dirs:
+            # Don't allow empty subdirectory
+            if k:
+                self.subdirs[k] = dirs[k]
     
-    def removeDirectory(self, directory):
-        loc = self.subdirs.index(directory)
-        self.subdirs[loc] = ''
-        
     def render(self, ctx):
         return http.Response(
             200,
@@ -70,19 +63,9 @@ class TopLevel(resource.Resource):
 
     def locateChild(self, request, segments):
         name = segments[0]
-        if len(name) > 1 and name[0] == '~':
-            try:
-                loc = int(name[1:])
-            except:
-                log.msg('Not found: %s from %s' % (request.uri, request.remoteAddr))
-                return None, ()
-            
-            if loc >= 0 and loc < len(self.subdirs) and self.subdirs[loc]:
-                log.msg('Sharing %s with %s' % (request.uri, request.remoteAddr))
-                return static.File(self.subdirs[loc]), segments[1:]
-            else:
-                log.msg('Not found: %s from %s' % (request.uri, request.remoteAddr))
-                return None, ()
+        if name in self.subdirs:
+            log.msg('Sharing %s with %s' % (request.uri, request.remoteAddr))
+            return static.File(self.subdirs[name]), segments[1:]
         
         if request.remoteAddr.host != "127.0.0.1":
             log.msg('Blocked illegal access to %s from %s' % (request.uri, request.remoteAddr))
