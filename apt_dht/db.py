@@ -69,7 +69,11 @@ class DB:
         return res
         
     def storeFile(self, path, hash, directory):
-        """Store or update a file in the database."""
+        """Store or update a file in the database.
+        
+        @return: the urlpath to access the file, and whether a
+            new url top-level directory was needed
+        """
         path = os.path.abspath(path)
         directory = os.path.abspath(directory)
         assert path.startswith(directory)
@@ -81,13 +85,14 @@ class DB:
             c.execute("UPDATE files SET hash = ?, size = ?, mtime = ?, refreshed = ?", 
                       (khash(hash), stat.st_size, stat.st_mtime, datetime.now()))
             newdir = False
+            urldir = row['urldir']
         else:
             urldir, newdir = self.findDirectory(directory)
             c.execute("INSERT OR REPLACE INTO files VALUES(?, ?, ?, ?, ?, ?, ?)",
                       (path, khash(hash), urldir, len(directory), stat.st_size, stat.st_mtime, datetime.now()))
         self.conn.commit()
         c.close()
-        return newdir
+        return '/~' + str(urldir) + path[len(directory):], newdir
         
     def getFile(self, path):
         """Get a file from the database.

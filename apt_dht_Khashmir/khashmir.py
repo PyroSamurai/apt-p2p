@@ -30,7 +30,7 @@ class KhashmirBase(protocol.Factory):
     def setup(self, config, cache_dir):
         self.config = config
         self.port = config['PORT']
-        self.store = DB(os.path.join(cache_dir, 'khashmir.' + str(self.port) + '.db'))
+        self.store = DB(os.path.join(cache_dir, '.khashmir.' + str(self.port) + '.db'))
         self.node = self._loadSelfNode('', self.port)
         self.table = KTable(self.node, config)
         #self.app = service.Application("krpc")

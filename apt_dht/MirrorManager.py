@@ -263,7 +263,7 @@ class MirrorManager:
                 self.updatedFile(url[:-len(ext)], decFile.path)
             
             if self.manager:
-                self.manager.download_complete(hash, url, destFile.path)
+                self.manager.cached_file(hash, url, destFile.path)
         else:
             log.msg("Hashes don't match %s != %s: %s" % (hash.hexexpected(), hash.hexdigest(), url))
 

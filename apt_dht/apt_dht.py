@@ -12,10 +12,12 @@ from PeerManager import PeerManager
 from HTTPServer import TopLevel
 from MirrorManager import MirrorManager
 from Hash import HashObject
+from db import DB
 
 class AptDHT:
     def __init__(self, dht):
         log.msg('Initializing the main apt_dht application')
+        self.db = DB(config.get('DEFAULT', 'cache_dir') + '/.apt-dht.db')
         self.dht = dht
         self.dht.loadConfig(config, config.get('DEFAULT', 'DHT'))
         self.dht.join().addCallbacks(self.joinComplete, self.joinError)
@@ -188,22 +190,14 @@ class AptDHT:
             return getDefer
         return response
         
-    def download_complete(self, hash, url, file_path):
+    def cached_file(self, hash, url, file_path):
         assert file_path.startswith(config.get('DEFAULT', 'cache_dir'))
-        directory = file_path[:len(config.get('DEFAULT', 'cache_dir'))]
-        url_path = file_path[len(config.get('DEFAULT', 'cache_dir')):]
-        if url_path[0] == '/':
-            url_path = url_path[1:]
-        top_directory = url_path.split('/',1)[0]
-        url_path = url_path[len(top_directory):]
-        http_dir = os.path.join(directory, top_directory)
-        new_top = self.http_server.addDirectory(http_dir)
-        url_path = '/' + new_top + url_path
-        log.msg('now avaliable at %s: %s' % (url_path, url))
+        urlpath, newdir = self.db.storeFile(file_path, hash.digest(), config.get('DEFAULT', 'cache_dir'))
+        log.msg('now avaliable at %s: %s' % (urlpath, url))
 
         if self.my_addr:
             site = self.my_addr + ':' + str(config.getint('DEFAULT', 'PORT'))
-            full_path = urlunparse(('http', site, url_path, None, None, None))
+            full_path = urlunparse(('http', site, urlpath, None, None, None))
             key = hash.norm(bits = config.getint(config.get('DEFAULT', 'DHT'), 'HASH_LENGTH'))
             storeDefer = self.dht.storeValue(key, full_path)
             storeDefer.addCallback(self.store_done, full_path)
