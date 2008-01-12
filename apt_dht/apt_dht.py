@@ -33,6 +33,8 @@ class AptDHT:
     
     def joinComplete(self, result):
         self.my_addr = findMyIPAddr(result, config.getint(config.get('DEFAULT', 'DHT'), 'PORT'))
+        if not self.my_addr:
+            raise RuntimeError, "IP address for this machine could not be found"
 
     def joinError(self, failure):
         log.msg("joining DHT failed miserably")
