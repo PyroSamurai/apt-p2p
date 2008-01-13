@@ -184,9 +184,10 @@ class GetValue(FindNode):
 
 
 class StoreValue(ActionBase):
-    def __init__(self, caller, target, value, callback, config, store="storeValue"):
+    def __init__(self, caller, target, value, originated, callback, config, store="storeValue"):
         ActionBase.__init__(self, caller, target, callback, config)
         self.value = value
+        self.originated = originated
         self.stored = []
         self.store = store
         
@@ -234,7 +235,7 @@ class StoreValue(ActionBase):
                     except AttributeError:
                         print ">>> %s doesn't have a %s method!" % (node, self.store)
                     else:
-                        df = f(self.target, self.value, self.caller.node.id)
+                        df = f(self.target, self.value, self.originated, self.caller.node.id)
                         df.addCallback(self.storedValue, node=node)
                         df.addErrback(self.storeFailed, node=node)
                     

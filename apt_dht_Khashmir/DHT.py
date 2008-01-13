@@ -1,4 +1,5 @@
 
+from datetime import datetime
 import os, sha, random
 
 from twisted.internet import defer, reactor
@@ -145,7 +146,7 @@ class DHT:
                 d.callback(final_result)
             del self.retrieving[key]
 
-    def storeValue(self, key, value):
+    def storeValue(self, key, value, originated = None):
         """See L{apt_dht.interfaces.IDHT}."""
         if self.config is None:
             raise DHTError, "configuration not loaded"
@@ -155,8 +156,10 @@ class DHT:
         if key in self.storing and value in self.storing[key]:
             raise DHTError, "already storing that key with the same value"
 
+        if originated is None:
+            originated = datetime.utcnow()
         d = defer.Deferred()
-        self.khashmir.storeValueForKey(key, value, self._storeValue)
+        self.khashmir.storeValueForKey(key, value, originated, self._storeValue)
         self.storing.setdefault(key, {})[value] = d
         return d
     
@@ -179,7 +182,7 @@ class TestSimpleDHT(unittest.TestCase):
                     'STORE_REDUNDANCY': 3, 'MAX_FAILURES': 3,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
                     'KEINITIAL_DELAY': 15, 'KE_DELAY': 1200,
-                    'KE_AGE': 3600, 'SPEW': False, }
+                    'KE_AGE': 3600, 'SPEW': True, }
 
     def setUp(self):
         self.a = DHT()
