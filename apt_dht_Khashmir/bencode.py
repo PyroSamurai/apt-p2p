@@ -1,68 +1,187 @@
-# Written by Petru Paler
+# Written by Petru Paler, Uoti Urpala, Ross Cohen and John Hoffman
+# Modified by Cameron Dale
 # see LICENSE.txt for license information
+#
+# $Id: bencode.py 268 2007-08-18 23:45:45Z camrdale-guest $
+
+"""Functions for bencoding and bdecoding data.
+
+@type logger: C{logging.Logger}
+@var logger: the logger to send all log messages to for this module
+@type decode_func: C{dictionary} of C{function}
+@var decode_func: a dictionary of function calls to be made, based on data,
+    the keys are the first character of the data and the value is the
+    function to use to decode that data
+@type bencached_marker: C{list}
+@var bencached_marker: mutable type to ensure class origination
+@type encode_func: C{dictionary} of C{function}
+@var encode_func: a dictionary of function calls to be made, based on data,
+    the keys are the type of the data and the value is the
+    function to use to encode that data
+@type BencachedType: C{type}
+@var BencachedType: the L{Bencached} type
+"""
 
 from types import IntType, LongType, StringType, ListType, TupleType, DictType
-from re import compile
+import logging
+try:
+    from types import BooleanType
+except ImportError:
+    BooleanType = None
+try:
+    from types import UnicodeType
+except ImportError:
+    UnicodeType = None
 from cStringIO import StringIO
 
-int_filter = compile('(0|-?[1-9][0-9]*)e')
+logger = logging.getLogger('DebTorrent.bencode')
 
 def decode_int(x, f):
-    m = int_filter.match(x, f)
-    if m is None:
+    """Bdecode an integer.
+    
+    @type x: C{string}
+    @param x: the data to decode
+    @type f: C{int}
+    @param f: the offset in the data to start at
+    @rtype: C{int}, C{int}
+    @return: the bdecoded integer, and the offset to read next
+    @raise ValueError: if the data is improperly encoded
+    
+    """
+    
+    f += 1
+    newf = x.index('e', f)
+    try:
+        n = int(x[f:newf])
+    except:
+        n = long(x[f:newf])
+    if x[f] == '-':
+        if x[f + 1] == '0':
+            raise ValueError
+    elif x[f] == '0' and newf != f+1:
         raise ValueError
-    return (long(m.group(1)), m.end())
-
-string_filter = compile('(0|[1-9][0-9]*):')
-
+    return (n, newf+1)
+  
 def decode_string(x, f):
-    m = string_filter.match(x, f)
-    if m is None:
+    """Bdecode a string.
+    
+    @type x: C{string}
+    @param x: the data to decode
+    @type f: C{int}
+    @param f: the offset in the data to start at
+    @rtype: C{string}, C{int}
+    @return: the bdecoded string, and the offset to read next
+    @raise ValueError: if the data is improperly encoded
+    
+    """
+    
+    colon = x.index(':', f)
+    try:
+        n = int(x[f:colon])
+    except (OverflowError, ValueError):
+        n = long(x[f:colon])
+    if x[f] == '0' and colon != f+1:
         raise ValueError
-    l = int(m.group(1))
-    s = m.end()
-    return (x[s:s+l], s + l)
+    colon += 1
+    return (x[colon:colon+n], colon+n)
+
+def decode_unicode(x, f):
+    """Bdecode a unicode string.
+    
+    @type x: C{string}
+    @param x: the data to decode
+    @type f: C{int}
+    @param f: the offset in the data to start at
+    @rtype: C{int}, C{int}
+    @return: the bdecoded unicode string, and the offset to read next
+    
+    """
+    
+    s, f = decode_string(x, f+1)
+    return (s.decode('UTF-8'),f)
 
 def decode_list(x, f):
-    r = []
+    """Bdecode a list.
+    
+    @type x: C{string}
+    @param x: the data to decode
+    @type f: C{int}
+    @param f: the offset in the data to start at
+    @rtype: C{list}, C{int}
+    @return: the bdecoded list, and the offset to read next
+    
+    """
+    
+    r, f = [], f+1
     while x[f] != 'e':
-        v, f = bdecode_rec(x, f)
+        v, f = decode_func[x[f]](x, f)
         r.append(v)
     return (r, f + 1)
 
 def decode_dict(x, f):
-    r = {}
+    """Bdecode a dictionary.
+    
+    @type x: C{string}
+    @param x: the data to decode
+    @type f: C{int}
+    @param f: the offset in the data to start at
+    @rtype: C{dictionary}, C{int}
+    @return: the bdecoded dictionary, and the offset to read next
+    @raise ValueError: if the data is improperly encoded
+    
+    """
+    
+    r, f = {}, f+1
     lastkey = None
     while x[f] != 'e':
         k, f = decode_string(x, f)
-        if lastkey is not None and lastkey >= k:
+        if lastkey >= k:
             raise ValueError
         lastkey = k
-        v, f = bdecode_rec(x, f)
-        r[k] = v
+        r[k], f = decode_func[x[f]](x, f)
     return (r, f + 1)
 
-def bdecode_rec(x, f):
-    t = x[f]
-    if t == 'i':
-        return decode_int(x, f + 1)
-    elif t == 'l':
-        return decode_list(x, f + 1)
-    elif t == 'd':
-        return decode_dict(x, f + 1)
-    else:
-        return decode_string(x, f)
-
-def bdecode(x):
+decode_func = {}
+decode_func['l'] = decode_list
+decode_func['d'] = decode_dict
+decode_func['i'] = decode_int
+decode_func['0'] = decode_string
+decode_func['1'] = decode_string
+decode_func['2'] = decode_string
+decode_func['3'] = decode_string
+decode_func['4'] = decode_string
+decode_func['5'] = decode_string
+decode_func['6'] = decode_string
+decode_func['7'] = decode_string
+decode_func['8'] = decode_string
+decode_func['9'] = decode_string
+#decode_func['u'] = decode_unicode
+  
+def bdecode(x, sloppy = 0):
+    """Bdecode a string of data.
+    
+    @type x: C{string}
+    @param x: the data to decode
+    @type sloppy: C{boolean}
+    @param sloppy: whether to allow errors in the decoding
+    @rtype: unknown
+    @return: the bdecoded data
+    @raise ValueError: if the data is improperly encoded
+    
+    """
+    
     try:
-        r, l = bdecode_rec(x, 0)
-    except IndexError:
-        raise ValueError
-    if l != len(x):
-        raise ValueError
+        r, l = decode_func[x[0]](x, 0)
+#    except (IndexError, KeyError):
+    except (IndexError, KeyError, ValueError):
+        logger.exception('bad bencoded data')
+        raise ValueError, "bad bencoded data"
+    if not sloppy and l != len(x):
+        raise ValueError, "bad bencoded data"
     return r
 
 def test_bdecode():
+    """A test routine for the bdecoding functions."""
     try:
         bdecode('0:0:')
         assert 0
@@ -204,35 +323,166 @@ def test_bdecode():
     except ValueError:
         pass
 
-def bencode_rec(x, b):
-    t = type(x)
-    if t in (IntType, LongType):
-        b.write('i%de' % x)
-    elif t is StringType:
-        b.write('%d:%s' % (len(x), x))
-    elif t in (ListType, TupleType):
-        b.write('l')
-        for e in x:
-            bencode_rec(e, b)
-        b.write('e')
-    elif t is DictType:
-        b.write('d')
-        keylist = x.keys()
-        keylist.sort()
-        for k in keylist:
-            assert type(k) is StringType
-            bencode_rec(k, b)
-            bencode_rec(x[k], b)
-        b.write('e')
-    else:
-        assert 0
+bencached_marker = []
 
+class Bencached:
+    """Dummy data structure for storing bencoded data in memory.
+    
+    @type marker: C{list}
+    @ivar marker: mutable type to make sure the data was encoded by this class
+    @type bencoded: C{string}
+    @ivar bencoded: the bencoded data stored in a string
+    
+    """
+    
+    def __init__(self, s):
+        """
+        
+        @type s: C{string}
+        @param s: the new bencoded data to store
+        
+        """
+        
+        self.marker = bencached_marker
+        self.bencoded = s
+
+BencachedType = type(Bencached('')) # insufficient, but good as a filter
+
+def encode_bencached(x,r):
+    """Bencode L{Bencached} data.
+    
+    @type x: L{Bencached}
+    @param x: the data to encode
+    @type r: C{list}
+    @param r: the currently bencoded data, to which the bencoding of x
+        will be appended
+    
+    """
+    
+    assert x.marker == bencached_marker
+    r.append(x.bencoded)
+
+def encode_int(x,r):
+    """Bencode an integer.
+    
+    @type x: C{int}
+    @param x: the data to encode
+    @type r: C{list}
+    @param r: the currently bencoded data, to which the bencoding of x
+        will be appended
+    
+    """
+    
+    r.extend(('i',str(x),'e'))
+
+def encode_bool(x,r):
+    """Bencode a boolean.
+    
+    @type x: C{boolean}
+    @param x: the data to encode
+    @type r: C{list}
+    @param r: the currently bencoded data, to which the bencoding of x
+        will be appended
+    
+    """
+    
+    encode_int(int(x),r)
+
+def encode_string(x,r):    
+    """Bencode a string.
+    
+    @type x: C{string}
+    @param x: the data to encode
+    @type r: C{list}
+    @param r: the currently bencoded data, to which the bencoding of x
+        will be appended
+    
+    """
+    
+    r.extend((str(len(x)),':',x))
+
+def encode_unicode(x,r):
+    """Bencode a unicode string.
+    
+    @type x: C{unicode}
+    @param x: the data to encode
+    @type r: C{list}
+    @param r: the currently bencoded data, to which the bencoding of x
+        will be appended
+    
+    """
+    
+    #r.append('u')
+    encode_string(x.encode('UTF-8'),r)
+
+def encode_list(x,r):
+    """Bencode a list.
+    
+    @type x: C{list}
+    @param x: the data to encode
+    @type r: C{list}
+    @param r: the currently bencoded data, to which the bencoding of x
+        will be appended
+    
+    """
+    
+    r.append('l')
+    for e in x:
+        encode_func[type(e)](e, r)
+    r.append('e')
+
+def encode_dict(x,r):
+    """Bencode a dictionary.
+    
+    @type x: C{dictionary}
+    @param x: the data to encode
+    @type r: C{list}
+    @param r: the currently bencoded data, to which the bencoding of x
+        will be appended
+    
+    """
+    
+    r.append('d')
+    ilist = x.items()
+    ilist.sort()
+    for k,v in ilist:
+        r.extend((str(len(k)),':',k))
+        encode_func[type(v)](v, r)
+    r.append('e')
+
+encode_func = {}
+encode_func[BencachedType] = encode_bencached
+encode_func[IntType] = encode_int
+encode_func[LongType] = encode_int
+encode_func[StringType] = encode_string
+encode_func[ListType] = encode_list
+encode_func[TupleType] = encode_list
+encode_func[DictType] = encode_dict
+if BooleanType:
+    encode_func[BooleanType] = encode_bool
+if UnicodeType:
+    encode_func[UnicodeType] = encode_unicode
+    
 def bencode(x):
-    b = StringIO()
-    bencode_rec(x, b)
-    return b.getvalue()
+    """Bencode some data.
+    
+    @type x: unknown
+    @param x: the data to encode
+    @rtype: string
+    @return: the bencoded data
+    @raise ValueError: if the data contains a type that cannot be encoded
+    
+    """
+    r = []
+    try:
+        encode_func[type(x)](x, r)
+    except:
+        logger.exception('could not encode type '+str(type(x))+' (value: '+str(x)+')')
+        assert 0
+    return ''.join(r)
 
 def test_bencode():
+    """A test routine for the bencoding functions."""
     assert bencode(4) == 'i4e'
     assert bencode(0) == 'i0e'
     assert bencode(-10) == 'i-10e'
@@ -252,3 +502,10 @@ def test_bencode():
     except AssertionError:
         pass
 
+  
+try:
+    import psyco
+    psyco.bind(bdecode)
+    psyco.bind(bencode)
+except ImportError:
+    pass
