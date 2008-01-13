@@ -24,6 +24,9 @@ except ImportError:
 from twisted.python import log
 from twisted.trial import unittest
 
+class BencodeError(ValueError):
+    pass
+
 def decode_int(x, f):
     """Bdecode an integer.
     
@@ -33,7 +36,7 @@ def decode_int(x, f):
     @param f: the offset in the data to start at
     @rtype: C{int}, C{int}
     @return: the bdecoded integer, and the offset to read next
-    @raise ValueError: if the data is improperly encoded
+    @raise BencodeError: if the data is improperly encoded
     
     """
     
@@ -45,9 +48,9 @@ def decode_int(x, f):
         n = long(x[f:newf])
     if x[f] == '-':
         if x[f + 1] == '0':
-            raise ValueError
+            raise BencodeError, "integer has a leading zero after a negative sign"
     elif x[f] == '0' and newf != f+1:
-        raise ValueError
+        raise BencodeError, "integer has a leading zero"
     return (n, newf+1)
   
 def decode_string(x, f):
@@ -59,7 +62,7 @@ def decode_string(x, f):
     @param f: the offset in the data to start at
     @rtype: C{string}, C{int}
     @return: the bdecoded string, and the offset to read next
-    @raise ValueError: if the data is improperly encoded
+    @raise BencodeError: if the data is improperly encoded
     
     """
     
@@ -69,7 +72,7 @@ def decode_string(x, f):
     except (OverflowError, ValueError):
         n = long(x[f:colon])
     if x[f] == '0' and colon != f+1:
-        raise ValueError
+        raise BencodeError, "string length has a leading zero"
     colon += 1
     return (x[colon:colon+n], colon+n)
 
@@ -115,7 +118,7 @@ def decode_dict(x, f):
     @param f: the offset in the data to start at
     @rtype: C{dictionary}, C{int}
     @return: the bdecoded dictionary, and the offset to read next
-    @raise ValueError: if the data is improperly encoded
+    @raise BencodeError: if the data is improperly encoded
     
     """
     
@@ -124,7 +127,7 @@ def decode_dict(x, f):
     while x[f] != 'e':
         k, f = decode_string(x, f)
         if lastkey >= k:
-            raise ValueError
+            raise BencodeError, "dictionary keys must be in sorted order"
         lastkey = k
         r[k], f = decode_func[x[f]](x, f)
     return (r, f + 1)
@@ -154,7 +157,7 @@ def bdecode(x, sloppy = 0):
     @param sloppy: whether to allow errors in the decoding
     @rtype: unknown
     @return: the bdecoded data
-    @raise ValueError: if the data is improperly encoded
+    @raise BencodeError: if the data is improperly encoded
     
     """
     
@@ -162,9 +165,9 @@ def bdecode(x, sloppy = 0):
         r, l = decode_func[x[0]](x, 0)
 #    except (IndexError, KeyError):
     except (IndexError, KeyError, ValueError):
-        raise ValueError, "bad bencoded data"
+        raise BencodeError, "bad bencoded data"
     if not sloppy and l != len(x):
-        raise ValueError, "bad bencoded data"
+        raise BencodeError, "bad bencoded data, all could not be decoded"
     return r
 
 bencached_marker = []
@@ -313,14 +316,14 @@ def bencode(x):
     @param x: the data to encode
     @rtype: string
     @return: the bencoded data
-    @raise ValueError: if the data contains a type that cannot be encoded
+    @raise BencodeError: if the data contains a type that cannot be encoded
     
     """
     r = []
     try:
         encode_func[type(x)](x, r)
     except:
-        raise ValueError, "failed to bencode the data"
+        raise BencodeError, "failed to bencode the data"
     return ''.join(r)
 
 class TestBencode(unittest.TestCase):
@@ -329,64 +332,64 @@ class TestBencode(unittest.TestCase):
     timeout = 2
 
     def test_bdecode_string(self):
-        self.failUnlessRaises(ValueError, bdecode, '0:0:')
-        self.failUnlessRaises(ValueError, bdecode, '')
-        self.failUnlessRaises(ValueError, bdecode, '35208734823ljdahflajhdf')
-        self.failUnlessRaises(ValueError, bdecode, '2:abfdjslhfld')
+        self.failUnlessRaises(BencodeError, bdecode, '0:0:')
+        self.failUnlessRaises(BencodeError, bdecode, '')
+        self.failUnlessRaises(BencodeError, bdecode, '35208734823ljdahflajhdf')
+        self.failUnlessRaises(BencodeError, bdecode, '2:abfdjslhfld')
         self.failUnlessEqual(bdecode('0:'), '')
         self.failUnlessEqual(bdecode('3:abc'), 'abc')
         self.failUnlessEqual(bdecode('10:1234567890'), '1234567890')
-        self.failUnlessRaises(ValueError, bdecode, '02:xy')
-        self.failUnlessRaises(ValueError, bdecode, '9999:x')
+        self.failUnlessRaises(BencodeError, bdecode, '02:xy')
+        self.failUnlessRaises(BencodeError, bdecode, '9999:x')
 
     def test_bdecode_int(self):
-        self.failUnlessRaises(ValueError, bdecode, 'ie')
-        self.failUnlessRaises(ValueError, bdecode, 'i341foo382e')
+        self.failUnlessRaises(BencodeError, bdecode, 'ie')
+        self.failUnlessRaises(BencodeError, bdecode, 'i341foo382e')
         self.failUnlessEqual(bdecode('i4e'), 4L)
         self.failUnlessEqual(bdecode('i0e'), 0L)
         self.failUnlessEqual(bdecode('i123456789e'), 123456789L)
         self.failUnlessEqual(bdecode('i-10e'), -10L)
-        self.failUnlessRaises(ValueError, bdecode, 'i-0e')
-        self.failUnlessRaises(ValueError, bdecode, 'i123')
-        self.failUnlessRaises(ValueError, bdecode, 'i6easd')
-        self.failUnlessRaises(ValueError, bdecode, 'i03e')
+        self.failUnlessRaises(BencodeError, bdecode, 'i-0e')
+        self.failUnlessRaises(BencodeError, bdecode, 'i123')
+        self.failUnlessRaises(BencodeError, bdecode, 'i6easd')
+        self.failUnlessRaises(BencodeError, bdecode, 'i03e')
 
     def test_bdecode_list(self):
-        self.failUnlessRaises(ValueError, bdecode, 'l')
+        self.failUnlessRaises(BencodeError, bdecode, 'l')
         self.failUnlessEqual(bdecode('le'), [])
-        self.failUnlessRaises(ValueError, bdecode, 'leanfdldjfh')
+        self.failUnlessRaises(BencodeError, bdecode, 'leanfdldjfh')
         self.failUnlessEqual(bdecode('l0:0:0:e'), ['', '', ''])
-        self.failUnlessRaises(ValueError, bdecode, 'relwjhrlewjh')
+        self.failUnlessRaises(BencodeError, bdecode, 'relwjhrlewjh')
         self.failUnlessEqual(bdecode('li1ei2ei3ee'), [1, 2, 3])
         self.failUnlessEqual(bdecode('l3:asd2:xye'), ['asd', 'xy'])
         self.failUnlessEqual(bdecode('ll5:Alice3:Bobeli2ei3eee'), [['Alice', 'Bob'], [2, 3]])
-        self.failUnlessRaises(ValueError, bdecode, 'l01:ae')
-        self.failUnlessRaises(ValueError, bdecode, 'l0:')
+        self.failUnlessRaises(BencodeError, bdecode, 'l01:ae')
+        self.failUnlessRaises(BencodeError, bdecode, 'l0:')
 
     def test_bdecode_dict(self):
-        self.failUnlessRaises(ValueError, bdecode, 'd')
-        self.failUnlessRaises(ValueError, bdecode, 'defoobar')
+        self.failUnlessRaises(BencodeError, bdecode, 'd')
+        self.failUnlessRaises(BencodeError, bdecode, 'defoobar')
         self.failUnlessEqual(bdecode('de'), {})
         self.failUnlessEqual(bdecode('d3:agei25e4:eyes4:bluee'), {'age': 25, 'eyes': 'blue'})
         self.failUnlessEqual(bdecode('d8:spam.mp3d6:author5:Alice6:lengthi100000eee'),
                              {'spam.mp3': {'author': 'Alice', 'length': 100000}})
-        self.failUnlessRaises(ValueError, bdecode, 'd3:fooe')
-        self.failUnlessRaises(ValueError, bdecode, 'di1e0:e')
-        self.failUnlessRaises(ValueError, bdecode, 'd1:b0:1:a0:e')
-        self.failUnlessRaises(ValueError, bdecode, 'd1:a0:1:a0:e')
-        self.failUnlessRaises(ValueError, bdecode, 'd0:0:')
-        self.failUnlessRaises(ValueError, bdecode, 'd0:')
+        self.failUnlessRaises(BencodeError, bdecode, 'd3:fooe')
+        self.failUnlessRaises(BencodeError, bdecode, 'di1e0:e')
+        self.failUnlessRaises(BencodeError, bdecode, 'd1:b0:1:a0:e')
+        self.failUnlessRaises(BencodeError, bdecode, 'd1:a0:1:a0:e')
+        self.failUnlessRaises(BencodeError, bdecode, 'd0:0:')
+        self.failUnlessRaises(BencodeError, bdecode, 'd0:')
 
     def test_bdecode_unicode(self):
-        self.failUnlessRaises(ValueError, bdecode, 'u0:0:')
-        self.failUnlessRaises(ValueError, bdecode, 'u')
-        self.failUnlessRaises(ValueError, bdecode, 'u35208734823ljdahflajhdf')
-        self.failUnlessRaises(ValueError, bdecode, 'u2:abfdjslhfld')
+        self.failUnlessRaises(BencodeError, bdecode, 'u0:0:')
+        self.failUnlessRaises(BencodeError, bdecode, 'u')
+        self.failUnlessRaises(BencodeError, bdecode, 'u35208734823ljdahflajhdf')
+        self.failUnlessRaises(BencodeError, bdecode, 'u2:abfdjslhfld')
         self.failUnlessEqual(bdecode('u0:'), '')
         self.failUnlessEqual(bdecode('u3:abc'), 'abc')
         self.failUnlessEqual(bdecode('u10:1234567890'), '1234567890')
-        self.failUnlessRaises(ValueError, bdecode, 'u02:xy')
-        self.failUnlessRaises(ValueError, bdecode, 'u9999:x')
+        self.failUnlessRaises(BencodeError, bdecode, 'u02:xy')
+        self.failUnlessRaises(BencodeError, bdecode, 'u9999:x')
 
     def test_bencode_int(self):
         self.failUnlessEqual(bencode(4), 'i4e')
@@ -409,7 +412,7 @@ class TestBencode(unittest.TestCase):
         self.failUnlessEqual(bencode({'age': 25, 'eyes': 'blue'}), 'd3:agei25e4:eyes4:bluee')
         self.failUnlessEqual(bencode({'spam.mp3': {'author': 'Alice', 'length': 100000}}), 
                              'd8:spam.mp3d6:author5:Alice6:lengthi100000eee')
-        self.failUnlessRaises(ValueError, bencode, {1: 'foo'})
+        self.failUnlessRaises(BencodeError, bencode, {1: 'foo'})
 
     def test_bencode_unicode(self):
         self.failUnlessEqual(bencode(u''), '0:')
