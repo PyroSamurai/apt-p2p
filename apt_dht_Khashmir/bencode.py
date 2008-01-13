@@ -377,6 +377,17 @@ class TestBencode(unittest.TestCase):
         self.failUnlessRaises(ValueError, bdecode, 'd0:0:')
         self.failUnlessRaises(ValueError, bdecode, 'd0:')
 
+    def test_bdecode_unicode(self):
+        self.failUnlessRaises(ValueError, bdecode, 'u0:0:')
+        self.failUnlessRaises(ValueError, bdecode, 'u')
+        self.failUnlessRaises(ValueError, bdecode, 'u35208734823ljdahflajhdf')
+        self.failUnlessRaises(ValueError, bdecode, 'u2:abfdjslhfld')
+        self.failUnlessEqual(bdecode('u0:'), '')
+        self.failUnlessEqual(bdecode('u3:abc'), 'abc')
+        self.failUnlessEqual(bdecode('u10:1234567890'), '1234567890')
+        self.failUnlessRaises(ValueError, bdecode, 'u02:xy')
+        self.failUnlessRaises(ValueError, bdecode, 'u9999:x')
+
     def test_bencode_int(self):
         self.failUnlessEqual(bencode(4), 'i4e')
         self.failUnlessEqual(bencode(0), 'i0e')
@@ -399,3 +410,16 @@ class TestBencode(unittest.TestCase):
         self.failUnlessEqual(bencode({'spam.mp3': {'author': 'Alice', 'length': 100000}}), 
                              'd8:spam.mp3d6:author5:Alice6:lengthi100000eee')
         self.failUnlessRaises(ValueError, bencode, {1: 'foo'})
+
+    def test_bencode_unicode(self):
+        self.failUnlessEqual(bencode(u''), '0:')
+        self.failUnlessEqual(bencode(u'abc'), '3:abc')
+        self.failUnlessEqual(bencode(u'1234567890'), '10:1234567890')
+
+    def test_bool(self):
+        self.failUnless(bdecode(bencode(True)))
+        self.failIf(bdecode(bencode(False)))
+
+    if UnicodeType == None:
+        test_bencode_unicode.skip = "Python was not compiled with unicode support"
+        test_bdecode_unicode.skip = "Python was not compiled with unicode support"
