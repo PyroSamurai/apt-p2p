@@ -1,13 +1,6 @@
-# Written by Petru Paler, Uoti Urpala, Ross Cohen and John Hoffman
-# Modified by Cameron Dale
-# see LICENSE.txt for license information
-#
-# $Id: bencode.py 268 2007-08-18 23:45:45Z camrdale-guest $
 
 """Functions for bencoding and bdecoding data.
 
-@type logger: C{logging.Logger}
-@var logger: the logger to send all log messages to for this module
 @type decode_func: C{dictionary} of C{function}
 @var decode_func: a dictionary of function calls to be made, based on data,
     the keys are the first character of the data and the value is the
@@ -22,19 +15,14 @@
 @var BencachedType: the L{Bencached} type
 """
 
-from types import IntType, LongType, StringType, ListType, TupleType, DictType
-import logging
-try:
-    from types import BooleanType
-except ImportError:
-    BooleanType = None
+from types import IntType, LongType, StringType, ListType, TupleType, DictType, BooleanType
 try:
     from types import UnicodeType
 except ImportError:
     UnicodeType = None
 from cStringIO import StringIO
 
-logger = logging.getLogger('DebTorrent.bencode')
+from twisted.python import log
 
 def decode_int(x, f):
     """Bdecode an integer.
@@ -155,7 +143,7 @@ decode_func['6'] = decode_string
 decode_func['7'] = decode_string
 decode_func['8'] = decode_string
 decode_func['9'] = decode_string
-#decode_func['u'] = decode_unicode
+decode_func['u'] = decode_unicode
   
 def bdecode(x, sloppy = 0):
     """Bdecode a string of data.
@@ -174,7 +162,7 @@ def bdecode(x, sloppy = 0):
         r, l = decode_func[x[0]](x, 0)
 #    except (IndexError, KeyError):
     except (IndexError, KeyError, ValueError):
-        logger.exception('bad bencoded data')
+        log.err()
         raise ValueError, "bad bencoded data"
     if not sloppy and l != len(x):
         raise ValueError, "bad bencoded data"
@@ -477,7 +465,7 @@ def bencode(x):
     try:
         encode_func[type(x)](x, r)
     except:
-        logger.exception('could not encode type '+str(type(x))+' (value: '+str(x)+')')
+        log.err()
         assert 0
     return ''.join(r)
 
