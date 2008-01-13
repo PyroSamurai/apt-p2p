@@ -20,6 +20,8 @@ try:
     from types import UnicodeType
 except ImportError:
     UnicodeType = None
+from datetime import datetime
+import time
 
 from twisted.python import log
 from twisted.trial import unittest
@@ -91,6 +93,27 @@ def decode_unicode(x, f):
     s, f = decode_string(x, f+1)
     return (s.decode('UTF-8'),f)
 
+def decode_datetime(x, f):
+    """Bdecode a datetime value.
+    
+    @type x: C{string}
+    @param x: the data to decode
+    @type f: C{int}
+    @param f: the offset in the data to start at
+    @rtype: C{datetime.datetime}, C{int}
+    @return: the bdecoded integer, and the offset to read next
+    @raise BencodeError: if the data is improperly encoded
+    
+    """
+    
+    f += 1
+    newf = x.index('e', f)
+    try:
+        date = datetime(*(time.strptime(x[f:newf], '%Y-%m-%dT%H:%M:%S')[0:6]))
+    except:
+        raise BencodeError, "datetime value could not be decoded: %s" % x[f:newf]
+    return (date, newf+1)
+  
 def decode_list(x, f):
     """Bdecode a list.
     
@@ -147,6 +170,7 @@ decode_func['7'] = decode_string
 decode_func['8'] = decode_string
 decode_func['9'] = decode_string
 decode_func['u'] = decode_unicode
+decode_func['t'] = decode_datetime
   
 def bdecode(x, sloppy = 0):
     """Bdecode a string of data.
@@ -262,6 +286,29 @@ def encode_unicode(x,r):
     #r.append('u')
     encode_string(x.encode('UTF-8'),r)
 
+def encode_datetime(x,r):
+    """Bencode a datetime value in UTC.
+    
+    If the datetime object has time zone info, it is converted to UTC time.
+    Otherwise it is assumed that the time is already in UTC time.
+    Microseconds are removed.
+    
+    @type x: C{datetime.datetime}
+    @param x: the data to encode
+    @type r: C{list}
+    @param r: the currently bencoded data, to which the bencoding of x
+        will be appended
+    
+    """
+    
+    date = x.replace(microsecond = 0)
+    offset = date.utcoffset()
+    if offset is not None:
+        utcdate = date.replace(tzinfo = None) + offset
+    else:
+        utcdate = date
+    r.extend(('t',utcdate.isoformat(),'e'))
+
 def encode_list(x,r):
     """Bencode a list.
     
@@ -306,6 +353,7 @@ encode_func[ListType] = encode_list
 encode_func[TupleType] = encode_list
 encode_func[DictType] = encode_dict
 encode_func[BooleanType] = encode_bool
+encode_func[datetime] = encode_datetime
 if UnicodeType:
     encode_func[UnicodeType] = encode_unicode
     
@@ -422,6 +470,10 @@ class TestBencode(unittest.TestCase):
     def test_bool(self):
         self.failUnless(bdecode(bencode(True)))
         self.failIf(bdecode(bencode(False)))
+
+    def test_datetime(self):
+        date = datetime.utcnow()
+        self.failUnlessEqual(bdecode(bencode(date)), date.replace(microsecond = 0))
 
     if UnicodeType == None:
         test_bencode_unicode.skip = "Python was not compiled with unicode support"
