@@ -35,6 +35,7 @@ class AptDHT:
         self.mirrors = MirrorManager(self.cache_dir)
         self.cache = CacheManager(self.cache_dir.child(download_dir), self.db, self)
         self.my_addr = None
+        self.setDirectories = self.http_server.setDirectories
     
     def getSite(self):
         return self.http_site

@@ -51,6 +51,7 @@ class TopLevel(resource.Resource):
             # Don't allow empty subdirectory
             if k:
                 self.subdirs[k] = dirs[k]
+        log.msg('new subdirectories initialized')
     
     def render(self, ctx):
         return http.Response(

@@ -206,6 +206,9 @@ class CacheManager:
                 
             urlpath, newdir = self.db.storeFile(destFile, hash.digest(), self.cache_dir)
             log.msg('now avaliable at %s: %s' % (urlpath, url))
+            if newdir and self.manager:
+                log.msg('A new web directory was created, so enable it')
+                self.manager.setDirectories(self.db.getAllDirectories())
 
             if self.manager:
                 self.manager.new_cached_file(url, destFile, hash, urlpath)
