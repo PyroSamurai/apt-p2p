@@ -204,7 +204,8 @@ class CacheManager:
             else:
                 log.msg('Hashed file to %s: %s' % (hash.hexdigest(), url))
                 
-            urlpath, newdir = self.db.storeFile(destFile, hash.digest(), self.cache_dir)
+            mirror_dir = self.cache_dir.child(destFile.path[len(self.cache_dir.path)+1:].split('/', 1)[0])
+            urlpath, newdir = self.db.storeFile(destFile, hash.digest(), mirror_dir)
             log.msg('now avaliable at %s: %s' % (urlpath, url))
             if newdir and self.manager:
                 log.msg('A new web directory was created, so enable it')
