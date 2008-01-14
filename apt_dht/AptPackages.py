@@ -10,6 +10,7 @@ from UserDict import DictMixin
 
 from twisted.internet import threads, defer
 from twisted.python import log
+from twisted.python.filepath import FilePath
 from twisted.trial import unittest
 
 import apt_pkg, apt_inst
@@ -30,15 +31,16 @@ class PackageFileList(DictMixin):
     
     def __init__(self, cache_dir):
         self.cache_dir = cache_dir
-        if not os.path.exists(self.cache_dir):
-            os.makedirs(self.cache_dir)
+        self.cache_dir.restat(False)
+        if not self.cache_dir.exists():
+            self.cache_dir.makedirs()
         self.packages = None
         self.open()
 
     def open(self):
         """Open the persistent dictionary of files in this backend."""
         if self.packages is None:
-            self.packages = shelve.open(self.cache_dir+'/packages.db')
+            self.packages = shelve.open(self.cache_dir.child('packages.db').path)
 
     def close(self):
         """Close the persistent dictionary."""
@@ -62,7 +64,8 @@ class PackageFileList(DictMixin):
         """Check all files in the database to make sure they exist."""
         files = self.packages.keys()
         for f in files:
-            if not os.path.exists(self.packages[f]):
+            self.packages[f].restat(False)
+            if not self.packages[f].exists():
                 log.msg("File in packages database has been deleted: "+f)
                 del self.packages[f]
 
@@ -124,19 +127,16 @@ class AptPackages:
         self.apt_config = deepcopy(self.DEFAULT_APT_CONFIG)
 
         for dir in self.essential_dirs:
-            path = os.path.join(self.cache_dir, dir)
-            if not os.path.exists(path):
-                os.makedirs(path)
+            path = self.cache_dir.preauthChild(dir)
+            if not path.exists():
+                path.makedirs()
         for file in self.essential_files:
-            path = os.path.join(self.cache_dir, file)
-            if not os.path.exists(path):
-                f = open(path,'w')
-                f.close()
-                del f
+            path = self.cache_dir.preauthChild(file)
+            if not path.exists():
+                path.touch()
                 
-        self.apt_config['Dir'] = self.cache_dir
-        self.apt_config['Dir::State::status'] = os.path.join(self.cache_dir, 
-                      self.apt_config['Dir::State'], self.apt_config['Dir::State::status'])
+        self.apt_config['Dir'] = self.cache_dir.path
+        self.apt_config['Dir::State::status'] = self.cache_dir.preauthChild(self.apt_config['Dir::State']).preauthChild(self.apt_config['Dir::State::status']).path
         self.packages = PackageFileList(cache_dir)
         self.loaded = 0
         self.loading = None
@@ -152,7 +152,7 @@ class AptPackages:
         self.indexrecords[cache_path] = {}
 
         read_packages = False
-        f = open(file_path, 'r')
+        f = file_path.open('r')
         
         for line in f:
             line = line.rstrip()
@@ -204,13 +204,14 @@ class AptPackages:
         """Regenerates the fake configuration and load the packages cache."""
         if self.loaded: return True
         apt_pkg.InitSystem()
-        rmtree(os.path.join(self.cache_dir, self.apt_config['Dir::State'], 
-                            self.apt_config['Dir::State::Lists']))
-        os.makedirs(os.path.join(self.cache_dir, self.apt_config['Dir::State'], 
-                                 self.apt_config['Dir::State::Lists'], 'partial'))
-        sources_filename = os.path.join(self.cache_dir, self.apt_config['Dir::Etc'], 
-                                        self.apt_config['Dir::Etc::sourcelist'])
-        sources = open(sources_filename, 'w')
+        self.cache_dir.preauthChild(self.apt_config['Dir::State']
+                     ).preauthChild(self.apt_config['Dir::State::Lists']).remove()
+        self.cache_dir.preauthChild(self.apt_config['Dir::State']
+                     ).preauthChild(self.apt_config['Dir::State::Lists']
+                     ).child('partial').makedirs()
+        sources_file = self.cache_dir.preauthChild(self.apt_config['Dir::Etc']
+                               ).preauthChild(self.apt_config['Dir::Etc::sourcelist'])
+        sources = sources_file.open('w')
         sources_count = 0
         deb_src_added = False
         self.packages.check_files()
@@ -218,9 +219,9 @@ class AptPackages:
         for f in self.packages:
             # we should probably clear old entries from self.packages and
             # take into account the recorded mtime as optimization
-            filepath = self.packages[f]
+            file = self.packages[f]
             if f.split('/')[-1] == "Release":
-                self.addRelease(f, filepath)
+                self.addRelease(f, file)
             fake_uri='http://apt-dht'+f
             fake_dirname = '/'.join(fake_uri.split('/')[:-1])
             if f.endswith('Sources'):
@@ -228,26 +229,24 @@ class AptPackages:
                 source_line='deb-src '+fake_dirname+'/ /'
             else:
                 source_line='deb '+fake_dirname+'/ /'
-            listpath=(os.path.join(self.cache_dir, self.apt_config['Dir::State'], 
-                                   self.apt_config['Dir::State::Lists'], 
-                                   apt_pkg.URItoFileName(fake_uri)))
+            listpath = self.cache_dir.preauthChild(self.apt_config['Dir::State']
+                                    ).preauthChild(self.apt_config['Dir::State::Lists']
+                                    ).child(apt_pkg.URItoFileName(fake_uri))
             sources.write(source_line+'\n')
             log.msg("Sources line: " + source_line)
             sources_count = sources_count + 1
 
-            try:
+            if listpath.exists():
                 #we should empty the directory instead
-                os.unlink(listpath)
-            except:
-                pass
-            os.symlink(filepath, listpath)
+                listpath.remove()
+            os.symlink(file.path, listpath.path)
         sources.close()
 
         if sources_count == 0:
-            log.msg("No Packages files available for %s backend"%(self.cache_dir))
+            log.msg("No Packages files available for %s backend"%(self.cache_dir.path))
             return False
 
-        log.msg("Loading Packages database for "+self.cache_dir)
+        log.msg("Loading Packages database for "+self.cache_dir.path)
         for key, value in self.apt_config.items():
             apt_pkg.Config[key] = value
 
@@ -355,7 +354,7 @@ class TestAptPackages(unittest.TestCase):
     releaseFile = ''
     
     def setUp(self):
-        self.client = AptPackages('/tmp/.apt-dht')
+        self.client = AptPackages(FilePath('/tmp/.apt-dht'))
     
         self.packagesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Packages$" | tail -n 1').read().rstrip('\n')
         self.sourcesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Sources$" | tail -n 1').read().rstrip('\n')
@@ -365,11 +364,11 @@ class TestAptPackages(unittest.TestCase):
                 break
         
         self.client.file_updated(self.releaseFile[self.releaseFile.find('_dists_'):].replace('_','/'), 
-                                 '/var/lib/apt/lists/' + self.releaseFile)
+                                 FilePath('/var/lib/apt/lists/' + self.releaseFile))
         self.client.file_updated(self.packagesFile[self.packagesFile.find('_dists_'):].replace('_','/'), 
-                                 '/var/lib/apt/lists/' + self.packagesFile)
+                                 FilePath('/var/lib/apt/lists/' + self.packagesFile))
         self.client.file_updated(self.sourcesFile[self.sourcesFile.find('_dists_'):].replace('_','/'), 
-                                 '/var/lib/apt/lists/' + self.sourcesFile)
+                                 FilePath('/var/lib/apt/lists/' + self.sourcesFile))
     
     def test_pkg_hash(self):
         self.client._load()

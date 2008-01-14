@@ -1,4 +1,3 @@
-import os.path, time
 
 from twisted.python import log
 from twisted.internet import defer
@@ -65,14 +64,14 @@ class TopLevel(resource.Resource):
         name = segments[0]
         if name in self.subdirs:
             log.msg('Sharing %s with %s' % (request.uri, request.remoteAddr))
-            return static.File(self.subdirs[name]), segments[1:]
+            return static.File(self.subdirs[name].path), segments[1:]
         
         if request.remoteAddr.host != "127.0.0.1":
             log.msg('Blocked illegal access to %s from %s' % (request.uri, request.remoteAddr))
             return None, ()
             
         if len(name) > 1:
-            return FileDownloader(self.directory, self.manager), segments[0:]
+            return FileDownloader(self.directory.path, self.manager), segments[0:]
         else:
             return self, ()
         

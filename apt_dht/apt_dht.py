@@ -6,26 +6,34 @@ import os, re
 from twisted.internet import defer
 from twisted.web2 import server, http, http_headers
 from twisted.python import log
+from twisted.python.filepath import FilePath
 
 from apt_dht_conf import config
 from PeerManager import PeerManager
 from HTTPServer import TopLevel
 from MirrorManager import MirrorManager
+from CacheManager import CacheManager
 from Hash import HashObject
 from db import DB
 from util import findMyIPAddr
 
+download_dir = 'cache'
+
 class AptDHT:
     def __init__(self, dht):
         log.msg('Initializing the main apt_dht application')
-        self.db = DB(config.get('DEFAULT', 'cache_dir') + '/.apt-dht.db')
+        self.cache_dir = FilePath(config.get('DEFAULT', 'cache_dir'))
+        if not self.cache_dir.child(download_dir).exists():
+            self.cache_dir.child(download_dir).makedirs()
+        self.db = DB(self.cache_dir.child('apt-dht.db'))
         self.dht = dht
         self.dht.loadConfig(config, config.get('DEFAULT', 'DHT'))
         self.dht.join().addCallbacks(self.joinComplete, self.joinError)
-        self.http_server = TopLevel(config.get('DEFAULT', 'cache_dir'), self)
+        self.http_server = TopLevel(self.cache_dir.child(download_dir), self)
         self.http_site = server.Site(self.http_server)
         self.peers = PeerManager()
-        self.mirrors = MirrorManager(config.get('DEFAULT', 'cache_dir'), self)
+        self.mirrors = MirrorManager(self.cache_dir)
+        self.cache = CacheManager(self.cache_dir.child(download_dir), self.db, self)
         self.my_addr = None
     
     def getSite(self):
@@ -39,6 +47,7 @@ class AptDHT:
     def joinError(self, failure):
         log.msg("joining DHT failed miserably")
         log.err(failure)
+        raise RuntimeError, "IP address for this machine could not be found"
     
     def check_freshness(self, path, modtime, resp):
         log.msg('Checking if %s is still fresh' % path)
@@ -84,16 +93,16 @@ class AptDHT:
         if not locations:
             log.msg('Peers for %s were not found' % path)
             getDefer = self.peers.get([path])
-            getDefer.addCallback(self.mirrors.save_file, hash, path)
-            getDefer.addErrback(self.mirrors.save_error, path)
+            getDefer.addCallback(self.cache.save_file, hash, path)
+            getDefer.addErrback(self.cache.save_error, path)
             getDefer.addCallbacks(d.callback, d.errback)
         else:
             log.msg('Found peers for %s: %r' % (path, locations))
             # Download from the found peers
             getDefer = self.peers.get(locations)
             getDefer.addCallback(self.check_response, hash, path)
-            getDefer.addCallback(self.mirrors.save_file, hash, path)
-            getDefer.addErrback(self.mirrors.save_error, path)
+            getDefer.addCallback(self.cache.save_file, hash, path)
+            getDefer.addErrback(self.cache.save_error, path)
             getDefer.addCallbacks(d.callback, d.errback)
             
     def check_response(self, response, hash, path):
@@ -103,12 +112,10 @@ class AptDHT:
             return getDefer
         return response
         
-    def cached_file(self, hash, url, file_path):
-        assert file_path.startswith(config.get('DEFAULT', 'cache_dir'))
-        urlpath, newdir = self.db.storeFile(file_path, hash.digest(), config.get('DEFAULT', 'cache_dir'))
-        log.msg('now avaliable at %s: %s' % (urlpath, url))
-
-        if self.my_addr:
+    def new_cached_file(self, url, file_path, hash, urlpath):
+        self.mirrors.updatedFile(url, file_path)
+        
+        if self.my_addr and hash:
             site = self.my_addr + ':' + str(config.getint('DEFAULT', 'PORT'))
             full_path = urlunparse(('http', site, urlpath, None, None, None))
             key = hash.norm(bits = config.getint(config.get('DEFAULT', 'DHT'), 'HASH_LENGTH'))

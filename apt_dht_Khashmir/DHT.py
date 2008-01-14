@@ -11,6 +11,8 @@ from zope.interface import implements
 from apt_dht.interfaces import IDHT
 from khashmir import Khashmir
 
+khashmir_dir = 'apt-dht-Khashmir'
+
 class DHTError(Exception):
     """Represents errors that occur in the DHT."""
 
@@ -36,7 +38,9 @@ class DHT:
         self.config_parser = config
         self.section = section
         self.config = {}
-        self.cache_dir = self.config_parser.get(section, 'cache_dir')
+        self.cache_dir = os.path.join(self.config_parser.get(section, 'cache_dir'), khashmir_dir)
+        if not os.path.exists(self.cache_dir):
+            os.makedirs(self.cache_dir)
         self.bootstrap = self.config_parser.getstringlist(section, 'BOOTSTRAP')
         self.bootstrap_node = self.config_parser.getboolean(section, 'BOOTSTRAP_NODE')
         for k in self.config_parser.options(section):
@@ -182,7 +186,7 @@ class TestSimpleDHT(unittest.TestCase):
                     'STORE_REDUNDANCY': 3, 'MAX_FAILURES': 3,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
                     'KEINITIAL_DELAY': 15, 'KE_DELAY': 1200,
-                    'KE_AGE': 3600, 'SPEW': True, }
+                    'KE_AGE': 3600, 'SPEW': False, }
 
     def setUp(self):
         self.a = DHT()
