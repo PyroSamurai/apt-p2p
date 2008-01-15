@@ -25,10 +25,10 @@ class FileDownloader(static.File):
         if self.manager:
             path = 'http:/' + req.uri
             if resp.code >= 200 and resp.code < 400:
-                return self.manager.check_freshness(path, resp.headers.getHeader('Last-Modified'), resp)
+                return self.manager.check_freshness(req, path, resp.headers.getHeader('Last-Modified'), resp)
             
             log.msg('Not found, trying other methods for %s' % req.uri)
-            return self.manager.get_resp(path)
+            return self.manager.get_resp(req, path)
         
         return resp
 

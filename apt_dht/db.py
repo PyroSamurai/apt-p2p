@@ -47,6 +47,7 @@ class DB:
         self.conn = sqlite.connect(database=self.db.path, detect_types=sqlite.PARSE_DECLTYPES)
         c = self.conn.cursor()
         c.execute("CREATE TABLE files (path TEXT PRIMARY KEY, hash KHASH, urldir INTEGER, dirlength INTEGER, size NUMBER, mtime NUMBER, refreshed TIMESTAMP)")
+        c.execute("CREATE INDEX files_hash ON files(hash)")
         c.execute("CREATE INDEX files_urldir ON files(urldir)")
         c.execute("CREATE INDEX files_refreshed ON files(refreshed)")
         c.execute("CREATE TABLE dirs (urldir INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT)")
@@ -101,14 +102,41 @@ class DB:
         c = self.conn.cursor()
         c.execute("SELECT hash, urldir, dirlength, size, mtime FROM files WHERE path = ?", (file.path, ))
         row = c.fetchone()
-        res = self._removeChanged(file, row)
-        if res:
-            res = {}
-            res['hash'] = row['hash']
-            res['size'] = row['size']
-            res['urlpath'] = '/~' + str(row['urldir']) + file.path[row['dirlength']:]
+        res = None
+        if row:
+            res = self._removeChanged(file, row)
+            if res:
+                res = {}
+                res['hash'] = row['hash']
+                res['size'] = row['size']
+                res['urlpath'] = '/~' + str(row['urldir']) + file.path[row['dirlength']:]
         c.close()
         return res
+        
+    def lookupHash(self, hash):
+        """Find a file by hash in the database.
+        
+        If any found files have changed or are missing, they are removed
+        from the database.
+        
+        @return: list of dictionaries of info for the found files
+        """
+        c = self.conn.cursor()
+        c.execute("SELECT path, urldir, dirlength, size, mtime FROM files WHERE hash = ? ORDER BY urldir", (khash(hash), ))
+        row = c.fetchone()
+        files = []
+        while row:
+            file = FilePath(row['path'])
+            res = self._removeChanged(file, row)
+            if res:
+                res = {}
+                res['path'] = file
+                res['size'] = row['size']
+                res['urlpath'] = '/~' + str(row['urldir']) + file.path[row['dirlength']:]
+                files.append(res)
+            row = c.fetchone()
+        c.close()
+        return files
         
     def isUnchanged(self, file):
         """Check if a file in the file system has changed.
@@ -132,9 +160,11 @@ class DB:
         c = self.conn.cursor()
         c.execute("SELECT size, mtime FROM files WHERE path = ?", (file.path, ))
         row = c.fetchone()
-        res = self._removeChanged(file, row)
-        if res:
-            c.execute("UPDATE files SET refreshed = ? WHERE path = ?", (datetime.now(), file.path))
+        res = None
+        if row:
+            res = self._removeChanged(file, row)
+            if res:
+                c.execute("UPDATE files SET refreshed = ? WHERE path = ?", (datetime.now(), file.path))
         return res
     
     def expiredFiles(self, expireAfter):
