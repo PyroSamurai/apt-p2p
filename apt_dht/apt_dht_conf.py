@@ -25,6 +25,11 @@ DEFAULTS = {
     # Directory to store the downloaded files in
     'CACHE_DIR': home + '/.apt-dht/cache',
     
+    # Other directories containing packages to share with others
+    # WARNING: all files in these directories will be hashed and available
+    #          for everybody to download
+    'OTHER_DIRS': """""",
+    
     # User name to try and run as
     'USERNAME': '',
 

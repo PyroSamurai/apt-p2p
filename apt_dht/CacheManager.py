@@ -147,14 +147,17 @@ class ProxyFileStream(stream.SimpleStream):
 class CacheManager:
     """Manages all requests for cached objects."""
     
-    def __init__(self, cache_dir, db, manager = None):
+    def __init__(self, cache_dir, db, other_dirs = [], manager = None):
         self.cache_dir = cache_dir
+        self.other_dirs = other_dirs
+        self.all_dirs = self.other_dirs[:]
+        self.all_dirs.insert(0, self.cache_dir)
         self.db = db
         self.manager = manager
         self.scanning = []
         
         # Init the database, remove old files, init the HTTP dirs
-        self.db.removeUntrackedFiles([self.cache_dir])
+        self.db.removeUntrackedFiles(self.all_dirs)
         self.db.reconcileDirectories()
         self.manager.setDirectories(self.db.getAllDirectories())
         
@@ -162,7 +165,7 @@ class CacheManager:
     def scanDirectories(self):
         """Scan the cache directories, hashing new and rehashing changed files."""
         assert not self.scanning, "a directory scan is already under way"
-        self.scanning.append(self.cache_dir)
+        self.scanning = self.all_dirs[:]
         self._scanDirectories()
 
     def _scanDirectories(self, walker = None):

@@ -34,7 +34,8 @@ class AptDHT:
         self.http_site = server.Site(self.http_server)
         self.peers = PeerManager()
         self.mirrors = MirrorManager(self.cache_dir)
-        self.cache = CacheManager(self.cache_dir.child(download_dir), self.db, self)
+        other_dirs = [FilePath(f) for f in config.getstringlist('DEFAULT', 'OTHER_DIRS')]
+        self.cache = CacheManager(self.cache_dir.child(download_dir), self.db, other_dirs, self)
         self.my_addr = None
     
     def getSite(self):
