@@ -1,11 +1,3 @@
-Hashes of files need to be stored permanently.
-
-A new database of files and their hashes is needed. It should store the 
-location and hash of the file as well as the modtime and other details 
-so we can check if a file needs to be rehashed on startup. The DB can 
-also be used to store info needed to manage the values stored in the DHT.
-
-
 Change all print statements to log.msg() calls.
 
 
