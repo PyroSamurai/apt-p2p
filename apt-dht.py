@@ -25,10 +25,11 @@ if __name__ == '__main__':
     # Parse command line parameters when started on command line
     class AptDHTOptions(usage.Options):
         optFlags = [
-            ['help', 'h'],
+            ['help', 'h', 'Print this help message'],
             ]
         optParameters = [
             ['config-file', 'c', [], "Configuration file"],
+            ['log-file', 'l', '-', "File to log to, - for stdout"],
             ]
         longdesc="apt-dht is a peer-to-peer downloader for apt users"
         def opt_version(self):
@@ -43,6 +44,12 @@ if __name__ == '__main__':
         sys.exit(1)
 
     config_file = opts.opts['config-file']
+    log_file = opts.opts['log-file']
+    if log_file == '-':
+        f = sys.stdout
+    else:
+        f = open(log_file, 'w')
+    log.startLogging(f, setStdout=1)
 
 config.read(config_file)
 if config.has_option('DEFAULT', 'username') and config.get('DEFAULT', 'username'):
@@ -73,7 +80,6 @@ else:
 
 if __name__ == '__main__':
     # Run on command line
-    log.startLogging(sys.stdout, setStdout=0)
     service.IServiceCollection(application).privilegedStartService()
     service.IServiceCollection(application).startService()
     reactor.run()
