@@ -168,7 +168,8 @@ class AptDHT:
             key = hash.norm(bits = config.getint(config.get('DEFAULT', 'DHT'), 'HASH_LENGTH'))
             storeDefer = self.dht.storeValue(key, full_path)
             storeDefer.addCallback(self.store_done, full_path)
-            storeDefer.addErrback(log.err)
+            return storeDefer
+        return None
 
     def store_done(self, result, path):
         log.msg('Added %s to the DHT: %r' % (path, result))

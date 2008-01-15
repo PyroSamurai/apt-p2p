@@ -168,7 +168,7 @@ class CacheManager:
         self.scanning = self.all_dirs[:]
         self._scanDirectories()
 
-    def _scanDirectories(self, walker = None):
+    def _scanDirectories(self, result = None, walker = None):
         # Need to start waling a new directory
         if walker is None:
             # If there are any left, get them
@@ -198,7 +198,7 @@ class CacheManager:
                 log.msg('entering directory: %s' % file.path)
             else:
                 log.msg('file is unchanged: %s' % file.path)
-            reactor.callLater(0, self._scanDirectories, walker)
+            reactor.callLater(0, self._scanDirectories, None, walker)
             return
 
         # Otherwise hash it
@@ -209,7 +209,6 @@ class CacheManager:
         df.addErrback(log.err)
     
     def _doneHashing(self, result, file, walker):
-        reactor.callLater(0, self._scanDirectories, walker)
     
         if isinstance(result, HashObject):
             log.msg('hash check of %s completed with hash: %s' % (file.path, result.hexdigest()))
@@ -222,10 +221,15 @@ class CacheManager:
                 url = None
             if newdir:
                 self.manager.setDirectories(self.db.getAllDirectories())
-            self.manager.new_cached_file(file, result, urlpath, url)
+            df = self.manager.new_cached_file(file, result, urlpath, url)
+            if df is None:
+                reactor.callLater(0, self._scanDirectories, None, walker)
+            else:
+                df.addBoth(self._scanDirectories, walker)
         else:
             log.msg('hash check of %s failed' % file.path)
             log.err(result)
+            reactor.callLater(0, self._scanDirectories, None, walker)
 
     def save_file(self, response, hash, url):
         """Save a downloaded file to the cache and stream it."""
