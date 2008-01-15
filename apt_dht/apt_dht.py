@@ -30,12 +30,12 @@ class AptDHT:
         self.dht.loadConfig(config, config.get('DEFAULT', 'DHT'))
         self.dht.join().addCallbacks(self.joinComplete, self.joinError)
         self.http_server = TopLevel(self.cache_dir.child(download_dir), self)
+        self.setDirectories = self.http_server.setDirectories
         self.http_site = server.Site(self.http_server)
         self.peers = PeerManager()
         self.mirrors = MirrorManager(self.cache_dir)
         self.cache = CacheManager(self.cache_dir.child(download_dir), self.db, self)
         self.my_addr = None
-        self.setDirectories = self.http_server.setDirectories
     
     def getSite(self):
         return self.http_site
@@ -44,6 +44,7 @@ class AptDHT:
         self.my_addr = findMyIPAddr(result, config.getint(config.get('DEFAULT', 'DHT'), 'PORT'))
         if not self.my_addr:
             raise RuntimeError, "IP address for this machine could not be found"
+        self.cache.scanDirectories()
 
     def joinError(self, failure):
         log.msg("joining DHT failed miserably")
@@ -113,8 +114,13 @@ class AptDHT:
             return getDefer
         return response
         
-    def new_cached_file(self, url, file_path, hash, urlpath):
-        self.mirrors.updatedFile(url, file_path)
+    def new_cached_file(self, file_path, hash, urlpath, url = None):
+        """Add a newly cached file to the DHT.
+        
+        If the file was downloaded, set url to the path it was downloaded for.
+        """
+        if url:
+            self.mirrors.updatedFile(url, file_path)
         
         if self.my_addr and hash:
             site = self.my_addr + ':' + str(config.getint('DEFAULT', 'PORT'))

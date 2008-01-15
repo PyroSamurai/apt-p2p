@@ -2,8 +2,12 @@
 from binascii import b2a_hex, a2b_hex
 import sys
 
+from twisted.internet import threads, defer
 from twisted.trial import unittest
 
+class HashError(ValueError):
+    """An error has occurred while hashing a file."""
+    
 class HashObject:
     """Manages hashes and hashing for a file."""
     
@@ -53,7 +57,8 @@ class HashObject:
         if bits is not None:
             bytes = (bits - 1) // 8 + 1
         else:
-            assert bytes is not None, "you must specify one of bits or bytes"
+            if bytes is None:
+                raise HashError, "you must specify one of bits or bytes"
         if len(hashString) < bytes:
             hashString = hashString + '\000'*(bytes - len(hashString))
         elif len(hashString) > bytes:
@@ -102,15 +107,18 @@ class HashObject:
     def update(self, data):
         """Add more data to the file hasher."""
         if self.result is None:
-            assert self.done == False, "Already done, you can't add more data after calling digest() or verify()"
-            assert self.fileHasher is not None, "file hasher not initialized"
+            if self.done:
+                raise HashError, "Already done, you can't add more data after calling digest() or verify()"
+            if self.fileHasher is None:
+                raise HashError, "file hasher not initialized"
             self.fileHasher.update(data)
             self.size += len(data)
         
     def digest(self):
         """Get the hash of the added file data."""
         if self.fileHash is None:
-            assert self.fileHasher is not None, "you must hash some data first"
+            if self.fileHasher is None:
+                raise HashError, "you must hash some data first"
             self.fileHash = self.fileHasher.digest()
             self.done = True
         return self.fileHash
@@ -136,6 +144,28 @@ class HashObject:
             self.result = (self.fileHash == self.expHash and self.size == self.expSize)
         return self.result
     
+    def hashInThread(self, file):
+        """Hashes a file in a separate thread, callback with the result."""
+        file.restat(False)
+        if not file.exists():
+            df = defer.Deferred()
+            df.errback(HashError("file not found"))
+            return df
+        
+        df = threads.deferToThread(self._hashInThread, file)
+        return df
+    
+    def _hashInThread(self, file):
+        """Hashes a file, returning itself as the result."""
+        f = file.open()
+        self.new(force = True)
+        data = f.read(4096)
+        while data:
+            self.update(data)
+            data = f.read(4096)
+        self.digest()
+        return self
+
     #### Methods for setting the expected hash
     def set(self, hashType, hashHex, size):
         """Initialize the hash object.
@@ -213,10 +243,10 @@ class TestHashObject(unittest.TestCase):
     def test_failure(self):
         h = HashObject()
         h.set(h.ORDER[0], b2a_hex('12345678901234567890'), '0')
-        self.failUnlessRaises(AssertionError, h.normexpected)
-        self.failUnlessRaises(AssertionError, h.digest)
-        self.failUnlessRaises(AssertionError, h.hexdigest)
-        self.failUnlessRaises(AssertionError, h.update, 'gfgf')
+        self.failUnlessRaises(HashError, h.normexpected)
+        self.failUnlessRaises(HashError, h.digest)
+        self.failUnlessRaises(HashError, h.hexdigest)
+        self.failUnlessRaises(HashError, h.update, 'gfgf')
     
     def test_sha1(self):
         h = HashObject()
@@ -230,7 +260,7 @@ class TestHashObject(unittest.TestCase):
         h.new()
         h.update('apt-dht is the best')
         self.failUnless(h.hexdigest() == 'c722df87e1acaa64b27aac4e174077afc3623540')
-        self.failUnlessRaises(AssertionError, h.update, 'gfgf')
+        self.failUnlessRaises(HashError, h.update, 'gfgf')
         self.failUnless(h.verify() == True)
         
     def test_md5(self):
@@ -245,7 +275,7 @@ class TestHashObject(unittest.TestCase):
         h.new()
         h.update('apt-dht is the best')
         self.failUnless(h.hexdigest() == '2a586bcd1befc5082c872dcd96a01403')
-        self.failUnlessRaises(AssertionError, h.update, 'gfgf')
+        self.failUnlessRaises(HashError, h.update, 'gfgf')
         self.failUnless(h.verify() == True)
         
     def test_sha256(self):
@@ -260,7 +290,7 @@ class TestHashObject(unittest.TestCase):
         h.new()
         h.update('apt-dht is the best')
         self.failUnless(h.hexdigest() == '55b971f64d9772f733de03f23db39224f51a455cc5ad4c2db9d5740d2ab259a7')
-        self.failUnlessRaises(AssertionError, h.update, 'gfgf')
+        self.failUnlessRaises(HashError, h.update, 'gfgf')
         self.failUnless(h.verify() == True)
 
     if sys.version_info < (2, 5):
