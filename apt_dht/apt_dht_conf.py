@@ -32,6 +32,9 @@ DEFAULTS = {
     
     # User name to try and run as
     'USERNAME': '',
+    
+    # Whether it's OK to use an IP addres from a known local/private range
+    'LOCAL_OK': 'no',
 
     # Which DHT implementation to use.
     # It must be possile to do "from <DHT>.DHT import DHT" to get a class that

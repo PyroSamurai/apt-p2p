@@ -42,7 +42,9 @@ class AptDHT:
         return self.http_site
     
     def joinComplete(self, result):
-        self.my_addr = findMyIPAddr(result, config.getint(config.get('DEFAULT', 'DHT'), 'PORT'))
+        self.my_addr = findMyIPAddr(result,
+                                    config.getint(config.get('DEFAULT', 'DHT'), 'PORT'),
+                                    config.getboolean('DEFAULT', 'LOCAL_OK'))
         if not self.my_addr:
             raise RuntimeError, "IP address for this machine could not be found"
         self.cache.scanDirectories()

@@ -10,7 +10,15 @@ isLocal = re.compile('^(192\.168\.[0-9]{1,3}\.[0-9]{1,3})|'+
                      '(172\.0?([1][6-9])|([2][0-9])|([3][0-1])\.[0-9]{1,3}\.[0-9]{1,3})|'+
                      '(127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})$')
 
-def findMyIPAddr(addrs, intended_port):
+def findMyIPAddr(addrs, intended_port, local_ok = False):
+    """Find the best IP address to use from a list of possibilities.
+    
+    @param addrs: the list of possible IP addresses
+    @param intended_port: the port that was supposed to be used
+    @param local_ok: whether known local/private IP ranges are allowed
+        (defaults to False)
+    @return: the preferred IP address, or None if one couldn't be found
+    """
     log.msg("got addrs: %r" % (addrs,))
     my_addr = None
     
@@ -24,7 +32,7 @@ def findMyIPAddr(addrs, intended_port):
     # Get counts for all the non-local addresses returned
     addr_count = {}
     for addr in ifconfig:
-        if not isLocal.match(addr):
+        if local_ok or not isLocal.match(addr):
             addr_count.setdefault(addr, 0)
             addr_count[addr] += 1
     
@@ -37,7 +45,7 @@ def findMyIPAddr(addrs, intended_port):
     addr_count = {}
     port_count = {}
     for addr in addrs:
-        if not isLocal.match(addr[0]):
+        if local_ok or not isLocal.match(addr[0]):
             addr_count.setdefault(addr[0], 0)
             addr_count[addr[0]] += 1
             port_count.setdefault(addr[1], 0)
