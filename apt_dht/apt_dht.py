@@ -31,15 +31,12 @@ class AptDHT:
         self.dht.join().addCallbacks(self.joinComplete, self.joinError)
         self.http_server = TopLevel(self.cache_dir.child(download_dir), self)
         self.setDirectories = self.http_server.setDirectories
-        self.http_site = server.Site(self.http_server)
+        self.getHTTPFactory = self.http_server.getHTTPFactory
         self.peers = PeerManager()
         self.mirrors = MirrorManager(self.cache_dir)
         other_dirs = [FilePath(f) for f in config.getstringlist('DEFAULT', 'OTHER_DIRS')]
         self.cache = CacheManager(self.cache_dir.child(download_dir), self.db, other_dirs, self)
         self.my_addr = None
-    
-    def getSite(self):
-        return self.http_site
     
     def joinComplete(self, result):
         self.my_addr = findMyIPAddr(result,

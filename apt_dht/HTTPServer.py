@@ -44,6 +44,14 @@ class TopLevel(resource.Resource):
         self.directory = directory
         self.manager = manager
         self.subdirs = {}
+        self.factory = None
+
+    def getHTTPFactory(self):
+        if self.factory is None:
+            self.factory = channel.HTTPFactory(server.Site(self),
+                                               **{'maxPipeline': 10, 
+                                                  'betweenRequestsTimeOut': 60})
+        return self.factory
 
     def setDirectories(self, dirs):
         self.subdirs = {}
@@ -75,16 +83,15 @@ class TopLevel(resource.Resource):
             return FileDownloader(self.directory.path, self.manager), segments[0:]
         else:
             return self, ()
-        
+
 if __name__ == '__builtin__':
     # Running from twistd -y
     t = TopLevel('/home', None)
-    t.addDirectory('/tmp')
-    t.addDirectory('/var/log')
-    site = server.Site(t)
+    t.setDirectories({'~1': '/tmp', '~2': '/var/log'})
+    factory = t.getHTTPFactory()
     
     # Standard twisted application Boilerplate
     from twisted.application import service, strports
     application = service.Application("demoserver")
-    s = strports.service('tcp:18080', channel.HTTPFactory(site))
+    s = strports.service('tcp:18080', factory)
     s.setServiceParent(application)

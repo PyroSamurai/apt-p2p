@@ -71,8 +71,8 @@ if not config.getboolean('DEFAULT', 'DHT-only'):
     log.msg('Starting main application server')
     from apt_dht.apt_dht import AptDHT
     myapp = AptDHT(myDHT)
-    site = myapp.getSite()
-    s = strports.service('tcp:'+config.get('DEFAULT', 'port'), channel.HTTPFactory(site))
+    factory = myapp.getHTTPFactory()
+    s = strports.service('tcp:'+config.get('DEFAULT', 'port'), factory)
     s.setServiceParent(application)
 else:
     myDHT.loadConfig(config, config.get('DEFAULT', 'DHT'))
