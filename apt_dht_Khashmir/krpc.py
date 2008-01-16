@@ -8,6 +8,7 @@ from traceback import format_exception
 
 from twisted.internet.defer import Deferred
 from twisted.internet import protocol, reactor
+from twisted.python import log
 from twisted.trial import unittest
 
 from khash import newID
@@ -78,16 +79,17 @@ class KRPC:
     def datagramReceived(self, str, addr):
         if self.stopped:
             if self.noisy:
-                print "stopped, dropping message from", addr, str
+                log.msg("stopped, dropping message from %r: %s" % (addr, str))
         # bdecode
         try:
             msg = bdecode(str)
         except Exception, e:
             if self.noisy:
-                print "response decode error: " + `e`
+                log.msg("response decode error: ")
+                log.err(e)
         else:
             if self.noisy:
-                print self.factory.port, "received from", addr, self.addr, ":", msg
+                log.msg("%d received from %r: %s" % (self.factory.port, addr, msg))
             # look at msg type
             if msg[TYP]  == REQ:
                 ilen = len(str)
@@ -104,12 +106,12 @@ class KRPC:
                         olen = self._sendResponse(addr, msg[TID], RSP, ret)
                 else:
                     if self.noisy:
-                        print "don't know about method %s" % msg[REQ]
+                        log.msg("don't know about method %s" % msg[REQ])
                     # unknown method
                     olen = self._sendResponse(addr, msg[TID], ERR, KRPC_ERROR_METHOD_UNKNOWN)
                 if self.noisy:
-                    print "%s %s >>> %s - %s %s %s" % (asctime(), addr, self.factory.node.port, 
-                                                    ilen, msg[REQ], olen)
+                    log.msg("%s >>> %s - %s %s %s" % (addr, self.factory.node.port,
+                                                      ilen, msg[REQ], olen))
             elif msg[TYP] == RSP:
                 # if response
                 # 	lookup tid
@@ -119,8 +121,9 @@ class KRPC:
                     del(self.tids[msg[TID]])
                     df.callback({'rsp' : msg[RSP], '_krpc_sender': addr})
                 else:
-                    print 'timeout ' + `msg[RSP]['id']`
                     # no tid, this transaction timed out already...
+                    if self.noisy:
+                        log.msg('timeout: %r' % msg[RSP]['id'])
             elif msg[TYP] == ERR:
                 # if error
                 # 	lookup tid
@@ -133,7 +136,8 @@ class KRPC:
                     # day late and dollar short
                     pass
             else:
-                print "unknown message type " + `msg`
+                if self.noisy:
+                    log.msg("unknown message type: %r" % msg)
                 # unknown message type
                 df = self.tids[msg[TID]]
                 # 	callback
@@ -147,7 +151,7 @@ class KRPC:
         msg = {TID : tid, TYP : msgType, msgType : response}
 
         if self.noisy:
-            print self.factory.port, "responding to", addr, ":", msg
+            log.msg("%d responding to %r: %s" % (self.factory.port, addr, msg))
 
         out = bencode(msg)
         self.transport.write(out, addr)
@@ -160,7 +164,7 @@ class KRPC:
         # send it
         msg = {TID : newID(), TYP : REQ,  REQ : method, ARG : args}
         if self.noisy:
-            print self.factory.port, "sending to", self.addr, ":", msg
+            log.msg("%d sending to %r: %s" % (self.factory.port, self.addr, msg))
         str = bencode(msg)
         d = Deferred()
         self.tids[msg[TID]] = d
@@ -168,7 +172,7 @@ class KRPC:
             if tids.has_key(id):
                 df = tids[id]
                 del(tids[id])
-                print ">>>>>> KRPC_ERROR_TIMEOUT"
+                log.msg(">>>>>> KRPC_ERROR_TIMEOUT")
                 df.errback(ProtocolError('timeout waiting for %r' % msg))
         later = reactor.callLater(KRPC_TIMEOUT, timeOut)
         def dropTimeOut(dict, later_call = later):

@@ -4,6 +4,7 @@
 from datetime import datetime
 from bisect import bisect_left
 
+from twisted.python import log
 from twisted.trial import unittest
 
 import khash
@@ -133,7 +134,7 @@ class KTable:
         # this bucket is full and contains our node, split the bucket
         if len(self.buckets) >= self.config['HASH_LENGTH']:
             # our table is FULL, this is really unlikely
-            print "Hash Table is FULL!  Increase K!"
+            log.err("Hash Table is FULL!  Increase K!")
             return
             
         self._splitBucket(self.buckets[i])

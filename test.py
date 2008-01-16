@@ -511,7 +511,7 @@ def apt_get(num_down, cmd):
     
     """
     
-    print '************************** apt-get (' + str(num_down) + ') ' + ' '.join(cmd) + ' **************************'
+    print '*************** apt-get (' + str(num_down) + ') ' + ' '.join(cmd) + ' ****************'
     apt_conf = join([down_dir(num_down), 'etc', 'apt', 'apt.conf'])
     dpkg_status = join([down_dir(num_down), 'var', 'lib', 'dpkg', 'status'])
     args = ['-d', '-c', apt_conf, '-o', 'Dir::state::status='+dpkg_status] + cmd
@@ -735,9 +735,9 @@ def run_test(bootstraps, downloaders, apt_get_queue):
             apt_get_results.append((elapsed, r_value))
 
             if r_value == 0:
-                print '********************** apt-get completed successfully in ' +  str(elapsed) + ' sec. **************************'
+                print '********** apt-get completed successfully in ' +  str(elapsed) + ' sec. *****************'
             else:
-                print '********************** apt-get finished with status ' + str(r_value) + ' in ' +  str(elapsed) + ' sec. **************************'
+                print '********** apt-get finished with status ' + str(r_value) + ' in ' +  str(elapsed) + ' sec. ************'
         
             sleep(5)
             

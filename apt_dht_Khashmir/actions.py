@@ -2,6 +2,7 @@
 # see LICENSE.txt for license information
 
 from twisted.internet import reactor
+from twisted.python import log
 
 from khash import intify
 
@@ -83,7 +84,8 @@ class FindNode(ActionBase):
     
     def makeMsgFailed(self, node):
         def defaultGotNodes(err, self=self, node=node):
-            print ">>> find failed (%s) %s/%s" % (self.config['PORT'], node.host, node.port), err
+            log.msg("find failed (%s) %s/%s" % (self.config['PORT'], node.host, node.port))
+            log.err(err)
             self.caller.table.nodeFailed(node)
             self.outstanding = self.outstanding - 1
             self.schedule()
@@ -153,7 +155,7 @@ class GetValue(FindNode):
                 try:
                     f = getattr(node, self.findValue)
                 except AttributeError:
-                    print ">>> findValue %s doesn't have a %s method!" % (node, self.findValue)
+                    log.msg("findValue %s doesn't have a %s method!" % (node, self.findValue))
                 else:
                     df = f(self.target, self.caller.node.id)
                     df.addCallback(self.handleGotNodes)
@@ -206,7 +208,7 @@ class StoreValue(ActionBase):
         return t
     
     def storeFailed(self, t, node):
-        print ">>> store failed %s/%s" % (node.host, node.port)
+        log.msg("store failed %s/%s" % (node.host, node.port))
         self.caller.nodeFailed(node)
         self.outstanding -= 1
         if self.finished:
@@ -233,7 +235,7 @@ class StoreValue(ActionBase):
                     try:
                         f = getattr(node, self.store)
                     except AttributeError:
-                        print ">>> %s doesn't have a %s method!" % (node, self.store)
+                        log.msg("%s doesn't have a %s method!" % (node, self.store))
                     else:
                         df = f(self.target, self.value, self.originated, self.caller.node.id)
                         df.addCallback(self.storedValue, node=node)

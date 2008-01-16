@@ -1,6 +1,8 @@
 ## Copyright 2002-2004 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
+from twisted.python import log
+
 from node import Node, NULL_ID
 
 class KNodeBase(Node):
@@ -8,17 +10,17 @@ class KNodeBase(Node):
         try:
             senderid = dict['rsp']['id']
         except KeyError:
-            print ">>>> No peer id in response"
+            log.msg("No peer id in response")
             raise Exception, "No peer id in response."
         else:
             if self.id != NULL_ID and senderid != self.id:
-                print "Got response from different node than expected."
+                log.msg("Got response from different node than expected.")
                 self.table.invalidateNode(self)
                 
         return dict
 
     def errBack(self, err):
-        print ">>> ", err
+        log.err(err)
         return err
         
     def ping(self, id):
