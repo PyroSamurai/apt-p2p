@@ -1,3 +1,105 @@
+Files for which a hash cannot be found should not be added to the DHT.
+
+If the hash can't found, it stands to reason that other peers will not 
+be able to find the hash either. So adding those files to the DHT will 
+just clutter it with useless information. Examples include Release.gpg, 
+Release, Translation-de.bz2, and Contents.gz.
+
+
+Packages.diff files need to be considered.
+
+The Packages.diff/Index files contain hashes of Packages.diff/rred.gz 
+files, which themselves contain diffs to the Packages files previously 
+downloaded. Apt will request these files for the testing/unstable 
+distributions. They need to either be ignored, or dealt with properly by 
+adding them to the tracking done by the AptPackages module.
+
+
+Hashes need to be sent with requests for some files.
+
+Some files can change without changing the file name, since the file was 
+added to the DHT by the peer. Examples are Release, Packages.gz, and 
+Sources.bz2. For files like this (and only for files like this), the 
+request to download from the peer should include the downloader's 
+expected hash for the file as a new HTTP header. If the file is found, 
+the cached hash for the file will be used to determine whether the 
+request is for the same file as is currently available, and a special 
+HTTP response can be sent if it is not (i.e. not a 404).
+
+Alternatively, consider sharing the files by hash instead of by 
+directory. Then the request would be for
+http://127.3.45.9:9977/<urlencodedHash>, and it would always work. This 
+would require a database lookup for every request.
+
+
+PeerManager needs to download large files from multiple peers.
+
+The PeerManager currently chooses a peer at random from the list of 
+possible peers, and downloads the entire file from there. This needs to 
+change if both a) the file is large (more than 512 KB), and b) there are
+multiple peers with the file. The PeerManager should then break up the 
+large file into multiple pieces of size < 512 KB, and then send requests 
+to multiple peers for these pieces.
+
+This can cause a problem with hash checking the returned data, as hashes 
+for the pieces are not known. Any file that fails a hash check should be 
+downloaded again, with each piece being downloaded from different peers 
+than it was previously. The peers are shifted by 1, so that if a peers 
+previously downloaded piece i, it now downloads piece i+1, and the first 
+piece is downloaded by the previous downloader of the last piece, or 
+preferably a previously unused peer. As each piece is downloaded the 
+running hash of the file should be checked to determine the place at 
+which the file differs from the previous download.
+
+If the hash check then passes, then the peer who originally provided the 
+bad piece can be assessed blame for the error. Otherwise, the peer who 
+originally provided the piece is probably at fault, since he is now 
+providing a later piece. This doesn't work if the differing piece is the 
+first piece, in which case it is downloaded from a 3rd peer, with 
+consensus revealing the misbehaving peer.
+
+
+Consider storing torrent-like strings in the DHT.
+
+Instead of only storing the file download location (which would still be 
+used for small files), a bencoded dictionary containing the peer's 
+hashes of the individual pieces could be stored for the larger files 
+(20% of all the files are larger than 512 KB ). This dictionary would 
+have the download location, a list of the piece sizes, and a list of the 
+piece hashes (bittorrent uses a single string of length 20*#pieces, but 
+for general non-sha1 case a list is needed).
+
+These piece hashes could be compared ahead of time to determine which 
+peers have the same piece hashes (they all should), and then used during 
+the download to verify the downloaded pieces.
+
+Alternatively, the peers could store the torrent-like string for large 
+files separately, and only contain a reference to it in their stored 
+value for the hash of the file. The reference would be a hash of the 
+bencoded dictionary, and a lookup of that hash in the DHT would give the 
+torrent-like string. (A 100 MB file would result in 200 hashes, which 
+would create a bencoded dictionary larger than 6000 bytes.)
+
+
+PeerManager needs to track peers' properties.
+
+The PeerManager needs to keep track of the observed properties of seen 
+peers, to help determine a selection criteria for choosing peers to 
+download from. Each property will give a value from 0 to 1. The relevant 
+properties are:
+
+ - hash errors in last day (1 = 0, 0 = 3+)
+ - recent download speed (1 = fastest, 0 = 0)
+ - lag time from request to download (1 = 0, 0 = 15s+)
+ - number of pending requests (1 = 0, 0 = max (10))
+ - whether a connection is open (1 = yes, 0.9 = no)
+
+These should be combined (multiplied) to provide a sort order for peers 
+available to download from, which can then be used to assign new 
+downloads to peers. Pieces should be downloaded from the best peers 
+first (i.e. piece 0 from the absolute best peer).
+
+
 Missing Kademlia implementation details are needed.
 
 The current implementation is missing some important features, mostly 
