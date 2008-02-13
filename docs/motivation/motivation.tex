@@ -23,8 +23,8 @@ Email: camerond@cs.sfu.ca}}
 
 \begin{abstract}
 A large amount of free content is available over the Internet from
-many different sources. Most of this content uses the traditional
-client-server model of requests from users. However, there is an
+many different distributors. Most of this content uses the traditional
+client-server model to handle requests from users. However, there is an
 opportunity to use peer-to-peer techniques to reduce the cost of
 much of this distribution, especially due to the altruistic nature
 of many of these users. We present a general technique for
@@ -40,10 +40,10 @@ the distribution of Debian software packages.
 \section{Introduction}
 \label{intro}
 
-There are a large number of free content distributors with using
+There are a large number of free content distributors using
 package distribution systems over the Internet to distribute content
 to their users. These distributors have developed many different
-methods for this distribution, but they mostly use a client-server
+methods for this distribution, but they almost exclusively use a client-server
 model to satisfy user requests. The popularity and number of users
 results in a large number of requests, which usually requires a
 network of mirrors to handle. Due to the free nature of this
@@ -52,18 +52,18 @@ bandwidth to this distribution, but have no current way to do this.
 
 We present a new peer-to-peer distribution model to meet these
 demands. It is based on many previous implementations of successful
-peer-to-peer protocols, including distributed hash tables (DHT) and
+peer-to-peer protocols, especially distributed hash tables (DHT) and
 BitTorrent. The model relies on the pre-existence of cryptographic
 hashes of the content, which should uniquely identify it for a
 request from other peers. If the peer-to-peer download fails, then
 the original request to the server is used as a fallback to prevent
-any dissatisfaction from mirrors. The peer can then share this new
-content with others.
+any dissatisfaction from users. The peer can then share this new
+content with others through the P2P system.
 
 First, we examine the opportunity that is available for many of
 these free content distributors. We present an overview of a system
 that would efficiently satisfy the demands of a large number of
-users, and should substantially reduce the currently substantial
+users, and should significantly reduce the currently substantial
 bandwidth requirements of hosting this content. We then present an
 example implementation based on the Debian package distribution
 system. This implementation will be used by a large number of users,
@@ -98,8 +98,10 @@ reasons:
        packages, which wastes bandwidth downloading parts of other
        packages.
  \item A small number of the packages can be updated every day,
-       which may require a new torrent, therefore splitting the
-       download population.
+       requiring a new torrent and splitting the
+       download population (even though peers in the new torrent
+       share 99\% of the files in common with peers in the old
+       torrent).
  \item Incentives to share (upload) are no longer needed, as the
        content is freely available for anyone to download without
        sharing (seeds are also not needed).
@@ -109,11 +111,11 @@ Some other implementations have used BitTorrent almost unmodified,
 while others have only looked at using DHTs to replace the tracker
 in a BitTorrent system. apt-torrent \cite{apttorrent} creates
 torrents for some of the larger content available, but it ignores
-the smaller content, which is often the more requested content.
+the smaller content, which is often the most popular.
 DebTorrent \cite{debtorrent} makes widespread modifications to a
 traditional BitTorrent client, but also requires some changes to the
 distribution system to support it, and separates peers into groups
-based on their characteristics which limits the effectiveness of the
+based on their interest which limits the effectiveness of the
 sharing. Kenosis \cite{kenosis} is a P2P Remote Procedure Call
 client also based on the Kademlia DHT, but it is meant as a P2P
 primitive system on which other tools can be built, and so it has no
@@ -152,9 +154,10 @@ location, and a hash of their content. Red Hat's Fedora project
 \texttt{portage} in a similar way.
 
 Other software vendors also use a similar system. CPAN \cite{cpan}
-distrbutes files containing software packages for the PERL
-programming language. CYGWIN \cite{cygwin} provides many of the
-standard Unix/Linux tools in a Windows environment, also using a
+distributes files containing software packages for the PERL
+programming language, using SOAP RPC requests to find and download
+files. Cygwin \cite{cygwin} provides many of the
+standard Unix/Linux tools in a Windows environment, using a
 package management tool that requests packages from websites. There
 are two software distribution systems for Mac OSX, fink and
 MacPorts, that also retrieve packages in this way.
@@ -179,14 +182,14 @@ section \ref{examples}, is that they all have the following in
 common:
 \begin{itemize}
  \item The content is avaliable for anyone to freely download.
- \item The content is divided into packages, each of which contains
+ \item The content is divided into distinct units (packages), each of which contains
        a small independent part of all the content.
- \item No peers are interested in downloading all of the content
+ \item Users are typically not interested in downloading all of the content
        available.
  \item Hashes of the content and its size are available before the
        download is attempted.
  \item Requests for the content are sent by a tool, not directly by
-       the user, though the tool is responding to requests from the user.
+       the user (though the tool is responding to requests from the user).
 \end{itemize}
 
 We also expect that there are a number of users of these systems
@@ -216,10 +219,11 @@ integrate all these problems. For one, though they sometimes
 distribute nearly identical content (e.g. the same software
 available in multiple Linux distributions), it is not exactly
 identical and has usually been tailored to the system. The small
-differences will make it impossible to distribute similar content
+differences will change the hash of the files, and so
+will make it impossible to distribute similar content
 across systems. And, although peer-to-peer systems scale very well
 with the number of peers in the system, there is some overhead
-involved. So, having a much larger system of peers would mean that
+involved, so having a much larger system of peers would mean that
 requests could take longer to complete.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -228,20 +232,20 @@ requests could take longer to complete.
 \label{opportunity}
 
 The situation described in section \ref{situation} presents a clear
-opportunity to use some form of peer-to-peer file sharing protocols.
+opportunity to use some form of peer-to-peer file-sharing protocol.
 This sparse interest in a large number of packages, and constant
 updating, is well suited to the functionality provided by a
 Distributed Hash Table (DHT). DHTs require unique keys to store and
 retrieve strings of data, for which the cryptographic hashes used by
 these package management systems are perfect for. The stored and
 retrieved strings can then be pointers to the peers that have the
-content package that hashes to that key. A downloading peer can then
-lookup the package hash in the DHT, and then, if it is found,
+content package that hashes to that key. A downloading peer can
+lookup the package hash in the DHT and, if it is found,
 download the file from those peers and verify the content. If the
 package hash can not be found in the DHT, the peer will fallback to
 downloading from the original content location (i.e. the network of
 mirrors), and once complete will add a new entry to the DHT
-indicating that it has the package.
+indicating that it has the content.
 
 \subsection{Implementation Options}
 \label{imp_options}
@@ -251,7 +255,8 @@ into the existing package management software. The functionality can
 be directly integrated into the software, though this can be
 difficult as the DHT should be running at all times, both for
 efficient lookups and to support uploading of already downloaded
-content. Many of the package management software implmentations use
+content, whereas the tools typically only run until the download request is complete.
+Many of the package management software implementations use
 HTTP requests to download the files, which makes it possible to
 implement the P2P aspect as a standard HTTP caching proxy, which
 will get uncached requests first from the P2P system, and then
@@ -272,24 +277,27 @@ even desirable. However, this method can still be used in
 conjunction with the DHT, for the larger packages that are
 available.
 
-In addition to storing the file download location (which would still
+Since the package management system only stores a hash of the entire
+content, and not of sub-pieces of that content, we will need to be
+able to store and retrieve these sub-piece hashes using the P2P protocol.
+In addition to storing the file download location in the DHT (which would still
 be used for small files), a peer will store a \emph{torrent string}
-containing the peer's hashes of the individual pieces for the larger
+containing the peer's hashes of the sub-pieces of the larger
 files. These piece hashes could be compared ahead of time to
 determine which peers have the same piece hashes (they all should),
 and then used during the download to verify the downloaded pieces.
 
-For very large files (about 5 or more pieces), the torrent strings
+For very large files (5 or more pieces), the torrent strings
 are too long to store in the DHT (a single UDP packet should be less
 than 1472 bytes to avoid fragmentation). Instead, the peers will
 store the torrent string for large files separately in the DHT, and
 only contain a reference to it in their stored value for the hash of
 the file. The reference would be a hash of the torrent string. If
 the torrent string is short enough to store in the DHT (i.e. less
-than 1472 bytes, or about 70 pieces for the SHA1 hash), then a
+than 1472 bytes, or 70 pieces for the SHA1 hash), then a
 lookup of that hash in the DHT would give the torrent-like string.
-Otherwise, a request to the peer for the hash (just like files are
-downloaded), should return the torrent string.
+Otherwise, a request to the peer for the hash (using the same
+method as file downloads), should return the torrent string.
 
 % This can cause a problem with hash checking the returned data, as
 % hashes for the pieces are not known. Any file that fails a hash
@@ -317,24 +325,26 @@ downloaded), should return the torrent string.
 A sample implementation has been created that functions as described
 in section \ref{opportunity}. This software, called
 \texttt{apt-dht}, interacts with the \texttt{apt} tool found in most
-Debian-based Linux distributions. Our tool uses SHA1 hashes to
+Debian-based Linux distributions. Apt uses SHA1 hashes to
 verify most downloaded files, including the large index files that
 contain the hashes of the individual packages. We chose this
 distribution system as it is familiar to us, and there are
 interesting statistics available for analyzing the popularity of the
 software packages \cite{popcon}.
 
-Since all requests from apt are in the form of HTTP requests to a
+Since all requests from apt are in the form of HTTP downloads from a
 server, the implementation takes the form of a caching HTTP proxy.
-Pointing a standard apt implementation to use the proxy is as simple
+Making a standard apt implementation use the proxy is then as simple
 as prepending the proxy location and port to the front of the mirror
 name (i.e. ``localhost:9977/mirrorname.debian.org/\ldots'').
 
-The DHT is based on Khashmir, which is an implementation of the
-Kademlia DHT using methods familiar to BitTorrent developers. The
+The DHT is based on Khashmir \cite{khashmir}, which is an implementation of the
+Kademlia DHT \cite{kademlia} using methods familiar to BitTorrent
+developers. It is the same DHT used by most of the existing
+BitTorrent clients to implement trackerless operation. The
 communication is all handled by UDP messages, and RPC requests are
-bencoded similar to torrent files. Khashmir uses the high-level
-Twisted event-driven networking engine, so Twisted is also used for
+bencoded in the same way as torrent files. Khashmir uses the high-level
+Twisted event-driven networking engine \cite{twisted}, so Twisted is also used for
 all other networking needs.
 
 The torrent strings stored in the DHT are all bencoded dictionaries
@@ -343,9 +353,9 @@ includes the piece size used, the length of the piece hash, and of
 course the hashes of all the sub-pieces of the content.
 
 Downloading is accomplished by sending simple HTTP requests to the
-peer's identified by lookups in the DHT to have the desired file.
+peer's identified (by lookups in the DHT) to have the desired file.
 The HTTP server used for the proxy also doubles as the server
-listeneing for requests for downloads from other peers. All peers
+listening for requests for downloads from other peers. All peers
 support HTTP/1.1, both in the server and the client, which allows
 for pipelining of multiple requests to a peer, and the requesting of
 smaller pieces of a large file using the Range request header.
@@ -362,7 +372,7 @@ the package.}
 Figure \ref{size_CDF} shows the package size of the 22,298 packages
 available in Debian in January 2008. We can see that most of the
 packages are quite small, and so most will therefore not require
-sub-piece information to download. We have chosen a maximum piece
+sub-piece information to download. We have chosen a piece
 size of 512 kB, which means that 17,515 (78\%) of the packages will
 not require this information. There are 3054 packages that will
 require 2 to 4 pieces, for which the torrent string can be stored
@@ -370,18 +380,18 @@ directly with the package hash in the DHT. There are 1667 packages
 that will require a separate lookup in the DHT for the longer
 torrent string as they require 5 to 70 pieces. Finally, there are
 only 62 packages that require more than 70 pieces, and so will
-require a separate request to the user for the torrent string.
+require a separate request to a peer for the torrent string.
 
 \subsection{Current Status}
 \label{status}
 
 Though functional and useful, the current implementation is not
-complete, and is missing some of the downloading details necessary
-to make it complete. It operates as a caching HTTP proxy, serving
+complete, and is missing some of the downloading details necessary.
+It operates as a caching HTTP proxy, serving
 requests from apt and other peers. Index files are identified by the
-current implementation, and parsed to find hashed of files for DHT
-lookups if they are later requested. Files are downloaded from
-peers, and those not available in peers are downloaded correctly
+current implementation, and parsed to find the hashes of files for later DHT
+lookups if they are requested. Files are downloaded from
+peers, and those not available in peers are downloaded directly
 from the mirror. Any downloaded files are hash checked to verify
 them, and then added to the DHT.
 
@@ -397,6 +407,31 @@ step is not possible.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\section{Future Work}
+\label{future}
+
+There are some additional steps to be taken to succeed with this
+project. First, the storage method of sub-piece hashes needs to be
+finalized and properly implemented. The communication built into the
+Khashmir-based DHT also needs to be solidified. Some additional peer
+statistics data needs to be made available for each peer, so that
+some form of analysis is available once the system is deployed. The
+reference implementation then needs to be packaged for upload to the
+Debian package archive, so that it can benefit from the widest
+possible deployment among users.
+
+Finally, once deployed the system needs to be analyzed to determine
+its effectiveness at meeting the goals of this project. The analysis
+will consist of measuring, over time:
+\begin{itemize}
+ \item The number of peers using the system.
+ \item The amount of downloaded data by peers from other peers.
+ \item The amount of downloaded data by peers from mirrors/servers.
+ \item The bandwidth used to maintain the DHT.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Conclusions}
 \label{conclusions}
 
@@ -409,7 +444,7 @@ of hosting the content.
 
 We have also implemented our design in software to be used in
 conjuction with Debian-based distribution of Linux software
-packages. It will soone be in use by many users of the Debian
+packages. It will soon be in use by many users of the Debian
 project's distribution, and so serves as an example of the
 possibilities that exist.
 
