@@ -14,18 +14,23 @@ class PeerManager:
     def __init__(self):
         self.clients = {}
         
-    def get(self, locations, method="GET", modtime=None):
-        """Download from a list of peers.
+    def get(self, hash, mirror, peers = [], method="GET", modtime=None):
+        """Download from a list of peers or fallback to a mirror.
         
-        @type locations: C{list} of C{string}
-        @var locations: a list of the locations where the file can be found
+        @type peers: C{list} of C{string}
+        @param peers: a list of the peers where the file can be found
         """
-        url = choice(locations)
-        log.msg('Downloading %s' % url)
-        parsed = urlparse(url)
-        assert parsed[0] == "http", "Only HTTP is supported, not '%s'" % parsed[0]
-        host, port = splitHostPort(parsed[0], parsed[1])
-        path = urlunparse(('', '') + parsed[2:])
+        if peers:
+            peer = choice(peers)
+            log.msg('Downloading from peer %s' % peer)
+            host, port = splitHostPort('http', peer)
+            path = '/~/' + hash
+        else:
+            log.msg('Downloading (%s) from mirror %s' % (method, mirror))
+            parsed = urlparse(mirror)
+            assert parsed[0] == "http", "Only HTTP is supported, not '%s'" % parsed[0]
+            host, port = splitHostPort(parsed[0], parsed[1])
+            path = urlunparse(('', '') + parsed[2:])
 
         return self.getPeer(host, port, path, method, modtime)
         
@@ -62,17 +67,17 @@ class TestPeerManager(unittest.TestCase):
         self.manager = PeerManager()
         self.timeout = 10
         
-        host = 'www.camrdale.org'
-        d = self.manager.get(['http://' + host + '/robots.txt'])
-        d.addCallback(self.gotResp, 1, 309)
+        host = 'www.ietf.org'
+        d = self.manager.get('', 'http://' + host + '/rfc/rfc0013.txt')
+        d.addCallback(self.gotResp, 1, 1070)
         return d
         
     def test_head(self):
         self.manager = PeerManager()
         self.timeout = 10
         
-        host = 'www.camrdale.org'
-        d = self.manager.get(['http://' + host + '/robots.txt'], "HEAD")
+        host = 'www.ietf.org'
+        d = self.manager.get('', 'http://' + host + '/rfc/rfc0013.txt', method = "HEAD")
         d.addCallback(self.gotResp, 1, 0)
         return d
         
@@ -82,20 +87,20 @@ class TestPeerManager(unittest.TestCase):
         lastDefer = defer.Deferred()
         
         def newRequest(host, path, num, expect, last=False):
-            d = self.manager.get(['http://' + host + ':' + str(80) + path])
+            d = self.manager.get('', 'http://' + host + ':' + str(80) + path)
             d.addCallback(self.gotResp, num, expect)
             if last:
                 d.addBoth(lastDefer.callback)
                 
-        newRequest('www.camrdale.org', "/", 1, 3433)
-        newRequest('www.camrdale.org', "/blog/", 2, 39152)
+        newRequest('www.ietf.org', "/rfc/rfc0006.txt", 1, 1776)
+        newRequest('www.ietf.org', "/rfc/rfc2362.txt", 2, 159833)
         newRequest('www.google.ca', "/", 3, None)
         self.pending_calls.append(reactor.callLater(1, newRequest, 'www.sfu.ca', '/', 4, None))
-        self.pending_calls.append(reactor.callLater(10, newRequest, 'www.camrdale.org', '/wikilink.html', 5, 3084))
-        self.pending_calls.append(reactor.callLater(30, newRequest, 'www.camrdale.org', '/sitemap.html', 6, 4756))
+        self.pending_calls.append(reactor.callLater(10, newRequest, 'www.ietf.org', '/rfc/rfc0048.txt', 5, 41696))
+        self.pending_calls.append(reactor.callLater(30, newRequest, 'www.ietf.org', '/rfc/rfc0022.txt', 6, 4606))
         self.pending_calls.append(reactor.callLater(31, newRequest, 'www.sfu.ca', '/studentcentral/index.html', 7, None))
-        self.pending_calls.append(reactor.callLater(32, newRequest, 'www.camrdale.org', '/openid.html', 8, 2525))
-        self.pending_calls.append(reactor.callLater(32, newRequest, 'www.camrdale.org', '/subpage.html', 9, 2381))
+        self.pending_calls.append(reactor.callLater(32, newRequest, 'www.ietf.org', '/rfc/rfc0014.txt', 8, 27))
+        self.pending_calls.append(reactor.callLater(32, newRequest, 'www.ietf.org', '/rfc/rfc0001.txt', 9, 21088))
         self.pending_calls.append(reactor.callLater(62, newRequest, 'www.google.ca', '/intl/en/options/', 0, None, True))
         return lastDefer
         

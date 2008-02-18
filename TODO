@@ -22,16 +22,6 @@ distributions. They need to either be ignored, or dealt with properly by
 adding them to the tracking done by the AptPackages module.
 
 
-Change file identifier from path to hash.
-
-Some files can change without changing the path, since the file was 
-added to the DHT by the peer. Examples are Release, Packages.gz, and 
-Sources.bz2. This would cause problems when requesting these files by 
-path. Instead, share the files by hash, then the request would be for 
-http://127.3.45.9:9977/~<urlencodedHash>, and it would always work. This 
-will require a database lookup for every request.
-
-
 PeerManager needs to download large files from multiple peers.
 
 The PeerManager currently chooses a peer at random from the list of 

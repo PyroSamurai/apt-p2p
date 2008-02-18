@@ -146,25 +146,25 @@ class TestClientManager(unittest.TestCase):
         stream_mod.readStream(resp.stream, print_).addCallback(printdone)
     
     def test_download(self):
-        host = 'www.camrdale.org'
+        host = 'www.ietf.org'
         self.client = HTTPClientManager(host, 80)
         self.timeout = 10
         
-        d = self.client.get('/robots.txt')
-        d.addCallback(self.gotResp, 1, 309)
+        d = self.client.get('/rfc/rfc0013.txt')
+        d.addCallback(self.gotResp, 1, 1070)
         return d
         
     def test_head(self):
-        host = 'www.camrdale.org'
+        host = 'www.ietf.org'
         self.client = HTTPClientManager(host, 80)
         self.timeout = 10
         
-        d = self.client.get('/robots.txt', "HEAD")
+        d = self.client.get('/rfc/rfc0013.txt', "HEAD")
         d.addCallback(self.gotResp, 1, 0)
         return d
         
     def test_multiple_downloads(self):
-        host = 'www.camrdale.org'
+        host = 'www.ietf.org'
         self.client = HTTPClientManager(host, 80)
         self.timeout = 120
         lastDefer = defer.Deferred()
@@ -175,20 +175,20 @@ class TestClientManager(unittest.TestCase):
             if last:
                 d.addBoth(lastDefer.callback)
                 
-        newRequest("/", 1, 3433)
-        newRequest("/blog/", 2, 39152)
-        newRequest("/camrdale.html", 3, 2234)
-        self.pending_calls.append(reactor.callLater(1, newRequest, '/robots.txt', 4, 309))
-        self.pending_calls.append(reactor.callLater(10, newRequest, '/wikilink.html', 5, 3084))
-        self.pending_calls.append(reactor.callLater(30, newRequest, '/sitemap.html', 6, 4756))
-        self.pending_calls.append(reactor.callLater(31, newRequest, '/PlanetLab.html', 7, 2783))
-        self.pending_calls.append(reactor.callLater(32, newRequest, '/openid.html', 8, 2525))
-        self.pending_calls.append(reactor.callLater(32, newRequest, '/subpage.html', 9, 2381))
-        self.pending_calls.append(reactor.callLater(62, newRequest, '/sitemap2.rss', 0, 313470, True))
+        newRequest("/rfc/rfc0006.txt", 1, 1776)
+        newRequest("/rfc/rfc2362.txt", 2, 159833)
+        newRequest("/rfc/rfc0801.txt", 3, 40824)
+        self.pending_calls.append(reactor.callLater(1, newRequest, '/rfc/rfc0013.txt', 4, 1070))
+        self.pending_calls.append(reactor.callLater(10, newRequest, '/rfc/rfc0022.txt', 5, 4606))
+        self.pending_calls.append(reactor.callLater(30, newRequest, '/rfc/rfc0048.txt', 6, 41696))
+        self.pending_calls.append(reactor.callLater(31, newRequest, '/rfc/rfc3261.txt', 7, 647976))
+        self.pending_calls.append(reactor.callLater(32, newRequest, '/rfc/rfc0014.txt', 8, 27))
+        self.pending_calls.append(reactor.callLater(32, newRequest, '/rfc/rfc0001.txt', 9, 21088))
+        self.pending_calls.append(reactor.callLater(62, newRequest, '/rfc/rfc2801.txt', 0, 598794, True))
         return lastDefer
         
     def test_multiple_quick_downloads(self):
-        host = 'www.camrdale.org'
+        host = 'www.ietf.org'
         self.client = HTTPClientManager(host, 80)
         self.timeout = 30
         lastDefer = defer.Deferred()
@@ -199,24 +199,24 @@ class TestClientManager(unittest.TestCase):
             if last:
                 d.addBoth(lastDefer.callback)
                 
-        newRequest("/", 1, 3433)
-        newRequest("/blog/", 2, 39152)
-        newRequest("/camrdale.html", 3, 2234)
-        self.pending_calls.append(reactor.callLater(0, newRequest, '/robots.txt', 4, 309))
-        self.pending_calls.append(reactor.callLater(0, newRequest, '/wikilink.html', 5, 3084))
-        self.pending_calls.append(reactor.callLater(0, newRequest, '/sitemap.html', 6, 4756))
-        self.pending_calls.append(reactor.callLater(0, newRequest, '/PlanetLab.html', 7, 2783))
-        self.pending_calls.append(reactor.callLater(0, newRequest, '/openid.html', 8, 2525))
-        self.pending_calls.append(reactor.callLater(0, newRequest, '/subpage.html', 9, 2381))
-        self.pending_calls.append(reactor.callLater(0, newRequest, '/sitemap2.rss', 0, 313470, True))
+        newRequest("/rfc/rfc0006.txt", 1, 1776)
+        newRequest("/rfc/rfc2362.txt", 2, 159833)
+        newRequest("/rfc/rfc0801.txt", 3, 40824)
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/rfc/rfc0013.txt', 4, 1070))
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/rfc/rfc0022.txt', 5, 4606))
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/rfc/rfc0048.txt', 6, 41696))
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/rfc/rfc3261.txt', 7, 647976))
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/rfc/rfc0014.txt', 8, 27))
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/rfc/rfc0001.txt', 9, 21088))
+        self.pending_calls.append(reactor.callLater(0, newRequest, '/rfc/rfc2801.txt', 0, 598794, True))
         return lastDefer
         
     def test_range(self):
-        host = 'www.camrdale.org'
+        host = 'www.ietf.org'
         self.client = HTTPClientManager(host, 80)
         self.timeout = 10
         
-        d = self.client.getRange('/robots.txt', 100, 199)
+        d = self.client.getRange('/rfc/rfc0013.txt', 100, 199)
         d.addCallback(self.gotResp, 1, 100)
         return d
         

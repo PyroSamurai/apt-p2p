@@ -52,7 +52,7 @@ class AptDHT:
     
     def check_freshness(self, req, path, modtime, resp):
         log.msg('Checking if %s is still fresh' % path)
-        d = self.peers.get([path], "HEAD", modtime)
+        d = self.peers.get('', path, method = "HEAD", modtime = modtime)
         d.addCallback(self.check_freshness_done, req, path, resp)
         return d
     
@@ -132,14 +132,14 @@ class AptDHT:
     def lookupHash_done(self, locations, hash, path, d):
         if not locations:
             log.msg('Peers for %s were not found' % path)
-            getDefer = self.peers.get([path])
+            getDefer = self.peers.get(hash, path)
             getDefer.addCallback(self.cache.save_file, hash, path)
             getDefer.addErrback(self.cache.save_error, path)
             getDefer.addCallbacks(d.callback, d.errback)
         else:
             log.msg('Found peers for %s: %r' % (path, locations))
             # Download from the found peers
-            getDefer = self.peers.get(locations)
+            getDefer = self.peers.get(hash, path, locations)
             getDefer.addCallback(self.check_response, hash, path)
             getDefer.addCallback(self.cache.save_file, hash, path)
             getDefer.addErrback(self.cache.save_error, path)
@@ -148,7 +148,7 @@ class AptDHT:
     def check_response(self, response, hash, path):
         if response.code < 200 or response.code >= 300:
             log.msg('Download from peers failed, going to direct download: %s' % path)
-            getDefer = self.peers.get([path])
+            getDefer = self.peers.get(hash, path)
             return getDefer
         return response
         
