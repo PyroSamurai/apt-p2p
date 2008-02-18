@@ -29,8 +29,7 @@ class AptDHT:
         self.dht = dht
         self.dht.loadConfig(config, config.get('DEFAULT', 'DHT'))
         self.dht.join().addCallbacks(self.joinComplete, self.joinError)
-        self.http_server = TopLevel(self.cache_dir.child(download_dir), self)
-        self.setDirectories = self.http_server.setDirectories
+        self.http_server = TopLevel(self.cache_dir.child(download_dir), self.db, self)
         self.getHTTPFactory = self.http_server.getHTTPFactory
         self.peers = PeerManager()
         self.mirrors = MirrorManager(self.cache_dir)
@@ -153,7 +152,7 @@ class AptDHT:
             return getDefer
         return response
         
-    def new_cached_file(self, file_path, hash, urlpath, url = None):
+    def new_cached_file(self, file_path, hash, url = None):
         """Add a newly cached file to the DHT.
         
         If the file was downloaded, set url to the path it was downloaded for.
@@ -163,13 +162,12 @@ class AptDHT:
         
         if self.my_addr and hash:
             site = self.my_addr + ':' + str(config.getint('DEFAULT', 'PORT'))
-            full_path = urlunparse(('http', site, urlpath, None, None, None))
             key = hash.norm(bits = config.getint(config.get('DEFAULT', 'DHT'), 'HASH_LENGTH'))
-            storeDefer = self.dht.storeValue(key, full_path)
-            storeDefer.addCallback(self.store_done, full_path)
+            storeDefer = self.dht.storeValue(key, site)
+            storeDefer.addCallback(self.store_done, hash)
             return storeDefer
         return None
 
-    def store_done(self, result, path):
-        log.msg('Added %s to the DHT: %r' % (path, result))
+    def store_done(self, result, hash):
+        log.msg('Added %s to the DHT: %r' % (hash, result))
         

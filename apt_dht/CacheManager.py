@@ -156,10 +156,8 @@ class CacheManager:
         self.manager = manager
         self.scanning = []
         
-        # Init the database, remove old files, init the HTTP dirs
+        # Init the database, remove old files
         self.db.removeUntrackedFiles(self.all_dirs)
-        self.db.reconcileDirectories()
-        self.manager.setDirectories(self.db.getAllDirectories())
         
         
     def scanDirectories(self):
@@ -176,10 +174,7 @@ class CacheManager:
                 log.msg('started scanning directory: %s' % self.scanning[0].path)
                 walker = self.scanning[0].walk()
             else:
-                # Done, just check if the HTTP directories need updating
                 log.msg('cache directory scan complete')
-                if self.db.reconcileDirectories():
-                    self.manager.setDirectories(self.db.getAllDirectories())
                 return
             
         try:
@@ -212,16 +207,11 @@ class CacheManager:
     
         if isinstance(result, HashObject):
             log.msg('hash check of %s completed with hash: %s' % (file.path, result.hexdigest()))
+            url = None
             if self.scanning[0] == self.cache_dir:
-                mirror_dir = self.cache_dir.child(file.path[len(self.cache_dir.path)+1:].split('/', 1)[0])
-                urlpath, newdir = self.db.storeFile(file, result.digest(), mirror_dir)
                 url = 'http:/' + file.path[len(self.cache_dir.path):]
-            else:
-                urlpath, newdir = self.db.storeFile(file, result.digest(), self.scanning[0])
-                url = None
-            if newdir:
-                self.manager.setDirectories(self.db.getAllDirectories())
-            df = self.manager.new_cached_file(file, result, urlpath, url)
+            self.db.storeFile(file, result.digest())
+            df = self.manager.new_cached_file(file, result, url)
             if df is None:
                 reactor.callLater(0, self._scanDirectories, None, walker)
             else:
@@ -283,18 +273,13 @@ class CacheManager:
             else:
                 log.msg('Hashed file to %s: %s' % (hash.hexdigest(), url))
                 
-            mirror_dir = self.cache_dir.child(destFile.path[len(self.cache_dir.path)+1:].split('/', 1)[0])
-            urlpath, newdir = self.db.storeFile(destFile, hash.digest(), mirror_dir)
-            log.msg('now avaliable at %s: %s' % (urlpath, url))
+            self.db.storeFile(destFile, hash.digest())
+            log.msg('now avaliable: %s' % (url))
 
             if self.manager:
-                if newdir:
-                    log.msg('A new web directory was created, so enable it')
-                    self.manager.setDirectories(self.db.getAllDirectories())
-    
-                self.manager.new_cached_file(destFile, hash, urlpath, url)
+                self.manager.new_cached_file(destFile, hash, url)
                 if ext:
-                    self.manager.new_cached_file(decFile, None, urlpath, url[:-len(ext)])
+                    self.manager.new_cached_file(decFile, None, url[:-len(ext)])
         else:
             log.msg("Hashes don't match %s != %s: %s" % (hash.hexexpected(), hash.hexdigest(), url))
             destFile.remove()

@@ -40,10 +40,10 @@ class FileDownloader(static.File):
 class TopLevel(resource.Resource):
     addSlash = True
     
-    def __init__(self, directory, manager):
+    def __init__(self, directory, db, manager):
         self.directory = directory
+        self.db = db
         self.manager = manager
-        self.subdirs = {}
         self.factory = None
 
     def getHTTPFactory(self):
@@ -53,14 +53,6 @@ class TopLevel(resource.Resource):
                                                   'betweenRequestsTimeOut': 60})
         return self.factory
 
-    def setDirectories(self, dirs):
-        self.subdirs = {}
-        for k in dirs:
-            # Don't allow empty subdirectory
-            if k:
-                self.subdirs[k] = dirs[k]
-        log.msg('new subdirectories initialized')
-    
     def render(self, ctx):
         return http.Response(
             200,
@@ -71,9 +63,17 @@ class TopLevel(resource.Resource):
 
     def locateChild(self, request, segments):
         name = segments[0]
-        if name in self.subdirs:
-            log.msg('Sharing %s with %s' % (request.uri, request.remoteAddr))
-            return static.File(self.subdirs[name].path), segments[1:]
+        if name == '~':
+            if len(segments) != 2:
+                log.msg('Got a malformed request from %s' % request.remoteAddr)
+                return None, ()
+            hash = segments[1]
+            files = self.db.lookupHash(hash)
+            if files:
+                log.msg('Sharing %s with %s' % (files[0]['path'].path, request.remoteAddr))
+                return static.File(files[0]['path'].path), ()
+            else:
+                log.msg('Hash could not be found in database: %s' % hash)
         
         if request.remoteAddr.host != "127.0.0.1":
             log.msg('Blocked illegal access to %s from %s' % (request.uri, request.remoteAddr))
@@ -83,6 +83,9 @@ class TopLevel(resource.Resource):
             return FileDownloader(self.directory.path, self.manager), segments[0:]
         else:
             return self, ()
+        
+        log.msg('Got a malformed request for "%s" from %s' % (request.uri, request.remoteAddr))
+        return None, ()
 
 if __name__ == '__builtin__':
     # Running from twistd -y
