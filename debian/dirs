@@ -1,0 +1,6 @@
+etc/default
+etc/init.d
+usr/share/doc/apt-dht
+usr/sbin
+var/cache/apt-dht
+var/lib/apt-dht

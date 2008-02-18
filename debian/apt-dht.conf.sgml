@@ -1,0 +1,290 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+
+  <!-- Fill in your name for FIRSTNAME and SURNAME. -->
+  <!ENTITY dhfirstname "<firstname>Cameron</firstname>">
+  <!ENTITY dhsurname   "<surname>Dale</surname>">
+  <!-- Please adjust the date whenever revising the manpage. -->
+  <!ENTITY dhdate      "<date>February 17, 2008</date>">
+  <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
+       allowed: see man(7), man(1). -->
+  <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
+  <!ENTITY dhemail     "<email>camrdale@gmail.com</email>">
+  <!ENTITY dhusername  "Cameron Dale">
+  <!ENTITY dhucpackage "<refentrytitle>apt-dht.conf</refentrytitle>">
+  <!ENTITY dhpackage   "apt-dht">
+
+  <!ENTITY debian      "<productname>Debian</productname>">
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <address>
+      &dhemail;
+    </address>
+    <author>
+      &dhfirstname;
+      &dhsurname;
+    </author>
+    <copyright>
+      <year>2008</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &dhdate;
+  </refentryinfo>
+  <refmeta>
+    &dhucpackage;
+
+    &dhsection;
+  </refmeta>
+
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+
+    <refpurpose>configuration file for &dhpackage;</refpurpose>
+  </refnamediv>
+
+  <refsect1>
+    <title>DESCRIPTION</title>
+
+    <para>Configuration information for &dhpackage; is searched for in the following order, with later
+      entries overriding former ones:
+      <OrderedList>
+        <ListItem><para>/etc/apt-dht/apt-dht.conf</para></ListItem>
+        <ListItem><para>${HOME}/.apt-dht/apt-dht.conf</para></ListItem>
+        <ListItem><para>the location specified by the config-file parameter</para></ListItem>
+      </OrderedList>
+    </para>
+    
+  </refsect1>
+  <refsect1>
+    <title>FORMAT</title>
+
+    <para>&dhpackage; has a structure similar to Microsoft Windows INI files.
+	The configuration file consists of sections, led by a ``[section]'' header and followed
+	by ``name = value'' or ``name: value'' entries, with continuations in the style of RFC 822
+	(values can span multiple lines by starting the subsequent lines with one or more spaces).
+	Some values indicate times, in which case a suffix of 'd' for
+	days, 'h' for hours, 'm' for minutes, and 's' for seconds can be used.
+	Boolean values can be '1', 'yes', 'true', and 'on' to evaluate to True,
+	or '0', 'no', 'false', and 'off' to evaluate to false.
+	Note that leading whitespace is removed from values, and case is not important.
+	Lines beginning with "#" or ";" are ignored and may be used to provide comments.</para>
+    
+  </refsect1>
+  <refsect1>
+    <title>VARIABLES</title>
+      <para>There are 2 required sections in the config file. The first is the DEFAULT section, providing
+        variables for the configuration of the main application. The second is the section that provides
+        variables for the configuration of the DHT.</para>
+        
+      <refsect2>
+	<title>DEFAULT</title>
+
+        <variablelist>
+	  <varlistentry>
+	    <term><option>PORT = <replaceable>number</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>number</replaceable> of the port to listen on for requests.
+	          The main application will use this TCP port to listen for requests from APT, and
+	          for uploads to other peers. If a port is not specified for the DHT, it will also
+	          use this UDP port to listen for DHT requests.
+	          (Default is 9977.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>CACHE_DIR = <replaceable>directory</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>directory</replaceable> to store the downloaded files in.
+	        (Default is ${HOME}/.apt-dht/cache.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>OTHER_DIRS = <replaceable>list</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>list</replaceable> of directories containing packages to share with others.
+	        All files in these directories will be hashed and available for everybody to download.
+	        (Default is to share only the files downloaded.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>LOCAL_OK = <replaceable>boolean</replaceable></option></term>
+	     <listitem>
+	      <para>Whether it's OK to use an IP addres from a known local or private range.
+	        (Default is false)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>DHT = <replaceable>string</replaceable></option></term>
+	     <listitem>
+	      <para>The DHT implementation to use. It must be possile to do (in python)
+	        ``from &lt;DHT&gt;.DHT import DHT'' to get a class that implements the IDHT interface.
+	        There should also be a similarly named section below to specify the options for the DHT.
+	        (Default is `apt_dht_Khashmir')</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>DHT-ONLY = <replaceable>boolean</replaceable></option></term>
+	     <listitem>
+	      <para>Whether to only run the DHT. This can be useful for providing only a bootstrap node.
+	        (Default is false)</para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+      </refsect2>
+      <refsect2>
+	<title>apt_dht_Khashmir</title>
+
+        <variablelist>
+	  <varlistentry>
+	    <term><option>PORT = <replaceable>number</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>number</replaceable> of the port to listen on for DHT (UDP) requests.
+	          (Default is to use the value specified in the DEFAULT section.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>BOOTSTRAP = <replaceable>list</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>list</replaceable> of bootstrap nodes to contact to join the DHT.
+	        Each node should be on a separate line, and start with the IP address or host name,
+	        followed by a colon and the port number.
+	        (Default is a list of known good nodes.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>BOOTSTRAP_NODE = <replaceable>boolean</replaceable></option></term>
+	     <listitem>
+	      <para>Whether this node is a bootstrap node.
+	        (Default is false)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>K = <replaceable>number</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>number</replaceable> of the Kademlia "K" constant.
+	      	  It should be an even number.
+	          (Default is 8.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>HASH_LENGTH = <replaceable>number</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>number</replaceable> of bits in the hash to use.
+	          (Default is 160.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>CHECKPOINT_INTERVAL = <replaceable>time</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>time</replaceable> to wait between saves of the running state.
+	          (Default is 15 minutes.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>CONCURRENT_REQS = <replaceable>number</replaceable></option></term>
+	     <listitem>
+	      <para>The concurrent <replaceable>number</replaceable> of calls per find node/value request.
+	          (Default is 4.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>STORE_REDUNDANCY = <replaceable>number</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>number</replaceable> of redundant copies of a value to store in the DHT.
+	          (Default is 3.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>MAX_FAILURES = <replaceable>number</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>number</replaceable> of times in a row a node can fail to
+	          respond before it's booted from the routing table.
+	          (Default is 3.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>MIN_PING_INTERVAL = <replaceable>time</replaceable></option></term>
+	     <listitem>
+	      <para>The minimum <replaceable>time</replaceable> to wait before re-pinging a node.
+	          (Default is 15 minutes.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>BUCKET_STALENESS = <replaceable>time</replaceable></option></term>
+	     <listitem>
+	      <para>The maximum <replaceable>time</replaceable> to wait before refreshing a bucket.
+	          (Default is 1 hour.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>KEINITIAL_DELAY = <replaceable>time</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>time</replaceable> to wait after startup before starting the key expirer.
+	          (Default is 15 seconds.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>KE_DELAY = <replaceable>time</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>time</replaceable> to wait between runs of the key expirer.
+	          (Default is 20 minutes.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>KE_AGE = <replaceable>time</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>time</replaceable> to wait before expiring unrefreshed keys.
+	          (Default is 1 hour.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>SPEW = <replaceable>boolean</replaceable></option></term>
+	     <listitem>
+	      <para>Whether to log lots of info about the requests and responses in the protocol.
+	        (Default is false)</para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+     </refsect2>
+  </refsect1>
+
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry><refentrytitle>apt-dht</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>AUTHOR</title>
+    <para>This manual page was written by &dhusername; &lt;&dhemail;> for
+      the &debian; system (but may be used by others).  Permission is
+      granted to copy, distribute and/or modify this document under
+      the terms of the &gnu; General Public License, Version 2 or any
+      later version published by the Free Software Foundation.
+    </para>
+    <para>
+      On Debian systems, the complete text of the GNU General Public
+      License can be found in /usr/share/common-licenses/GPL.
+    </para>
+  </refsect1>
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

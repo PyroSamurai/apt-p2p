@@ -1,0 +1,14 @@
+This is the Debian GNU/Linux packaged version of apt-dht
+
+The package is written and maintained by Cameron Dale.
+
+The original source can always be found at:
+    http://ftp.debian.org/debian/pool/main/a/apt-dht/
+
+The project homepage is at
+  http://www.camrdale.org/apt-dht.html
+
+This software is released under the terms of the GNU General Public License.
+
+On Debian systems, the complete text of the GNU General Public License
+can be found in /usr/share/common-licenses/GPL.

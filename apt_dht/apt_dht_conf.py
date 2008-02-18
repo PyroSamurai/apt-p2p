@@ -16,6 +16,8 @@ if home == '${HOME}' or not os.path.isdir(home):
     home = os.path.expanduser('~')
     if not os.path.isdir(home):
         home = os.path.abspath(os.path.dirname(sys.argv[0]))
+DEFAULT_CONFIG_FILES=['/etc/apt-dht/apt-dht.conf',
+                      home + '/.apt-dht/apt-dht.conf']
 
 DEFAULTS = {
 

@@ -1,0 +1,68 @@
+#!/usr/bin/make -f
+# Sample debian/rules that uses debhelper.
+# GNU copyright 1997 to 1999 by Joey Hess.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+PYTHON_VERSION=$(shell /usr/bin/python -V 2>&1 | /usr/bin/perl -le 'print "$$1.$$2" if <> =~m/^Python\s+(\d+)\.(\d+)(\.\d+)*/')
+
+
+build-stamp: apt-dht.8 apt-dht.conf.5
+	dh_testdir
+	touch build-stamp
+
+%.1:	debian/%.sgml
+	/usr/bin/docbook-to-man $< > debian/$@
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -rf build/ apt_dht/*.pyc apt_dht_Khashmir/*.pyc *.pyc
+	rm -f debian/*.[58]
+	rm -f build-stamp
+	dh_clean
+
+install: build-stamp
+
+
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+
+	./setup.py install --prefix=$(CURDIR)/debian/apt-dht/usr --install-lib=$(CURDIR)/debian/apt-dht/usr/share/python-support/apt-dht
+
+	# Remove the generated .pyc files
+	( cd debian/apt-dht/usr/share/python-support/apt-dht/apt_dht_Khashmir && \
+	  rm -f *.pyc  && \
+	  cd ../apt_dht && \
+	  rm -f *.pyc )
+
+# Build architecture-independent files here.
+binary-indep: install
+	dh_testdir
+	dh_testroot
+	dh_installdocs
+	dh_installexamples
+	dh_installman
+	dh_installlogrotate
+	
+	# Remove the .py from the end of each of these
+	mv debian/apt-dht/usr/sbin/apt-dht.py debian/apt-dht/usr/sbin/apt-dht || exit 1; done
+
+	dh_installchangelogs 
+	dh_install
+	dh_link
+	dh_compress
+	dh_fixperms
+	dh_pysupport
+	dh_installinit
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install

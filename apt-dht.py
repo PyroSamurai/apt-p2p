@@ -16,7 +16,7 @@ from twisted.internet import reactor
 from twisted.python import usage, log
 from twisted.web2 import channel
 
-from apt_dht.apt_dht_conf import config, version
+from apt_dht.apt_dht_conf import config, version, DEFAULT_CONFIG_FILES
 from apt_dht.interfaces import IDHT
 
 config_file = []
@@ -51,7 +51,7 @@ if __name__ == '__main__':
         f = open(log_file, 'w')
     log.startLogging(f, setStdout=1)
 
-config.read(config_file)
+config.read(DEFAULT_CONFIG_FILES + [config_file])
 if config.has_option('DEFAULT', 'username') and config.get('DEFAULT', 'username'):
     uid,gid = pwd.getpwnam(config.get('DEFAULT', 'username'))[2:4]
 else:

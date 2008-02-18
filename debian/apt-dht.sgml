@@ -1,0 +1,163 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+
+  <!-- Fill in your name for FIRSTNAME and SURNAME. -->
+  <!ENTITY dhfirstname "<firstname>Cameron</firstname>">
+  <!ENTITY dhsurname   "<surname>Dale</surname>">
+  <!-- Please adjust the date whenever revising the manpage. -->
+  <!ENTITY dhdate      "<date>February 17, 2008</date>">
+  <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
+       allowed: see man(7), man(1). -->
+  <!ENTITY dhsection   "<manvolnum>8</manvolnum>">
+  <!ENTITY dhemail     "<email>camrdale@gmail.com</email>">
+  <!ENTITY dhusername  "Cameron Dale">
+  <!ENTITY dhucpackage "<refentrytitle>apt-dht</refentrytitle>">
+  <!ENTITY dhpackage   "apt-dht">
+
+  <!ENTITY debian      "<productname>Debian</productname>">
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <address>
+      &dhemail;
+    </address>
+    <author>
+      &dhfirstname;
+      &dhsurname;
+    </author>
+    <copyright>
+      <year>2008</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &dhdate;
+  </refentryinfo>
+  <refmeta>
+    &dhucpackage;
+
+    &dhsection;
+  </refmeta>
+
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+
+    <refpurpose>apt helper for peer-to-peer downloads of Debian packages</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <para>Normally &dhpackage; is run from init.d using <command>twistd</command>, in which case no &dhpackage;
+        options can be specified on the command-line, and all configuration variables are
+        read from the default config file locations of ${HOME}/.apt-dht.conf and /etc/apt-dht/apt-dht.conf.
+        The command is then:</para>
+    <cmdsynopsis>
+      <command>twistd</command> <arg choice="Req">-y /path/to/&dhpackage;</arg> <arg rep="Repeat"><option>twistd options</option></arg>
+    </cmdsynopsis>
+    <para>For a detailed listing of the twistd options, see
+        <citerefentry><refentrytitle>twistd</refentrytitle><manvolnum>1</manvolnum></citerefentry></para>
+    <para>&dhpackage; can also be run without twistd by executing:</para>
+    <cmdsynopsis>
+      <command>&dhpackage;</command> <arg rep="Repeat"><option>options</option></arg>
+    </cmdsynopsis>
+    <para>In this case, you can specify the options documented below on the command-line.</para>
+  </refsynopsisdiv>
+  <refsect1>
+    <title>DESCRIPTION</title>
+
+    <para>This manual page documents briefly the options available to the &dhpackage; command.</para>
+
+    <para><command>&dhpackage;</command> is a helper for downloading Debian packages files with APT.
+        It will download any needed files from other Apt-DHT peers in a
+        bittorrent-like manner, and so reduce the strain on the Debian mirrors.</para>
+
+    <para>In order for APT to send it's requests to &dhpackage;, the source.list entries must be modified to point to the
+        local &dhpackage; address. Unless you have changed the default port, then adding "localhost:9977/" to the beginning
+        of each entry should be sufficient. For example, if your sources.list contains a line like this:</para>
+
+    <para>deb http://ftp.us.debian.org/debian etch main contrib non-free</para>
+
+    <para>then replace it with this:</para>
+
+    <para>deb http://localhost:9977/ftp.us.debian.org/debian etch main contrib non-free</para>
+    
+    <para>The port can be changed in the &dhpackage; config file in /etc/&dhpackage;/&dhpackage;.conf,
+        but it defaults to 9977.</para>
+  </refsect1>
+  <refsect1>
+    <title>OPTIONS</title>
+
+    <para>These programs follow the usual &gnu; command line syntax,
+      with short options starting with a single dash (`-'),
+      and long options starting with two dashes (`--').
+      A summary of options is included below.</para>
+    
+    <variablelist>
+      <varlistentry>
+        <term><option>-c <replaceable>filename</replaceable>,</option> <option>--configfile=<replaceable>filename</replaceable></option></term>
+         <listitem>
+          <para>the <replaceable>filename</replaceable> to use for the configuration file, options found in this
+              file are combined with those in ${HOME}/.apt-dht/apt-dht.conf and /etc/apt-dht/apt-dht.conf
+              (see <citerefentry><refentrytitle>apt-dht.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry> for the format of the file)</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-l <replaceable>filename</replaceable>,</option> <option>--logfile=<replaceable>filename</replaceable></option></term>
+         <listitem>
+          <para>the <replaceable>filename</replaceable> to print log messages to,
+              or `-' to log to standard output, if not specified then
+              /var/log/apt-dht.log will be used</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-h</option>, <option>--help</option></term>
+        <listitem>
+          <para>print a help message describing the invocation of the program</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-v</option>, <option>--version</option></term>
+        <listitem>
+          <para>print the version of the program</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry><refentrytitle>apt-dht.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+      <citerefentry><refentrytitle>twistd</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>AUTHOR</title>
+    <para>This manual page was written by &dhusername; &lt;&dhemail;> for
+      the &debian; system (but may be used by others).  Permission is
+      granted to copy, distribute and/or modify this document under
+      the terms of the &gnu; General Public License, Version 2 or any
+      later version published by the Free Software Foundation.
+    </para>
+    <para>
+      On Debian systems, the complete text of the GNU General Public
+      License can be found in /usr/share/common-licenses/GPL.
+    </para>
+  </refsect1>
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

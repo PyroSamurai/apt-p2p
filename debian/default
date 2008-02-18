@@ -1,0 +1,7 @@
+# apt-dht configuration
+
+## Filename to store pid of process
+#pidfile=/var/run/apt-dht/apt-dht.pid 
+
+## Log file
+#logfile=/var/log/apt-dht.log
