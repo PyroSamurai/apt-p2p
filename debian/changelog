@@ -1,4 +1,4 @@
-apt-dht (0.0.0) sid; urgency=low
+apt-dht (0.0.0) unstable; urgency=low
 
   * Initial release.
 

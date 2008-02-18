@@ -12,7 +12,7 @@ build-stamp: apt-dht.8 apt-dht.conf.5
 	dh_testdir
 	touch build-stamp
 
-%.1:	debian/%.sgml
+%.5 %.8: debian/%.sgml
 	/usr/bin/docbook-to-man $< > debian/$@
 
 clean:
@@ -31,7 +31,9 @@ install: build-stamp
 	dh_clean -k
 	dh_installdirs
 
-	./setup.py install --prefix=$(CURDIR)/debian/apt-dht/usr --install-lib=$(CURDIR)/debian/apt-dht/usr/share/python-support/apt-dht
+	./setup.py install --prefix=$(CURDIR)/debian/apt-dht/usr \
+		--install-lib=$(CURDIR)/debian/apt-dht/usr/share/python-support/apt-dht \
+		--install-scripts=$(CURDIR)/debian/apt-dht/usr/sbin
 
 	# Remove the generated .pyc files
 	( cd debian/apt-dht/usr/share/python-support/apt-dht/apt_dht_Khashmir && \
@@ -44,12 +46,10 @@ binary-indep: install
 	dh_testdir
 	dh_testroot
 	dh_installdocs
-	dh_installexamples
 	dh_installman
-	dh_installlogrotate
 	
 	# Remove the .py from the end of each of these
-	mv debian/apt-dht/usr/sbin/apt-dht.py debian/apt-dht/usr/sbin/apt-dht || exit 1; done
+	mv debian/apt-dht/usr/sbin/apt-dht.py debian/apt-dht/usr/sbin/apt-dht
 
 	dh_installchangelogs 
 	dh_install

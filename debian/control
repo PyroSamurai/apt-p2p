@@ -6,15 +6,13 @@ Homepage: http://www.camrdale.org/apt-dht.html
 Standards-Version: 3.7.3
 Build-Depends: debhelper (>= 5.0.37.2)
 Build-Depends-Indep: python-dev, python-support (>= 0.5.4), docbook-to-man
-Build-Depends-Indep: python-twisted-web (>= 0.6), python (>= 2.3.5-1), python-apt, python-central (>= 0.5)
 Vcs-Git: git://git.camrdale.org/git/apt-dht.git
 Vcs-Browser: http://git.camrdale.org/?p=apt-dht.git;a=summary
 XS-Dm-Upload-Allowed: yes
 
 Package: apt-dht
 Architecture: all
-Depends: ${python:Depends}, python-twisted-web (>= 0.6), python-apt (>= 0.5.8)
-Depends: ${python:Depends}, adduser, python-debian (>= 0.1.4), python-apt
+Depends: ${python:Depends}, python-twisted-web2 (>= 0.2), adduser, python-debian (>= 0.1.4), python-apt (>= 0.6.20), python-pysqlite2 (>= 2.1)
 Provides: python-apt-dht, python-apt-dht-khashmir
 Description: apt helper for peer-to-peer downloads of Debian packages
  Apt-DHT is a helper for downloading Debian packages files with APT.
