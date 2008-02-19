@@ -15,6 +15,7 @@ from twisted.trial import unittest
 
 import apt_pkg, apt_inst
 from apt import OpProgress
+from debian_bundle import deb822
 
 from Hash import HashObject
 
@@ -154,29 +155,11 @@ class AptPackages:
         read_packages = False
         f = file_path.open('r')
         
-        for line in f:
-            line = line.rstrip()
-    
-            if line[:1] != " ":
-                read_packages = False
-                try:
-                    # Read the various headers from the file
-                    h, v = line.split(":", 1)
-                    if h == "MD5Sum" or h == "SHA1" or h == "SHA256":
-                        read_packages = True
-                        hash_type = h
-                except:
-                    # Bad header line, just ignore it
-                    log.msg("WARNING: Ignoring badly formatted Release line: %s" % line)
-    
-                # Skip to the next line
-                continue
+        rel = deb822.Release(f, fields = ['MD5Sum', 'SHA1', 'SHA256'])
+        for hash_type in rel:
+            for file in rel[hash_type]:
+                self.indexrecords[cache_path].setdefault(file['name'], {})[hash_type.upper()] = (file['hash_type'], file['size'])
             
-            # Read file names from the multiple hash sections of the file
-            if read_packages:
-                p = line.split()
-                self.indexrecords[cache_path].setdefault(p[2], {})[hash_type] = (p[0], p[1])
-        
         f.close()
 
     def file_updated(self, cache_path, file_path):

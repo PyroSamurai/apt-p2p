@@ -1,10 +1,3 @@
-Use python-debian for parsing RFC 822 files.
-
-There are already routines for parsing these files, so there is no need 
-to write more. In the AptPackages, change the Release file parsing to 
-use the python-debian routines.
-
-
 Packages.diff files need to be considered.
 
 The Packages.diff/Index files contain hashes of Packages.diff/rred.gz 

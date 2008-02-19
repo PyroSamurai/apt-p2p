@@ -28,7 +28,7 @@ class HashObject:
               {'name': 'md5',
                    'AptPkgRecord': 'MD5Hash', 
                    'AptSrcRecord': True, 
-                   'AptIndexRecord': 'MD5Sum',
+                   'AptIndexRecord': 'MD5SUM',
                    'old_module': 'md5',
                    'hashlib_func': 'md5',
                    },
