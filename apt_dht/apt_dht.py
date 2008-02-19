@@ -152,15 +152,17 @@ class AptDHT:
             return getDefer
         return response
         
-    def new_cached_file(self, file_path, hash, url = None):
+    def new_cached_file(self, file_path, hash, url = None, forceDHT = False):
         """Add a newly cached file to the DHT.
         
         If the file was downloaded, set url to the path it was downloaded for.
+        Don't add a file to the DHT unless a hash was found for it
+        (but do add it anyway if forceDHT is True).
         """
         if url:
             self.mirrors.updatedFile(url, file_path)
         
-        if self.my_addr and hash:
+        if self.my_addr and hash and (hash.expected() is not None or forceDHT):
             site = self.my_addr + ':' + str(config.getint('DEFAULT', 'PORT'))
             key = hash.norm(bits = config.getint(config.get('DEFAULT', 'DHT'), 'HASH_LENGTH'))
             storeDefer = self.dht.storeValue(key, site)

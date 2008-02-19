@@ -211,7 +211,7 @@ class CacheManager:
             if self.scanning[0] == self.cache_dir:
                 url = 'http:/' + file.path[len(self.cache_dir.path):]
             self.db.storeFile(file, result.digest())
-            df = self.manager.new_cached_file(file, result, url)
+            df = self.manager.new_cached_file(file, result, url, True)
             if df is None:
                 reactor.callLater(0, self._scanDirectories, None, walker)
             else:
