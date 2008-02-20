@@ -1,3 +1,23 @@
+apt-dht (0.0.1~1.gbpef2463) UNRELEASED; urgency=low
+
+  ** SNAPSHOT build @ef24631cd901522741529d3ef2ee458f2e9ced1d **
+
+  * UNRELEASED
+  * Initial debian directory and packaging related changes.
+  * Fix up some errors in the packaging.
+  * Add the git-buildpackage config file.
+  * HTTPServer uses the hash to lookup the file in the DB (no more
+    directories).
+  * Download from peers using the hash instead of a directory location.
+  * Don't add files to the DHT if a hash could not be found for them.
+  * Use python-debian for parsing RFC 822 files (untested).
+  * Fix some minor bugs in the previous commits.
+  * Another new TODO item: better DHT lookups for multiple values per
+    key.
+  * Added 2 (commented) failed attempts to throttle the web server.
+
+ -- Cameron Dale <camrdale@gmail.com>  Wed, 20 Feb 2008 10:52:18 -0800
+
 apt-dht (0.0.0) unstable; urgency=low
 
   * Initial release.
