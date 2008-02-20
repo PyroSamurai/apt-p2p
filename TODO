@@ -78,6 +78,15 @@ downloads to peers. Pieces should be downloaded from the best peers
 first (i.e. piece 0 from the absolute best peer).
 
 
+When Looking Up Values, DHT Should Return Nodes and Values
+
+When a key has multiple values in the DHT, returning a stored value may not
+be sufficient, as then no more nodes can be contacted to get more stored
+values. Instead, return both the stored values and the list of closest
+nodes so that the peer doing the lookup can decide when to stop looking
+(when it has received enough values).
+
+
 Missing Kademlia implementation details are needed.
 
 The current implementation is missing some important features, mostly 
