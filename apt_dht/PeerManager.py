@@ -1,6 +1,7 @@
 
 from random import choice
 from urlparse import urlparse, urlunparse
+from urllib import quote_plus
 
 from twisted.internet import reactor, defer
 from twisted.python import log
@@ -24,7 +25,7 @@ class PeerManager:
             peer = choice(peers)
             log.msg('Downloading from peer %s' % peer)
             host, port = splitHostPort('http', peer)
-            path = '/~/' + hash
+            path = '/~/' + quote_plus(hash.expected())
         else:
             log.msg('Downloading (%s) from mirror %s' % (method, mirror))
             parsed = urlparse(mirror)

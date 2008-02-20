@@ -1,4 +1,6 @@
 
+from urllib import unquote_plus
+
 from twisted.python import log
 from twisted.internet import defer
 from twisted.web2 import server, http, resource, channel
@@ -62,12 +64,13 @@ class TopLevel(resource.Resource):
             <p>TODO: eventually some stats will be shown here.</body></html>""")
 
     def locateChild(self, request, segments):
+        log.msg('Got HTTP request for %s from %s' % (request.uri, request.remoteAddr))
         name = segments[0]
         if name == '~':
             if len(segments) != 2:
                 log.msg('Got a malformed request from %s' % request.remoteAddr)
                 return None, ()
-            hash = segments[1]
+            hash = unquote_plus(segments[1])
             files = self.db.lookupHash(hash)
             if files:
                 log.msg('Sharing %s with %s' % (files[0]['path'].path, request.remoteAddr))

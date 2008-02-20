@@ -171,5 +171,5 @@ class AptDHT:
         return None
 
     def store_done(self, result, hash):
-        log.msg('Added %s to the DHT: %r' % (hash, result))
+        log.msg('Added %s to the DHT: %r' % (hash.hexdigest(), result))
         

@@ -158,7 +158,7 @@ class AptPackages:
         rel = deb822.Release(f, fields = ['MD5Sum', 'SHA1', 'SHA256'])
         for hash_type in rel:
             for file in rel[hash_type]:
-                self.indexrecords[cache_path].setdefault(file['name'], {})[hash_type.upper()] = (file['hash_type'], file['size'])
+                self.indexrecords[cache_path].setdefault(file['name'], {})[hash_type.upper()] = (file[hash_type], file['size'])
             
         f.close()
 
