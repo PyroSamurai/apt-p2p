@@ -3,6 +3,8 @@ from urllib import unquote_plus
 
 from twisted.python import log
 from twisted.internet import defer
+#from twisted.protocols import htb
+#from twisted.protocols.policies import ThrottlingFactory
 from twisted.web2 import server, http, resource, channel
 from twisted.web2 import static, http_headers, responsecode
 
@@ -53,6 +55,17 @@ class TopLevel(resource.Resource):
             self.factory = channel.HTTPFactory(server.Site(self),
                                                **{'maxPipeline': 10, 
                                                   'betweenRequestsTimeOut': 60})
+#            serverFilter = htb.HierarchicalBucketFilter()
+#            serverBucket = htb.Bucket()
+#
+#            # Cap total server traffic at 20 kB/s
+#            serverBucket.maxburst = 20000
+#            serverBucket.rate = 20000
+#
+#            serverFilter.buckets[None] = serverBucket
+#
+#            self.factory.protocol = htb.ShapedProtocolFactory(self.factory.protocol, serverFilter)
+#            self.factory = ThrottlingFactory(self.factory, writeLimit = 300*1024)
         return self.factory
 
     def render(self, ctx):
