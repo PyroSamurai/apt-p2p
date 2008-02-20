@@ -19,7 +19,7 @@ from twisted.web2 import channel
 from apt_dht.apt_dht_conf import config, version, DEFAULT_CONFIG_FILES
 from apt_dht.interfaces import IDHT
 
-config_file = []
+config_file = ''
 
 if __name__ == '__main__':
     # Parse command line parameters when started on command line
@@ -28,7 +28,7 @@ if __name__ == '__main__':
             ['help', 'h', 'Print this help message'],
             ]
         optParameters = [
-            ['config-file', 'c', [], "Configuration file"],
+            ['config-file', 'c', '', "Configuration file"],
             ['log-file', 'l', '-', "File to log to, - for stdout"],
             ]
         longdesc="apt-dht is a peer-to-peer downloader for apt users"
@@ -51,7 +51,9 @@ if __name__ == '__main__':
         f = open(log_file, 'w')
     log.startLogging(f, setStdout=1)
 
-config.read(DEFAULT_CONFIG_FILES + [config_file])
+log.msg("Loading config files: '%s'" % "', '".join(DEFAULT_CONFIG_FILES + [config_file]))
+config_read = config.read(DEFAULT_CONFIG_FILES + [config_file])
+log.msg("Successfully loaded config files: '%s'" % "', '".join(config_read))
 if config.has_option('DEFAULT', 'username') and config.get('DEFAULT', 'username'):
     uid,gid = pwd.getpwnam(config.get('DEFAULT', 'username'))[2:4]
 else:
