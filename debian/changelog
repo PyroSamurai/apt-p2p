@@ -1,6 +1,6 @@
-apt-dht (0.0.1~1.gbpef2463) UNRELEASED; urgency=low
+apt-dht (0.0.1~2.gbpc98e84) UNRELEASED; urgency=low
 
-  ** SNAPSHOT build @ef24631cd901522741529d3ef2ee458f2e9ced1d **
+  ** SNAPSHOT build @c98e840e6f67e2971ffc26a698d76c09a919db91 **
 
   * UNRELEASED
   * Initial debian directory and packaging related changes.
@@ -15,8 +15,9 @@ apt-dht (0.0.1~1.gbpef2463) UNRELEASED; urgency=low
   * Another new TODO item: better DHT lookups for multiple values per
     key.
   * Added 2 (commented) failed attempts to throttle the web server.
+  * Fixed some packaging issues with config file handling.
 
- -- Cameron Dale <camrdale@gmail.com>  Wed, 20 Feb 2008 10:52:18 -0800
+ -- Cameron Dale <camrdale@gmail.com>  Wed, 20 Feb 2008 11:35:14 -0800
 
 apt-dht (0.0.0) unstable; urgency=low
 
