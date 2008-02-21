@@ -10,6 +10,7 @@ from twisted.web2 import stream as stream_mod
 from twisted.web2.http import splitHostPort
 
 from HTTPDownloader import HTTPClientManager
+from util import uncompact
 
 class PeerManager:
     def __init__(self):
@@ -22,9 +23,10 @@ class PeerManager:
         @param peers: a list of the peers where the file can be found
         """
         if peers:
-            peer = choice(peers)
-            log.msg('Downloading from peer %s' % peer)
-            host, port = splitHostPort('http', peer)
+            compact_peer = choice(peers)
+            peer = uncompact(compact_peer['c'])
+            log.msg('Downloading from peer %r' % (peer, ))
+            host, port = peer
             path = '/~/' + quote_plus(hash.expected())
         else:
             log.msg('Downloading (%s) from mirror %s' % (method, mirror))

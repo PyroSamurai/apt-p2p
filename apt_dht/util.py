@@ -4,6 +4,7 @@
 import os, re
 
 from twisted.python import log
+from twisted.trial import unittest
 
 isLocal = re.compile('^(192\.168\.[0-9]{1,3}\.[0-9]{1,3})|'+
                      '(10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})|'+
@@ -109,3 +110,48 @@ def ipAddrFromChicken():
          return current_ip
     except Exception:
          return []
+
+def uncompact(s):
+    """Extract the contatc info from a compact peer representation.
+    
+    @type s: C{string}
+    @param s: the compact representation
+    @rtype: (C{string}, C{int})
+    @return: the IP address and port number to contact the peer on
+    @raise ValueError: if the compact representation doesn't exist
+    """
+    if (len(s) != 6):
+        raise ValueError
+    ip = '.'.join([str(ord(i)) for i in s[0:4]])
+    port = (ord(s[4]) << 8) | ord(s[5])
+    return (ip, port)
+
+def compact(ip, port):
+    """Create a compact representation of peer contact info.
+    
+    @type ip: C{string}
+    @param ip: the IP address of the peer
+    @type port: C{int}
+    @param port: the port number to contact the peer on
+    @rtype: C{string}
+    @return: the compact representation
+    @raise ValueError: if the compact representation doesn't exist
+    """
+    
+    s = ''.join([chr(int(i)) for i in ip.split('.')]) + \
+          chr((port & 0xFF00) >> 8) + chr(port & 0xFF)
+    if len(s) != 6:
+        raise ValueError
+    return s
+
+class TestUtil(unittest.TestCase):
+    """Tests for the utilities."""
+    
+    timeout = 5
+    ip = '165.234.1.34'
+    port = 61234
+
+    def test_compact(self):
+        d = uncompact(compact(self.ip, self.port))
+        self.failUnlessEqual(d[0], self.ip)
+        self.failUnlessEqual(d[1], self.port)

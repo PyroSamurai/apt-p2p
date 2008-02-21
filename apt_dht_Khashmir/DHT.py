@@ -10,6 +10,7 @@ from zope.interface import implements
 
 from apt_dht.interfaces import IDHT
 from khashmir import Khashmir
+from bencode import bencode, bdecode
 
 khashmir_dir = 'apt-dht-Khashmir'
 
@@ -139,7 +140,7 @@ class DHT:
         
     def _getValue(self, key, result):
         if result:
-            self.retrieved.setdefault(key, []).extend(result)
+            self.retrieved.setdefault(key, []).extend([bdecode(r) for r in result])
         else:
             final_result = []
             if key in self.retrieved:
@@ -157,21 +158,23 @@ class DHT:
         if not self.joined:
             raise DHTError, "have not joined a network yet"
 
-        if key in self.storing and value in self.storing[key]:
+        bvalue = bencode(value)
+
+        if key in self.storing and bvalue in self.storing[key]:
             raise DHTError, "already storing that key with the same value"
 
         d = defer.Deferred()
-        self.khashmir.storeValueForKey(key, value, self._storeValue)
-        self.storing.setdefault(key, {})[value] = d
+        self.khashmir.storeValueForKey(key, bvalue, self._storeValue)
+        self.storing.setdefault(key, {})[bvalue] = d
         return d
     
-    def _storeValue(self, key, value, result):
-        if key in self.storing and value in self.storing[key]:
+    def _storeValue(self, key, bvalue, result):
+        if key in self.storing and bvalue in self.storing[key]:
             if len(result) > 0:
-                self.storing[key][value].callback(result)
+                self.storing[key][bvalue].callback(result)
             else:
-                self.storing[key][value].errback(DHTError('could not store value %s in key %s' % (value, key)))
-            del self.storing[key][value]
+                self.storing[key][bvalue].errback(DHTError('could not store value %s in key %s' % (bvalue, key)))
+            del self.storing[key][bvalue]
             if len(self.storing[key].keys()) == 0:
                 del self.storing[key]
 

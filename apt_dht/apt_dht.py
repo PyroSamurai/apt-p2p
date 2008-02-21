@@ -15,7 +15,7 @@ from MirrorManager import MirrorManager
 from CacheManager import CacheManager
 from Hash import HashObject
 from db import DB
-from util import findMyIPAddr
+from util import findMyIPAddr, compact
 
 download_dir = 'cache'
 
@@ -129,17 +129,17 @@ class AptDHT:
         lookupDefer = self.dht.getValue(key)
         lookupDefer.addCallback(self.lookupHash_done, hash, path, d)
 
-    def lookupHash_done(self, locations, hash, path, d):
-        if not locations:
+    def lookupHash_done(self, values, hash, path, d):
+        if not values:
             log.msg('Peers for %s were not found' % path)
             getDefer = self.peers.get(hash, path)
             getDefer.addCallback(self.cache.save_file, hash, path)
             getDefer.addErrback(self.cache.save_error, path)
             getDefer.addCallbacks(d.callback, d.errback)
         else:
-            log.msg('Found peers for %s: %r' % (path, locations))
+            log.msg('Found peers for %s: %r' % (path, values))
             # Download from the found peers
-            getDefer = self.peers.get(hash, path, locations)
+            getDefer = self.peers.get(hash, path, values)
             getDefer.addCallback(self.check_response, hash, path)
             getDefer.addCallback(self.cache.save_file, hash, path)
             getDefer.addErrback(self.cache.save_error, path)
@@ -163,9 +163,10 @@ class AptDHT:
             self.mirrors.updatedFile(url, file_path)
         
         if self.my_addr and hash and (hash.expected() is not None or forceDHT):
-            site = self.my_addr + ':' + str(config.getint('DEFAULT', 'PORT'))
+            contact = compact(self.my_addr, config.getint('DEFAULT', 'PORT'))
+            value = {'c': contact}
             key = hash.norm(bits = config.getint(config.get('DEFAULT', 'DHT'), 'HASH_LENGTH'))
-            storeDefer = self.dht.storeValue(key, site)
+            storeDefer = self.dht.storeValue(key, value)
             storeDefer.addCallback(self.store_done, hash)
             return storeDefer
         return None
