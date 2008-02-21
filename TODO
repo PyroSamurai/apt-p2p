@@ -8,6 +8,14 @@ Various things need to done to comply with the newly defined protocol:
  - standardize the error messages (especially for a bad token)
 
 
+Reduce the memory footprint by clearing the AptPackages caches.
+
+The memory usage is a little bit high due to keeping the AptPackages
+caches always. Instead, they should timeout after a period of inactivity
+(say 15 minutes), and unload themselves from meory. It only takes a few
+seconds to reload, so this should not be an issue.
+
+
 Packages.diff files need to be considered.
 
 The Packages.diff/Index files contain hashes of Packages.diff/rred.gz 
