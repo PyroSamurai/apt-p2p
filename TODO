@@ -1,3 +1,13 @@
+Comply with the newly defined protocol on the web page.
+
+Various things need to done to comply with the newly defined protocol:
+ - use the compact encoding of contact information
+ - remove the originated time from the value storage
+ - add the token to find_node responses
+ - use the token in store_node requests
+ - standardize the error messages (especially for a bad token)
+
+
 Packages.diff files need to be considered.
 
 The Packages.diff/Index files contain hashes of Packages.diff/rred.gz 
@@ -78,7 +88,7 @@ downloads to peers. Pieces should be downloaded from the best peers
 first (i.e. piece 0 from the absolute best peer).
 
 
-When Looking Up Values, DHT Should Return Nodes and Values
+When looking up values, DHT should return nodes and values.
 
 When a key has multiple values in the DHT, returning a stored value may not
 be sufficient, as then no more nodes can be contacted to get more stored
@@ -86,17 +96,17 @@ values. Instead, return both the stored values and the list of closest
 nodes so that the peer doing the lookup can decide when to stop looking
 (when it has received enough values).
 
+Instead of returning both, a new method could be added, "lookup_value".
+This method will be like "get_value", except that every node will always
+return a list of nodes, as well as the number of values it has for that
+key. Once a querying node has found enough values (or all of them), then
+it would send the "get_value" method to the nodes that have the most
+values. The "get_value" query could also have a new parameter "number",
+which is the maximum number of values to return.
+
 
 Missing Kademlia implementation details are needed.
 
 The current implementation is missing some important features, mostly 
 focussed on storing values:
  - values need to be republished (every hour?)
- - original publishers need to republish values (every 24 hours)
- - when a new node is found that is closer to some values, replicate the 
-   values there without deleting them
- - when a value lookup succeeds, store the value in the closest node 
-   found that didn't have it
- - make the expiration time of a value exponentially inversely 
-   proportional to the number of nodes between the current node and the 
-   node closest to the value
