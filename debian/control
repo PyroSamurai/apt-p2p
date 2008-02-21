@@ -5,7 +5,7 @@ Maintainer: Cameron Dale <camrdale@gmail.com>
 Homepage: http://www.camrdale.org/apt-dht.html
 Standards-Version: 3.7.3
 Build-Depends: debhelper (>= 5.0.37.2)
-Build-Depends-Indep: python-dev, python-support (>= 0.5.4), docbook-to-man
+Build-Depends-Indep: python-dev, python-support (>= 0.5.4), docbook-to-man, python-debian (>= 0.1.4)
 Vcs-Git: git://git.camrdale.org/git/apt-dht.git
 Vcs-Browser: http://git.camrdale.org/?p=apt-dht.git;a=summary
 XS-Dm-Upload-Allowed: yes
