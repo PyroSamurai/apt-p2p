@@ -5,7 +5,6 @@ from datetime import datetime, MINYEAR
 from types import InstanceType
 
 from twisted.trial import unittest
-from twisted.python import log
 
 import khash
 from util import compact
@@ -16,7 +15,6 @@ NULL_ID = 20 * '\0'
 class Node:
     """encapsulate contact info"""
     def __init__(self, id, host = None, port = None):
-        log.msg('New node: id=%r, host=%r, port=%r' % (id, host, port))
         self.fails = 0
         self.lastSeen = datetime(MINYEAR, 1, 1)
 
