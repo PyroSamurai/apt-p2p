@@ -5,8 +5,10 @@ from datetime import datetime, MINYEAR
 from types import InstanceType
 
 from twisted.trial import unittest
+from twisted.python import log
 
 import khash
+from util import compact
 
 # magic id to use before we know a peer's id
 NULL_ID = 20 * '\0'
@@ -14,6 +16,7 @@ NULL_ID = 20 * '\0'
 class Node:
     """encapsulate contact info"""
     def __init__(self, id, host = None, port = None):
+        log.msg('New node: id=%r, host=%r, port=%r' % (id, host, port))
         self.fails = 0
         self.lastSeen = datetime(MINYEAR, 1, 1)
 
@@ -29,7 +32,7 @@ class Node:
         self.num = khash.intify(id)
         self.host = host
         self.port = int(port)
-        self._senderDict = {'id': self.id, 'port' : self.port, 'host' : self.host}
+        self._contactInfo = None
     
     def updateLastSeen(self):
         self.lastSeen = datetime.now()
@@ -39,8 +42,10 @@ class Node:
         self.fails = self.fails + 1
         return self.fails
     
-    def senderDict(self):
-        return self._senderDict
+    def contactInfo(self):
+        if self._contactInfo is None:
+            self._contactInfo = compact(self.id, self.host, self.port)
+        return self._contactInfo
     
     def __repr__(self):
         return `(self.id, self.host, self.port)`
@@ -74,7 +79,7 @@ class Node:
 
 class TestNode(unittest.TestCase):
     def setUp(self):
-        self.node = Node(khash.newID(), 'localhost', 2002)
+        self.node = Node(khash.newID(), '127.0.0.1', 2002)
     def testUpdateLastSeen(self):
         t = self.node.lastSeen
         self.node.updateLastSeen()

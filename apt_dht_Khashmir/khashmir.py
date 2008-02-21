@@ -210,7 +210,7 @@ class KhashmirBase(protocol.Factory):
         n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
         self.insertNode(n, contacted=0)
         nodes = self.table.findNodes(target)
-        nodes = map(lambda node: node.senderDict(), nodes)
+        nodes = map(lambda node: node.contactInfo(), nodes)
         return {"nodes" : nodes, "id" : self.node.id}
 
 
@@ -249,7 +249,7 @@ class KhashmirRead(KhashmirBase):
             return {'values' : l, "id": self.node.id}
         else:
             nodes = self.table.findNodes(key)
-            nodes = map(lambda node: node.senderDict(), nodes)
+            nodes = map(lambda node: node.contactInfo(), nodes)
             return {'nodes' : nodes, "id": self.node.id}
 
 ###  provides a generic write method, you probably don't want to deploy something that allows
@@ -335,7 +335,7 @@ class SimpleTests(unittest.TestCase):
         reactor.iterate()
         reactor.iterate()
         self.got = 0
-        self.a.storeValueForKey(sha('foo').digest(), 'foobar', datetime.utcnow())
+        self.a.storeValueForKey(sha('foo').digest(), 'foobar')
         reactor.iterate()
         reactor.iterate()
         reactor.iterate()
@@ -417,7 +417,7 @@ class MultiTest(unittest.TestCase):
                 self.done = 0
                 def _scb(key, value, result):
                     self.done = 1
-                self.l[randrange(0, self.num)].storeValueForKey(K, V, datetime.utcnow(), _scb)
+                self.l[randrange(0, self.num)].storeValueForKey(K, V, _scb)
                 while not self.done:
                     reactor.iterate()
 

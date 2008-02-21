@@ -5,6 +5,7 @@ from twisted.internet import reactor
 from twisted.python import log
 
 from khash import intify
+from util import uncompact
 
 class ActionBase:
     """ base class for some long running asynchronous proccesses like finding nodes or values """
@@ -50,7 +51,8 @@ class FindNode(ActionBase):
             return
         self.outstanding = self.outstanding - 1
         self.answered[dict["id"]] = 1
-        for node in l:
+        for compact_node in l:
+            node = uncompact(compact_node)
             n = self.caller.Node(node)
             if not self.found.has_key(n.id):
                 self.found[n.id] = n
@@ -125,7 +127,8 @@ class GetValue(FindNode):
         # go through nodes
         # if we have any closer than what we already got, query them
         if dict.has_key('nodes'):
-            for node in dict['nodes']:
+            for compact_node in dict['nodes']:
+                node = uncompact(compact_node)
                 n = self.caller.Node(node)
                 if not self.found.has_key(n.id):
                     self.found[n.id] = n

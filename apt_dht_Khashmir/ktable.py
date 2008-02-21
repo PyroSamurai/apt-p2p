@@ -211,11 +211,11 @@ class KBucket:
 
 class TestKTable(unittest.TestCase):
     def setUp(self):
-        self.a = Node(khash.newID(), 'localhost', 2002)
+        self.a = Node(khash.newID(), '127.0.0.1', 2002)
         self.t = KTable(self.a, {'HASH_LENGTH': 160, 'K': 8, 'MAX_FAILURES': 3})
 
     def testAddNode(self):
-        self.b = Node(khash.newID(), 'localhost', 2003)
+        self.b = Node(khash.newID(), '127.0.0.1', 2003)
         self.t.insertNode(self.b)
         self.failUnlessEqual(len(self.t.buckets[0].l), 1)
         self.failUnlessEqual(self.t.buckets[0].l[0], self.b)
