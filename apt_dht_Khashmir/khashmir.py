@@ -257,28 +257,28 @@ class KhashmirRead(KhashmirBase):
 class KhashmirWrite(KhashmirRead):
     _Node = KNodeWrite
     ## async, callback indicates nodes we got a response from (but no guarantee they didn't drop it on the floor)
-    def storeValueForKey(self, key, value, originated, callback=None):
+    def storeValueForKey(self, key, value, callback=None):
         """ stores the value and origination time for key in the global table, returns immediately, no status 
             in this implementation, peers respond but don't indicate status to storing values
             a key can have many values
         """
-        def _storeValueForKey(nodes, key=key, value=value, originated=originated, response=callback , table=self.table):
+        def _storeValueForKey(nodes, key=key, value=value, response=callback , table=self.table):
             if not response:
                 # default callback
                 def _storedValueHandler(key, value, sender):
                     pass
                 response=_storedValueHandler
-            action = StoreValue(self.table, key, value, originated, response, self.config)
+            action = StoreValue(self.table, key, value, response, self.config)
             reactor.callLater(0, action.goWithNodes, nodes)
             
         # this call is asynch
         self.findNode(key, _storeValueForKey)
                     
     #### Remote Interface - called by remote nodes
-    def krpc_store_value(self, key, value, originated, id, _krpc_sender):
+    def krpc_store_value(self, key, value, id, _krpc_sender):
         n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
         self.insertNode(n, contacted=0)
-        self.store.storeValue(key, value, originated)
+        self.store.storeValue(key, value)
         return {"id" : self.node.id}
 
 # the whole shebang, for testing

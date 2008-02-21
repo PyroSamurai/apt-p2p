@@ -44,9 +44,8 @@ class DB:
     def _createNewDB(self, db):
         self.conn = sqlite.connect(database=db, detect_types=sqlite.PARSE_DECLTYPES)
         c = self.conn.cursor()
-        c.execute("CREATE TABLE kv (key KHASH, value TEXT, originated TIMESTAMP, last_refresh TIMESTAMP, PRIMARY KEY (key, value))")
+        c.execute("CREATE TABLE kv (key KHASH, value TEXT, last_refresh TIMESTAMP, PRIMARY KEY (key, value))")
         c.execute("CREATE INDEX kv_key ON kv(key)")
-        c.execute("CREATE INDEX kv_originated ON kv(originated)")
         c.execute("CREATE INDEX kv_last_refresh ON kv(last_refresh)")
         c.execute("CREATE TABLE nodes (id KHASH PRIMARY KEY, host TEXT, port NUMBER)")
         c.execute("CREATE TABLE self (num NUMBER PRIMARY KEY, id KHASH)")
@@ -96,18 +95,18 @@ class DB:
             l.append(row[0])
         return l
 
-    def storeValue(self, key, value, originated):
+    def storeValue(self, key, value):
         """Store or update a key and value."""
         c = self.conn.cursor()
-        c.execute("INSERT OR REPLACE INTO kv VALUES (?, ?, ?, ?)", 
-                  (khash(key), value, originated, datetime.now()))
+        c.execute("INSERT OR REPLACE INTO kv VALUES (?, ?, ?)", 
+                  (khash(key), value, datetime.now()))
         self.conn.commit()
 
     def expireValues(self, expireAfter):
         """Expire older values after expireAfter seconds."""
         t = datetime.now() - timedelta(seconds=expireAfter)
         c = self.conn.cursor()
-        c.execute("DELETE FROM kv WHERE originated < ?", (t, ))
+        c.execute("DELETE FROM kv WHERE last_refresh < ?", (t, ))
         self.conn.commit()
         
     def refreshValues(self, expireAfter):
@@ -118,7 +117,7 @@ class DB:
         """
         t = datetime.now() - timedelta(seconds=expireAfter)
         c = self.conn.cursor()
-        c.execute("SELECT key, value, originated FROM kv WHERE last_refresh < ?", (t,))
+        c.execute("SELECT key, value, FROM kv WHERE last_refresh < ?", (t,))
         keys = []
         vals = []
         rows = c.fetchall()

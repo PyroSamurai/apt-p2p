@@ -2,7 +2,6 @@ Comply with the newly defined protocol on the web page.
 
 Various things need to done to comply with the newly defined protocol:
  - use the compact encoding of contact information
- - remove the originated time from the value storage
  - add the token to find_node responses
  - use the token in store_node requests
  - standardize the error messages (especially for a bad token)

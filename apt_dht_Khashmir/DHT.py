@@ -150,7 +150,7 @@ class DHT:
                 d.callback(final_result)
             del self.retrieving[key]
 
-    def storeValue(self, key, value, originated = None):
+    def storeValue(self, key, value):
         """See L{apt_dht.interfaces.IDHT}."""
         if self.config is None:
             raise DHTError, "configuration not loaded"
@@ -160,10 +160,8 @@ class DHT:
         if key in self.storing and value in self.storing[key]:
             raise DHTError, "already storing that key with the same value"
 
-        if originated is None:
-            originated = datetime.utcnow()
         d = defer.Deferred()
-        self.khashmir.storeValueForKey(key, value, originated, self._storeValue)
+        self.khashmir.storeValueForKey(key, value, self._storeValue)
         self.storing.setdefault(key, {})[value] = d
         return d
     

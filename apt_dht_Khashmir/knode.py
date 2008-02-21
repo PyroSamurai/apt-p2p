@@ -49,8 +49,8 @@ class KNodeRead(KNodeBase):
         return df
 
 class KNodeWrite(KNodeRead):
-    def storeValue(self, key, value, originated, id):
-        df = self.conn.sendRequest('store_value', {"key" : key, "value" : value, "originated" : originated, "id": id})
+    def storeValue(self, key, value, id):
+        df = self.conn.sendRequest('store_value', {"key" : key, "value" : value, "id": id})
         df.addErrback(self.errBack)
         df.addCallback(self.checkSender)
         return df
