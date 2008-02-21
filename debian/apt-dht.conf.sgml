@@ -179,7 +179,7 @@
 	    <term><option>CHECKPOINT_INTERVAL = <replaceable>time</replaceable></option></term>
 	     <listitem>
 	      <para>The <replaceable>time</replaceable> to wait between saves of the running state.
-	          (Default is 15 minutes.)</para>
+	          (Default is 5 minutes.)</para>
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>

@@ -62,7 +62,7 @@ DHT_DEFAULTS = {
     'HASH_LENGTH': '160',
     
     # checkpoint every this many seconds
-    'CHECKPOINT_INTERVAL': '15m', # fifteen minutes
+    'CHECKPOINT_INTERVAL': '5m', # five minutes
     
     ### SEARCHING/STORING
     # concurrent xmlrpc calls per find node/value request!

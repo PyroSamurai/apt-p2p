@@ -354,7 +354,7 @@ K = 8
 HASH_LENGTH = 160
 
 # checkpoint every this many seconds
-CHECKPOINT_INTERVAL = 15m
+CHECKPOINT_INTERVAL = 5m
 
 # concurrent xmlrpc calls per find node/value request!
 CONCURRENT_REQS = 4

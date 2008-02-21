@@ -30,11 +30,15 @@ class Node:
         self.num = khash.intify(id)
         self.host = host
         self.port = int(port)
+        self.token = ''
         self._contactInfo = None
     
     def updateLastSeen(self):
         self.lastSeen = datetime.now()
         self.fails = 0
+        
+    def updateToken(self, token):
+        self.token = token
     
     def msgFailed(self):
         self.fails = self.fails + 1

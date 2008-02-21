@@ -45,6 +45,8 @@ class FindNode(ActionBase):
         dict = dict['rsp']
         n = self.caller.Node(dict["id"], _krpc_sender[0], _krpc_sender[1])
         self.caller.insertNode(n)
+        if dict["id"] in self.found:
+            self.found[dict["id"]].updateToken(dict.get('token', ''))
         l = dict["nodes"]
         if self.finished or self.answered.has_key(dict["id"]):
             # a day late and a dollar short
@@ -239,7 +241,7 @@ class StoreValue(ActionBase):
                     except AttributeError:
                         log.msg("%s doesn't have a %s method!" % (node, self.store))
                     else:
-                        df = f(self.target, self.value, self.caller.node.id)
+                        df = f(self.target, self.value, node.token, self.caller.node.id)
                         df.addCallback(self.storedValue, node=node)
                         df.addErrback(self.storeFailed, node=node)
                     
