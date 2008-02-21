@@ -2,3 +2,4 @@
 .pydevproject
 *.pyc
 _trial_temp
+docs/html

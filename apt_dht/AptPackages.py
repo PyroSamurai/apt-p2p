@@ -121,8 +121,7 @@ class AptPackages:
     def __init__(self, cache_dir):
         """Construct a new packages manager.
 
-        @ivar backendName: name of backend associated with this packages file
-        @ivar cache_dir: cache directory from config file
+        @param cache_dir: cache directory from config file
         """
         self.cache_dir = cache_dir
         self.apt_config = deepcopy(self.DEFAULT_APT_CONFIG)

@@ -15,7 +15,7 @@ Diagram of the interaction between the given modules::
   |               |    | PeerManager |    | HTTPDownloader*|    |
   |               |--->|get          |--->|get         HTTP|----|---> Mirror
   |               |    |             |--->|getRange        |    |
-  |               |--->|close        |--->|close       HTTP|----|--\
+  |               |--->|close        |--->|close       HTTP|----|--\       
   |               |    +-------------+    +----------------+    |  |
   |               |    +-----------------------------------+    |  | Another
   |               |    |           HTTPServer              |    |  | Peer
