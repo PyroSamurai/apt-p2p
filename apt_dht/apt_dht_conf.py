@@ -43,6 +43,10 @@ DEFAULTS = {
     # to reload when a new request arrives.
     'UNLOAD_PACKAGES_CACHE': '5m',
 
+    # Refresh the DHT keys after this much time has passed.
+    # This should be a time slightly less than the DHT's KEY_EXPIRE value.
+    'KEY_REFRESH': '57m',
+
     # Which DHT implementation to use.
     # It must be possile to do "from <DHT>.DHT import DHT" to get a class that
     # implements the IDHT interface.

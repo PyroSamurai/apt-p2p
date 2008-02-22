@@ -124,6 +124,14 @@
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
+	    <term><option>KEY_REFRESH = <replaceable>time</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>time</replaceable> after which to refresh DHT keys.
+	          This should be a time slightly less than the DHT's KEY_EXPIRE value.
+	          (Default is 57 minutes.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
 	    <term><option>DHT = <replaceable>string</replaceable></option></term>
 	     <listitem>
 	      <para>The DHT implementation to use. It must be possile to do (in python)

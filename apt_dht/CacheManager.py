@@ -210,8 +210,8 @@ class CacheManager:
             url = None
             if self.scanning[0] == self.cache_dir:
                 url = 'http:/' + file.path[len(self.cache_dir.path):]
-            self.db.storeFile(file, result.digest())
-            df = self.manager.new_cached_file(file, result, url, True)
+            new_hash = self.db.storeFile(file, result.digest())
+            df = self.manager.new_cached_file(file, result, new_hash, url, True)
             if df is None:
                 reactor.callLater(0, self._scanDirectories, None, walker)
             else:
@@ -273,13 +273,13 @@ class CacheManager:
             else:
                 log.msg('Hashed file to %s: %s' % (hash.hexdigest(), url))
                 
-            self.db.storeFile(destFile, hash.digest())
+            new_hash = self.db.storeFile(destFile, hash.digest())
             log.msg('now avaliable: %s' % (url))
 
             if self.manager:
-                self.manager.new_cached_file(destFile, hash, url)
+                self.manager.new_cached_file(destFile, hash, new_hash, url)
                 if ext:
-                    self.manager.new_cached_file(decFile, None, url[:-len(ext)])
+                    self.manager.new_cached_file(decFile, None, False, url[:-len(ext)])
         else:
             log.msg("Hashes don't match %s != %s: %s" % (hash.hexexpected(), hash.hexdigest(), url))
             destFile.remove()

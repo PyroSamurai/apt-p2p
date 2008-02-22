@@ -66,19 +66,35 @@ class DB:
         return res
         
     def storeFile(self, file, hash):
-        """Store or update a file in the database."""
+        """Store or update a file in the database.
+        
+        @return: True if the hash was not in the database before
+            (so it needs to be added to the DHT)
+        """
+        new_hash = True
+        refreshTime = datetime.now()
+        c = self.conn.cursor()
+        c.execute("SELECT MAX(refreshed) AS max_refresh FROM files WHERE hash = ?", (khash(hash), ))
+        row = c.fetchone()
+        if row and row['max_refresh']:
+            new_hash = False
+            refreshTime = row['max_refresh']
+        c.close()
+        
         file.restat()
         c = self.conn.cursor()
         c.execute("SELECT path FROM files WHERE path = ?", (file.path, ))
         row = c.fetchone()
         if row:
             c.execute("UPDATE files SET hash = ?, size = ?, mtime = ?, refreshed = ?", 
-                      (khash(hash), file.getsize(), file.getmtime(), datetime.now()))
+                      (khash(hash), file.getsize(), file.getmtime(), refreshTime))
         else:
             c.execute("INSERT OR REPLACE INTO files VALUES(?, ?, ?, ?, ?)",
-                      (file.path, khash(hash), file.getsize(), file.getmtime(), datetime.now()))
+                      (file.path, khash(hash), file.getsize(), file.getmtime(), refreshTime))
         self.conn.commit()
         c.close()
+        
+        return new_hash
         
     def getFile(self, file):
         """Get a file from the database.
@@ -110,7 +126,7 @@ class DB:
         @return: list of dictionaries of info for the found files
         """
         c = self.conn.cursor()
-        c.execute("SELECT path, size, mtime FROM files WHERE hash = ?", (khash(hash), ))
+        c.execute("SELECT path, size, mtime, refreshed FROM files WHERE hash = ?", (khash(hash), ))
         row = c.fetchone()
         files = []
         while row:
@@ -120,6 +136,7 @@ class DB:
                 res = {}
                 res['path'] = file
                 res['size'] = row['size']
+                res['refreshed'] = row['refreshed']
                 files.append(res)
             row = c.fetchone()
         c.close()
@@ -137,41 +154,47 @@ class DB:
         row = c.fetchone()
         return self._removeChanged(file, row)
 
-    def refreshFile(self, file):
-        """Refresh the publishing time of a file.
-        
-        If it has changed or is missing, it is removed from the table.
-        
-        @return: True if unchanged, False if changed, None if not in database
-        """
+    def refreshHash(self, hash):
+        """Refresh the publishing time all files with a hash."""
+        refreshTime = datetime.now()
         c = self.conn.cursor()
-        c.execute("SELECT size, mtime FROM files WHERE path = ?", (file.path, ))
-        row = c.fetchone()
-        res = None
-        if row:
-            res = self._removeChanged(file, row)
-            if res:
-                c.execute("UPDATE files SET refreshed = ? WHERE path = ?", (datetime.now(), file.path))
-        return res
+        c.execute("UPDATE files SET refreshed = ? WHERE hash = ?", (refreshTime, khash(hash)))
+        c.close()
     
     def expiredFiles(self, expireAfter):
         """Find files that need refreshing after expireAfter seconds.
         
-        Also removes any entries from the table that no longer exist.
+        For each hash that needs refreshing, finds all the files with that hash.
+        If the file has changed or is missing, it is removed from the table.
         
         @return: dictionary with keys the hashes, values a list of FilePaths
         """
         t = datetime.now() - timedelta(seconds=expireAfter)
+        
+        # First find the hashes that need refreshing
         c = self.conn.cursor()
-        c.execute("SELECT path, hash, size, mtime FROM files WHERE refreshed < ?", (t, ))
+        c.execute("SELECT DISTINCT hash FROM files WHERE refreshed < ?", (t, ))
         row = c.fetchone()
         expired = {}
         while row:
-            res = self._removeChanged(FilePath(row['path']), row)
-            if res:
-                expired.setdefault(row['hash'], []).append(FilePath(row['path']))
+            expired.setdefault(row['hash'], [])
             row = c.fetchone()
         c.close()
+
+        # Now find the files for each hash
+        for hash in expired.keys():
+            c = self.conn.cursor()
+            c.execute("SELECT path, size, mtime FROM files WHERE hash = ?", (khash(hash), ))
+            row = c.fetchone()
+            while row:
+                res = self._removeChanged(FilePath(row['path']), row)
+                if res:
+                    expired[hash].append(FilePath(row['path']))
+                row = c.fetchone()
+            if len(expired[hash]) == 0:
+                del expired[hash]
+            c.close()
+        
         return expired
         
     def removeUntrackedFiles(self, dirs):
@@ -239,6 +262,12 @@ class TestDB(unittest.TestCase):
         self.failUnless(res)
         self.failUnlessEqual(res['hash'], self.hash)
         
+    def test_lookupHash(self):
+        res = self.store.lookupHash(self.hash)
+        self.failUnless(res)
+        self.failUnlessEqual(len(res), 1)
+        self.failUnlessEqual(res[0]['path'].path, self.file.path)
+        
     def test_isUnchanged(self):
         res = self.store.isUnchanged(self.file)
         self.failUnless(res)
@@ -258,8 +287,7 @@ class TestDB(unittest.TestCase):
         self.failUnlessEqual(len(res.keys()), 1)
         self.failUnlessEqual(res.keys()[0], self.hash)
         self.failUnlessEqual(len(res[self.hash]), 1)
-        res = self.store.refreshFile(self.file)
-        self.failUnless(res)
+        self.store.refreshHash(self.hash)
         res = self.store.expiredFiles(1)
         self.failUnlessEqual(len(res.keys()), 0)
         
@@ -271,6 +299,25 @@ class TestDB(unittest.TestCase):
             file.setContent(file.path)
             file.touch()
             self.store.storeFile(file, self.hash)
+    
+    def test_multipleHashes(self):
+        self.build_dirs()
+        res = self.store.expiredFiles(1)
+        self.failUnlessEqual(len(res.keys()), 0)
+        res = self.store.lookupHash(self.hash)
+        self.failUnless(res)
+        self.failUnlessEqual(len(res), 4)
+        self.failUnlessEqual(res[0]['refreshed'], res[1]['refreshed'])
+        self.failUnlessEqual(res[0]['refreshed'], res[2]['refreshed'])
+        self.failUnlessEqual(res[0]['refreshed'], res[3]['refreshed'])
+        sleep(2)
+        res = self.store.expiredFiles(1)
+        self.failUnlessEqual(len(res.keys()), 1)
+        self.failUnlessEqual(res.keys()[0], self.hash)
+        self.failUnlessEqual(len(res[self.hash]), 4)
+        self.store.refreshHash(self.hash)
+        res = self.store.expiredFiles(1)
+        self.failUnlessEqual(len(res.keys()), 0)
     
     def test_removeUntracked(self):
         self.build_dirs()

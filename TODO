@@ -93,10 +93,3 @@ key. Once a querying node has found enough values (or all of them), then
 it would send the "get_value" method to the nodes that have the most
 values. The "get_value" query could also have a new parameter "number",
 which is the maximum number of values to return.
-
-
-Missing Kademlia implementation details are needed.
-
-The current implementation is missing some important features, mostly 
-focussed on storing values:
- - values need to be republished (every hour?)

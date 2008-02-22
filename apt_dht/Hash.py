@@ -34,14 +34,15 @@ class HashObject:
                    },
             ]
     
-    def __init__(self):
+    def __init__(self, digest = None, size = None):
         self.hashTypeNum = 0    # Use the first if nothing else matters
         self.expHash = None
         self.expHex = None
         self.expSize = None
         self.expNormHash = None
         self.fileHasher = None
-        self.fileHash = None
+        self.fileHash = digest
+        self.size = size
         self.fileHex = None
         self.fileNormHash = None
         self.done = True
