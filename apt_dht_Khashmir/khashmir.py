@@ -287,8 +287,8 @@ class KhashmirWrite(KhashmirRead):
             this_token = sha(secret + _krpc_sender[0]).digest()
             if token == this_token:
                 self.store.storeValue(key, value)
-                break;
-        return {"id" : self.node.id}
+                return {"id" : self.node.id}
+        raise krpc.KrpcError, (krpc.KRPC_ERROR_INVALID_TOKEN, 'token is invalid, do a find_nodes to get a fresh one')
 
 # the whole shebang, for testing
 class Khashmir(KhashmirWrite):

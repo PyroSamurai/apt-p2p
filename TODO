@@ -1,9 +1,3 @@
-Comply with the newly defined protocol on the web page.
-
-Various things need to done to comply with the newly defined protocol:
- - standardize the error messages (especially for a bad token)
-
-
 Reduce the memory footprint by clearing the AptPackages caches.
 
 The memory usage is a little bit high due to keeping the AptPackages
