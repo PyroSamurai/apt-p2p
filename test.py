@@ -376,14 +376,8 @@ MIN_PING_INTERVAL = 15m
 # refresh buckets that haven't been touched in this long
 BUCKET_STALENESS = 1h
 
-# time before expirer starts running
-KEINITIAL_DELAY = 15s
-
-# time between expirer runs
-KE_DELAY = 20m
-
 # expire entries older than this
-KE_AGE = 1h
+KEY_EXPIRE = 1h
 
 # whether to spew info about the requests/responses in the protocol
 SPEW = yes

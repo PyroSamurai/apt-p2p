@@ -227,21 +227,7 @@
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
-	    <term><option>KEINITIAL_DELAY = <replaceable>time</replaceable></option></term>
-	     <listitem>
-	      <para>The <replaceable>time</replaceable> to wait after startup before starting the key expirer.
-	          (Default is 15 seconds.)</para>
-	    </listitem>
-	  </varlistentry>
-	  <varlistentry>
-	    <term><option>KE_DELAY = <replaceable>time</replaceable></option></term>
-	     <listitem>
-	      <para>The <replaceable>time</replaceable> to wait between runs of the key expirer.
-	          (Default is 20 minutes.)</para>
-	    </listitem>
-	  </varlistentry>
-	  <varlistentry>
-	    <term><option>KE_AGE = <replaceable>time</replaceable></option></term>
+	    <term><option>KEY_EXPIRE = <replaceable>time</replaceable></option></term>
 	     <listitem>
 	      <para>The <replaceable>time</replaceable> to wait before expiring unrefreshed keys.
 	          (Default is 1 hour.)</para>

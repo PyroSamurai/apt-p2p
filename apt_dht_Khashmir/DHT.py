@@ -49,7 +49,7 @@ class DHT:
                      'MAX_FAILURES', 'PORT']:
                 self.config[k] = self.config_parser.getint(section, k)
             elif k in ['CHECKPOINT_INTERVAL', 'MIN_PING_INTERVAL', 
-                       'BUCKET_STALENESS', 'KEINITIAL_DELAY', 'KE_DELAY', 'KE_AGE']:
+                       'BUCKET_STALENESS', 'KEY_EXPIRE']:
                 self.config[k] = self.config_parser.gettime(section, k)
             elif k in ['SPEW']:
                 self.config[k] = self.config_parser.getboolean(section, k)
@@ -186,8 +186,7 @@ class TestSimpleDHT(unittest.TestCase):
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 4,
                     'STORE_REDUNDANCY': 3, 'MAX_FAILURES': 3,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
-                    'KEINITIAL_DELAY': 15, 'KE_DELAY': 1200,
-                    'KE_AGE': 3600, 'SPEW': False, }
+                    'KEY_EXPIRE': 3600, 'SPEW': False, }
 
     def setUp(self):
         self.a = DHT()
@@ -279,8 +278,7 @@ class TestMultiDHT(unittest.TestCase):
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 4,
                     'STORE_REDUNDANCY': 3, 'MAX_FAILURES': 3,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
-                    'KEINITIAL_DELAY': 15, 'KE_DELAY': 1200,
-                    'KE_AGE': 3600, 'SPEW': False, }
+                    'KEY_EXPIRE': 3600, 'SPEW': False, }
 
     def setUp(self):
         self.l = []

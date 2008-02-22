@@ -236,20 +236,3 @@ class StoreValue(ActionBase):
         self.nodes = nodes
         self.nodes.sort(self.sort)
         self.schedule()
-
-
-class KeyExpirer:
-    def __init__(self, store, config):
-        self.store = store
-        self.config = config
-        self.next_expire = reactor.callLater(self.config['KEINITIAL_DELAY'], self.doExpire)
-    
-    def doExpire(self):
-        self.store.expireValues(self.config['KE_AGE'])
-        self.next_expire = reactor.callLater(self.config['KE_DELAY'], self.doExpire)
-        
-    def shutdown(self):
-        try:
-            self.next_expire.cancel()
-        except:
-            pass

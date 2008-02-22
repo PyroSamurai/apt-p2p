@@ -17,7 +17,7 @@ from db import DB
 from ktable import KTable
 from knode import KNodeBase, KNodeRead, KNodeWrite, NULL_ID
 from khash import newID, newIDInRange
-from actions import FindNode, GetValue, KeyExpirer, StoreValue
+from actions import FindNode, GetValue, StoreValue
 import krpc
 
 # this is the base class, has base functionality and find node, no key-value mappings
@@ -39,7 +39,6 @@ class KhashmirBase(protocol.Factory):
         self.udp.protocol = krpc.KRPC
         self.listenport = reactor.listenUDP(self.port, self.udp)
         self._loadRoutingTable()
-        self.expirer = KeyExpirer(self.store, config)
         self.refreshTable(force=1)
         self.next_checkpoint = reactor.callLater(60, self.checkpoint, (1,))
 
@@ -65,6 +64,7 @@ class KhashmirBase(protocol.Factory):
             self.token_secrets.pop()
         self.store.saveSelfNode(self.node.id)
         self.store.dumpRoutingTable(self.table.buckets)
+        self.store.expireValues(self.config['KEY_EXPIRE'])
         self.refreshTable()
         if auto:
             self.next_checkpoint = reactor.callLater(randrange(int(self.config['CHECKPOINT_INTERVAL'] * .9), 
@@ -196,7 +196,6 @@ class KhashmirBase(protocol.Factory):
             self.next_checkpoint.cancel()
         except:
             pass
-        self.expirer.shutdown()
         self.store.close()
 
     #### Remote Interface - called by remote nodes
@@ -301,8 +300,7 @@ class SimpleTests(unittest.TestCase):
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 4,
                     'STORE_REDUNDANCY': 3, 'MAX_FAILURES': 3,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
-                    'KEINITIAL_DELAY': 15, 'KE_DELAY': 1200,
-                    'KE_AGE': 3600, 'SPEW': False, }
+                    'KEY_EXPIRE': 3600, 'SPEW': False, }
 
     def setUp(self):
         krpc.KRPC.noisy = 0
@@ -375,8 +373,7 @@ class MultiTest(unittest.TestCase):
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 4,
                     'STORE_REDUNDANCY': 3, 'MAX_FAILURES': 3,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
-                    'KEINITIAL_DELAY': 15, 'KE_DELAY': 1200,
-                    'KE_AGE': 3600, 'SPEW': False, }
+                    'KEY_EXPIRE': 3600, 'SPEW': False, }
 
     def _done(self, val):
         self.done = 1

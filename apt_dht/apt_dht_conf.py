@@ -86,15 +86,8 @@ DHT_DEFAULTS = {
     # refresh buckets that haven't been touched in this long
     'BUCKET_STALENESS': '1h', # one hour
     
-    ###  KEY EXPIRER
-    # time before expirer starts running
-    'KEINITIAL_DELAY': '15s', # 15 seconds - to clean out old stuff in persistent db
-    
-    # time between expirer runs
-    'KE_DELAY': '20m', # 20 minutes
-    
     # expire entries older than this
-    'KE_AGE': '1h', # 60 minutes
+    'KEY_EXPIRE': '1h', # 60 minutes
     
     # whether to spew info about the requests/responses in the protocol
     'SPEW': 'yes',
