@@ -38,6 +38,11 @@ DEFAULTS = {
     # Whether it's OK to use an IP addres from a known local/private range
     'LOCAL_OK': 'no',
 
+    # Unload the packages cache after an interval of inactivity this long.
+    # The packages cache uses a lot of memory, and only takes a few seconds
+    # to reload when a new request arrives.
+    'UNLOAD_PACKAGES_CACHE': '5m',
+
     # Which DHT implementation to use.
     # It must be possile to do "from <DHT>.DHT import DHT" to get a class that
     # implements the IDHT interface.

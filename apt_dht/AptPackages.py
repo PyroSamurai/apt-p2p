@@ -25,7 +25,7 @@ from shutil import rmtree
 from copy import deepcopy
 from UserDict import DictMixin
 
-from twisted.internet import threads, defer
+from twisted.internet import threads, defer, reactor
 from twisted.python import log
 from twisted.python.filepath import FilePath
 from twisted.trial import unittest
@@ -135,12 +135,13 @@ class AptPackages:
                       'apt/lists/partial')
     essential_files = ('apt/dpkg/status', 'apt/etc/sources.list',)
         
-    def __init__(self, cache_dir):
+    def __init__(self, cache_dir, unload_delay):
         """Construct a new packages manager.
 
         @param cache_dir: cache directory from config file
         """
         self.cache_dir = cache_dir
+        self.unload_delay = unload_delay
         self.apt_config = deepcopy(self.DEFAULT_APT_CONFIG)
 
         for dir in self.essential_dirs:
@@ -157,6 +158,7 @@ class AptPackages:
         self.packages = PackageFileList(cache_dir)
         self.loaded = 0
         self.loading = None
+        self.unload_later = None
         
     def __del__(self):
         self.cleanup()
@@ -188,7 +190,12 @@ class AptPackages:
 
     def load(self):
         """Make sure the package is initialized and loaded."""
+        if self.unload_later and self.unload_later.active():
+            self.unload_later.reset(self.unload_delay)
+        else:
+            self.unload_later = reactor.callLater(self.unload_delay, self.unload)
         if self.loading is None:
+            log.msg('Loading the packages cache')
             self.loading = threads.deferToThread(self._load)
             self.loading.addCallback(self.doneLoading)
         return self.loading
@@ -261,7 +268,11 @@ class AptPackages:
 
     def unload(self):
         """Tries to make the packages server quit."""
+        if self.unload_later and self.unload_later.active():
+            self.unload_later.cancel()
+        self.unload_later = None
         if self.loaded:
+            log.msg('Unloading the packages cache')
             del self.cache
             del self.records
             del self.srcrecords
@@ -353,7 +364,7 @@ class TestAptPackages(unittest.TestCase):
     releaseFile = ''
     
     def setUp(self):
-        self.client = AptPackages(FilePath('/tmp/.apt-dht'))
+        self.client = AptPackages(FilePath('/tmp/.apt-dht'), 300)
     
         self.packagesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Packages$" | tail -n 1').read().rstrip('\n')
         self.sourcesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Sources$" | tail -n 1').read().rstrip('\n')

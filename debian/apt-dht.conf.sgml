@@ -116,6 +116,14 @@
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
+	    <term><option>UNLOAD_PACKAGES_CACHE = <replaceable>time</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>time</replaceable> of inactivity to wait for before unloading the
+	          packages cache. The packages cache uses a lot of memory, and only takes a few seconds
+	          to reload when a new request arrives. (Default is 5 minutes.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
 	    <term><option>DHT = <replaceable>string</replaceable></option></term>
 	     <listitem>
 	      <para>The DHT implementation to use. It must be possile to do (in python)

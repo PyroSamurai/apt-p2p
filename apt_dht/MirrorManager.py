@@ -18,8 +18,9 @@ class MirrorError(Exception):
 class MirrorManager:
     """Manages all requests for mirror objects."""
     
-    def __init__(self, cache_dir):
+    def __init__(self, cache_dir, unload_delay):
         self.cache_dir = cache_dir
+        self.unload_delay = unload_delay
         self.apt_caches = {}
     
     def extractPath(self, url):
@@ -59,7 +60,7 @@ class MirrorManager:
         if baseDir not in self.apt_caches[site]:
             site_cache = self.cache_dir.child(aptpkg_dir).child('mirrors').child(site + baseDir.replace('/', '_'))
             site_cache.makedirs
-            self.apt_caches[site][baseDir] = AptPackages(site_cache)
+            self.apt_caches[site][baseDir] = AptPackages(site_cache, self.unload_delay)
     
     def updatedFile(self, url, file_path):
         site, baseDir, path = self.extractPath(url)
@@ -82,7 +83,7 @@ class TestMirrorManager(unittest.TestCase):
     client = None
     
     def setUp(self):
-        self.client = MirrorManager(FilePath('/tmp/.apt-dht'))
+        self.client = MirrorManager(FilePath('/tmp/.apt-dht'), 300)
         
     def test_extractPath(self):
         site, baseDir, path = self.client.extractPath('http://ftp.us.debian.org/debian/dists/unstable/Release')

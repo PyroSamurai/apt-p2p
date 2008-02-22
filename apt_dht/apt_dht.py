@@ -32,7 +32,7 @@ class AptDHT:
         self.http_server = TopLevel(self.cache_dir.child(download_dir), self.db, self)
         self.getHTTPFactory = self.http_server.getHTTPFactory
         self.peers = PeerManager()
-        self.mirrors = MirrorManager(self.cache_dir)
+        self.mirrors = MirrorManager(self.cache_dir, config.gettime('DEFAULT', 'UNLOAD_PACKAGES_CACHE'))
         other_dirs = [FilePath(f) for f in config.getstringlist('DEFAULT', 'OTHER_DIRS')]
         self.cache = CacheManager(self.cache_dir.child(download_dir), self.db, other_dirs, self)
         self.my_addr = None
