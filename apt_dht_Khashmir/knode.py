@@ -48,6 +48,12 @@ class KNodeRead(KNodeBase):
         df.addCallback(self.checkSender)
         return df
 
+    def getValue(self, key, num, id):
+        df = self.conn.sendRequest('get_value', {"key" : key, "num": num, "id" : id})
+        df.addErrback(self.errBack)
+        df.addCallback(self.checkSender)
+        return df
+
 class KNodeWrite(KNodeRead):
     def storeValue(self, key, value, token, id):
         df = self.conn.sendRequest('store_value', {"key" : key, "value" : value, "token" : token, "id": id})

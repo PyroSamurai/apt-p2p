@@ -31,6 +31,7 @@ class Node:
         self.host = host
         self.port = int(port)
         self.token = ''
+        self.num_values = 0
         self._contactInfo = None
     
     def updateLastSeen(self):
@@ -39,6 +40,9 @@ class Node:
         
     def updateToken(self, token):
         self.token = token
+    
+    def updateNumValues(self, num_values):
+        self.num_values = num_values
     
     def msgFailed(self):
         self.fails = self.fails + 1

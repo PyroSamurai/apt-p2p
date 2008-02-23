@@ -1,3 +1,22 @@
+Check packet lengths before sending get_value responses.
+
+The length of the created UDP packet needs to be checked before sending
+to make sure it is not so long that it will get fragmented. This is only
+possible for the get_value RPC request.
+
+
+Clean up the khashmir actions.
+
+The khashmir actions are a mess, and some cleanup is necessary. A lot
+of the actions have most of their processing in common, so this code
+should be put in functions that all can call. Perhaps creating a
+base "RecurringAction" and "StaticAction" would be a good idea,
+as then find_node and find_value could use the first, while get_value
+and store_value could use the second. Perhaps ping and join actions
+should also be created for consistency, and maybe inherit from a
+"SingleNodeAction" base class.
+
+
 Packages.diff files need to be considered.
 
 The Packages.diff/Index files contain hashes of Packages.diff/rred.gz 
@@ -76,20 +95,3 @@ These should be combined (multiplied) to provide a sort order for peers
 available to download from, which can then be used to assign new 
 downloads to peers. Pieces should be downloaded from the best peers 
 first (i.e. piece 0 from the absolute best peer).
-
-
-When looking up values, DHT should return nodes and values.
-
-When a key has multiple values in the DHT, returning a stored value may not
-be sufficient, as then no more nodes can be contacted to get more stored
-values. Instead, return both the stored values and the list of closest
-nodes so that the peer doing the lookup can decide when to stop looking
-(when it has received enough values).
-
-Instead of returning both, a new method could be added, "lookup_value".
-This method will be like "get_value", except that every node will always
-return a list of nodes, as well as the number of values it has for that
-key. Once a querying node has found enough values (or all of them), then
-it would send the "get_value" method to the nodes that have the most
-values. The "get_value" query could also have a new parameter "number",
-which is the maximum number of values to return.

@@ -5,7 +5,7 @@ import warnings
 warnings.simplefilter("ignore", DeprecationWarning)
 
 from datetime import datetime, timedelta
-from random import randrange
+from random import randrange, shuffle
 from sha import sha
 import os
 
@@ -17,7 +17,7 @@ from db import DB
 from ktable import KTable
 from knode import KNodeBase, KNodeRead, KNodeWrite, NULL_ID
 from khash import newID, newIDInRange
-from actions import FindNode, GetValue, StoreValue
+from actions import FindNode, FindValue, GetValue, StoreValue
 import krpc
 
 # this is the base class, has base functionality and find node, no key-value mappings
@@ -224,13 +224,25 @@ class KhashmirRead(KhashmirBase):
     _Node = KNodeRead
 
     ## also async
+    def findValue(self, key, callback, errback=None):
+        """ returns the contact info for nodes that have values for the key, from the global table """
+        # get K nodes out of local table/cache
+        nodes = self.table.findNodes(key)
+        d = Deferred()
+        if errback:
+            d.addCallbacks(callback, errback)
+        else:
+            d.addCallback(callback)
+
+        # create our search state
+        state = FindValue(self, key, d.callback, self.config)
+        reactor.callLater(0, state.goWithNodes, nodes)
+
     def valueForKey(self, key, callback, searchlocal = 1):
         """ returns the values found for key in global table
             callback will be called with a list of values for each peer that returns unique values
             final callback will be an empty list - probably should change to 'more coming' arg
         """
-        nodes = self.table.findNodes(key)
-        
         # get locals
         if searchlocal:
             l = self.store.retrieveValues(key)
@@ -238,23 +250,35 @@ class KhashmirRead(KhashmirBase):
                 reactor.callLater(0, callback, key, l)
         else:
             l = []
-        
-        # create our search state
-        state = GetValue(self, key, callback, self.config)
-        reactor.callLater(0, state.goWithNodes, nodes, l)
+
+        def _getValueForKey(nodes, key=key, local_values=l, response=callback, table=self.table, config=self.config):
+            # create our search state
+            state = GetValue(table, key, 50 - len(local_values), response, config)
+            reactor.callLater(0, state.goWithNodes, nodes, local_values)
+            
+        # this call is asynch
+        self.findValue(key, _getValueForKey)
 
     #### Remote Interface - called by remote nodes
     def krpc_find_value(self, key, id, _krpc_sender):
         n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
         self.insertNode(n, contacted=0)
     
+        nodes = self.table.findNodes(key)
+        nodes = map(lambda node: node.contactInfo(), nodes)
+        num_values = self.store.countValues(key)
+        return {'nodes' : nodes, 'num' : num_values, "id": self.node.id}
+
+    def krpc_get_value(self, key, num, id, _krpc_sender):
+        n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
+        self.insertNode(n, contacted=0)
+    
         l = self.store.retrieveValues(key)
-        if len(l) > 0:
+        if num == 0 or num >= len(l):
             return {'values' : l, "id": self.node.id}
         else:
-            nodes = self.table.findNodes(key)
-            nodes = map(lambda node: node.contactInfo(), nodes)
-            return {'nodes' : nodes, "id": self.node.id}
+            shuffle(l)
+            return {'values' : l[:num], "id": self.node.id}
 
 ###  provides a generic write method, you probably don't want to deploy something that allows
 ###  arbitrary value storage
@@ -266,13 +290,13 @@ class KhashmirWrite(KhashmirRead):
             in this implementation, peers respond but don't indicate status to storing values
             a key can have many values
         """
-        def _storeValueForKey(nodes, key=key, value=value, response=callback , table=self.table):
+        def _storeValueForKey(nodes, key=key, value=value, response=callback, table=self.table, config=self.config):
             if not response:
                 # default callback
                 def _storedValueHandler(key, value, sender):
                     pass
                 response=_storedValueHandler
-            action = StoreValue(self.table, key, value, response, self.config)
+            action = StoreValue(table, key, value, response, config)
             reactor.callLater(0, action.goWithNodes, nodes)
             
         # this call is asynch
