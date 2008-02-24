@@ -194,14 +194,19 @@ class CacheManager:
             return
 
         # If it's already properly in the DB, ignore it
-        if self.db.isUnchanged(file):
+        db_status = self.db.isUnchanged(file)
+        if db_status:
             log.msg('file is unchanged: %s' % file.path)
             reactor.callLater(0, self._scanDirectories, None, walker)
             return
         
         # Don't hash files in the cache that are not in the DB
         if self.scanning[0] == self.cache_dir:
-            log.msg('ignoring unknown cache file: %s' % file.path)
+            if db_status is None:
+                log.msg('ignoring unknown cache file: %s' % file.path)
+            else:
+                log.msg('removing changed cache file: %s' % file.path)
+                file.remove()
             reactor.callLater(0, self._scanDirectories, None, walker)
             return
 
