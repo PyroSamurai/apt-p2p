@@ -196,7 +196,7 @@ def bdecode(x, sloppy = 0):
 
 bencached_marker = []
 
-class Bencached:
+class Bencached(object):
     """Dummy data structure for storing bencoded data in memory.
     
     @type marker: C{list}

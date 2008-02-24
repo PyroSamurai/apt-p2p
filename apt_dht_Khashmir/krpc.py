@@ -3,6 +3,7 @@
 
 from bencode import bencode, bdecode
 from time import asctime
+from math import ceil
 
 from twisted.internet.defer import Deferred
 from twisted.internet import protocol, reactor
@@ -12,6 +13,7 @@ from twisted.trial import unittest
 from khash import newID
 
 KRPC_TIMEOUT = 20
+UDP_PACKET_LIMIT = 1472
 
 # Remote node errors
 KRPC_ERROR = 200
@@ -20,6 +22,7 @@ KRPC_ERROR_MALFORMED_PACKET = 202
 KRPC_ERROR_METHOD_UNKNOWN = 203
 KRPC_ERROR_MALFORMED_REQUEST = 204
 KRPC_ERROR_INVALID_TOKEN = 205
+KRPC_ERROR_RESPONSE_TOO_LONG = 206
 
 # Local errors
 KRPC_ERROR_INTERNAL = 100
@@ -160,19 +163,24 @@ class KRPC:
                 try:
                     ret = f(*(), **msg[ARG])
                 except KrpcError, e:
+                    log.msg('Got a Krpc error while running: krpc_%s' % msg[REQ])
+                    log.err(e)
                     olen = self._sendResponse(addr, msg[TID], ERR, [e[0], e[1]])
                 except TypeError, e:
+                    log.msg('Got a malformed request for: krpc_%s' % msg[REQ])
+                    log.err(e)
                     olen = self._sendResponse(addr, msg[TID], ERR,
                                               [KRPC_ERROR_MALFORMED_REQUEST, str(e)])
                 except Exception, e:
+                    log.msg('Got an unknown error while running: krpc_%s' % msg[REQ])
+                    log.err(e)
                     olen = self._sendResponse(addr, msg[TID], ERR,
                                               [KRPC_ERROR_SERVER_ERROR, str(e)])
                 else:
                     olen = self._sendResponse(addr, msg[TID], RSP, ret)
             else:
-                if self.noisy:
-                    log.msg("don't know about method %s" % msg[REQ])
                 # unknown method
+                log.msg("ERROR: don't know about method %s" % msg[REQ])
                 olen = self._sendResponse(addr, msg[TID], ERR,
                                           [KRPC_ERROR_METHOD_UNKNOWN, "unknown method "+str(msg[REQ])])
             if self.noisy:
@@ -216,13 +224,57 @@ class KRPC:
     def _sendResponse(self, addr, tid, msgType, response):
         if not response:
             response = {}
+        
+        try:
+            msg = {TID : tid, TYP : msgType, msgType : response}
+    
+            if self.noisy:
+                log.msg("%d responding to %r: %s" % (self.factory.port, addr, msg))
+    
+            out = bencode(msg)
             
-        msg = {TID : tid, TYP : msgType, msgType : response}
+            if len(out) > UDP_PACKET_LIMIT:
+                if 'values' in response:
+                    # Save the original list of values
+                    orig_values = response['values']
+                    len_orig_values = len(bencode(orig_values))
+                    
+                    # Caclulate the maximum value length possible
+                    max_len_values = len_orig_values - (len(out) - UDP_PACKET_LIMIT)
+                    assert max_len_values > 0
+                    
+                    # Start with a calculation of how many values should be included
+                    # (assumes all values are the same length)
+                    per_value = (float(len_orig_values) - 2.0) / float(len(orig_values))
+                    num_values = len(orig_values) - int(ceil(float(len(out) - UDP_PACKET_LIMIT) / per_value))
+    
+                    # Do a linear search for the actual maximum number possible
+                    bencoded_values = len(bencode(orig_values[:num_values]))
+                    while bencoded_values < max_len_values and num_values + 1 < len(orig_values):
+                        bencoded_values += len(bencode(orig_values[num_values]))
+                        num_values += 1
+                    while bencoded_values > max_len_values and num_values > 0:
+                        num_values -= 1
+                        bencoded_values -= len(bencode(orig_values[num_values]))
+                    assert num_values > 0
+    
+                    # Encode the result
+                    response['values'] = orig_values[:num_values]
+                    out = bencode(msg)
+                    assert len(out) < UDP_PACKET_LIMIT
+                    log.msg('Shortened a long packet from %d to %d values, new packet length: %d' % 
+                            (len(orig_values), num_values, len(out)))
+                else:
+                    # Too long a response, send an error
+                    log.msg('Could not send response, too long: %d bytes' % len(out))
+                    msg = {TID : tid, TYP : ERR, ERR : [KRPC_ERROR_RESPONSE_TOO_LONG, "response was %d bytes" % len(out)]}
+                    out = bencode(msg)
 
-        if self.noisy:
-            log.msg("%d responding to %r: %s" % (self.factory.port, addr, msg))
-
-        out = bencode(msg)
+        except Exception, e:
+            # Unknown error, send an error message
+            msg = {TID : tid, TYP : ERR, ERR : [KRPC_ERROR_SERVER_ERROR, "unknown error sending response: %s" % str(e)]}
+            out = bencode(msg)
+                    
         self.transport.write(out, addr)
         return len(out)
     
@@ -270,6 +322,8 @@ class Receiver(protocol.Factory):
         return {}
     def krpc_echo(self, msg, _krpc_sender):
         return {'msg': msg}
+    def krpc_values(self, length, num, _krpc_sender):
+        return {'values': ['1'*length]*num}
 
 def make(port):
     af = Receiver()
@@ -279,6 +333,8 @@ def make(port):
     return af, a, p
     
 class KRPCTests(unittest.TestCase):
+    timeout = 2
+    
     def setUp(self):
         self.af, self.a, self.ap = make(1180)
         self.bf, self.b, self.bp = make(1181)
@@ -356,3 +412,14 @@ class KRPCTests(unittest.TestCase):
 
     def gotErr(self, err, should_be):
         self.failUnlessEqual(err.value[0], should_be)
+        
+    def testLongPackets(self):
+        df = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('values', {'length' : 1, 'num': 2000})
+        df.addCallback(self.gotLongRsp)
+        return df
+
+    def gotLongRsp(self, dict):
+        # Not quite accurate, but good enough
+        self.failUnless(len(bencode(dict))-10 < UDP_PACKET_LIMIT)
+
+        
