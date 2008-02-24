@@ -251,10 +251,10 @@ class KhashmirRead(KhashmirBase):
         else:
             l = []
 
-        def _getValueForKey(nodes, key=key, local_values=l, response=callback, table=self.table, config=self.config):
+        def _getValueForKey(nodes, key=key, local_values=l, response=callback, self=self):
             # create our search state
-            state = GetValue(table, key, 50 - len(local_values), response, config)
-            reactor.callLater(0, state.goWithNodes, nodes, local_values)
+            state = GetValue(self, key, local_values, 50, response, self.config)
+            reactor.callLater(0, state.goWithNodes, nodes)
             
         # this call is asynch
         self.findValue(key, _getValueForKey)
@@ -290,13 +290,13 @@ class KhashmirWrite(KhashmirRead):
             in this implementation, peers respond but don't indicate status to storing values
             a key can have many values
         """
-        def _storeValueForKey(nodes, key=key, value=value, response=callback, table=self.table, config=self.config):
+        def _storeValueForKey(nodes, key=key, value=value, response=callback, self=self):
             if not response:
                 # default callback
                 def _storedValueHandler(key, value, sender):
                     pass
                 response=_storedValueHandler
-            action = StoreValue(table, key, value, response, config)
+            action = StoreValue(self, key, value, self.config['STORE_REDUNDANCY'], response, self.config)
             reactor.callLater(0, action.goWithNodes, nodes)
             
         # this call is asynch

@@ -1,13 +1,8 @@
-Clean up the khashmir actions.
+Consider what happens when we are the closest node.
 
-The khashmir actions are a mess, and some cleanup is necessary. A lot
-of the actions have most of their processing in common, so this code
-should be put in functions that all can call. Perhaps creating a
-base "RecurringAction" and "StaticAction" would be a good idea,
-as then find_node and find_value could use the first, while get_value
-and store_value could use the second. Perhaps ping and join actions
-should also be created for consistency, and maybe inherit from a
-"SingleNodeAction" base class.
+In some of the actions it is unclear what happens when we are one of the
+closest nodes to the target key. Do we store values that we publish
+ourself?
 
 
 Packages.diff files need to be considered.

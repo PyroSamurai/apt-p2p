@@ -35,27 +35,27 @@ class KNodeBase(Node):
         df.addCallback(self.checkSender)
         return df
     
-    def findNode(self, target, id):
+    def findNode(self, id, target):
         df = self.conn.sendRequest('find_node', {"target" : target, "id": id})
         df.addErrback(self.errBack)
         df.addCallback(self.checkSender)
         return df
 
 class KNodeRead(KNodeBase):
-    def findValue(self, key, id):
+    def findValue(self, id, key):
         df =  self.conn.sendRequest('find_value', {"key" : key, "id" : id})
         df.addErrback(self.errBack)
         df.addCallback(self.checkSender)
         return df
 
-    def getValue(self, key, num, id):
+    def getValue(self, id, key, num):
         df = self.conn.sendRequest('get_value', {"key" : key, "num": num, "id" : id})
         df.addErrback(self.errBack)
         df.addCallback(self.checkSender)
         return df
 
 class KNodeWrite(KNodeRead):
-    def storeValue(self, key, value, token, id):
+    def storeValue(self, id, key, value, token):
         df = self.conn.sendRequest('store_value', {"key" : key, "value" : value, "token" : token, "id": id})
         df.addErrback(self.errBack)
         df.addCallback(self.checkSender)
