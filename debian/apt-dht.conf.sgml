@@ -213,6 +213,17 @@
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
+	    <term><option>RETRIEVE_VALUES = <replaceable>number</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>number</replaceable> of values to attempt to retrieve from the DHT.
+	          Setting this to 0 will try and get all values (which could take a while if
+	          a lot of nodes have values). Setting it negative will try to get that
+	          number of results from only the closest STORE_REDUNDANCY nodes to the hash.
+	          (Default is -10000, which is a large negative number so all values from the closest
+	          STORE_REDUNDANCY nodes will be retrieved.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
 	    <term><option>MAX_FAILURES = <replaceable>number</replaceable></option></term>
 	     <listitem>
 	      <para>The <replaceable>number</replaceable> of times in a row a node can fail to

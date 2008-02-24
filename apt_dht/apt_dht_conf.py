@@ -80,6 +80,14 @@ DHT_DEFAULTS = {
     # how many hosts to post to
     'STORE_REDUNDANCY': '3',
     
+    # How many values to attempt to retrieve from the DHT.
+    # Setting this to 0 will try and get all values (which could take a while if
+    # a lot of nodes have values). Setting it negative will try to get that
+    # number of results from only the closest STORE_REDUNDANCY nodes to the hash.
+    # The default is a large negative number so all values from the closest
+    # STORE_REDUNDANCY nodes will be retrieved.
+    'RETRIEVE_VALUES': '-10000',
+
     ###  ROUTING TABLE STUFF
     # how many times in a row a node can fail to respond before it's booted from the routing table
     'MAX_FAILURES': '3',

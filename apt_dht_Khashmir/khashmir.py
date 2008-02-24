@@ -253,7 +253,7 @@ class KhashmirRead(KhashmirBase):
 
         def _getValueForKey(nodes, key=key, local_values=l, response=callback, self=self):
             # create our search state
-            state = GetValue(self, key, local_values, 50, response, self.config)
+            state = GetValue(self, key, local_values, self.config['RETRIEVE_VALUES'], response, self.config)
             reactor.callLater(0, state.goWithNodes, nodes)
             
         # this call is asynch
@@ -322,7 +322,8 @@ class SimpleTests(unittest.TestCase):
     timeout = 10
     DHT_DEFAULTS = {'PORT': 9977, 'K': 8, 'HASH_LENGTH': 160,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 4,
-                    'STORE_REDUNDANCY': 3, 'MAX_FAILURES': 3,
+                    'STORE_REDUNDANCY': 3, 'RETRIEVE_VALUES': -10000,
+                    'MAX_FAILURES': 3,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
                     'KEY_EXPIRE': 3600, 'SPEW': False, }
 
@@ -395,7 +396,8 @@ class MultiTest(unittest.TestCase):
     num = 20
     DHT_DEFAULTS = {'PORT': 9977, 'K': 8, 'HASH_LENGTH': 160,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 4,
-                    'STORE_REDUNDANCY': 3, 'MAX_FAILURES': 3,
+                    'STORE_REDUNDANCY': 3, 'RETRIEVE_VALUES': -10000,
+                    'MAX_FAILURES': 3,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
                     'KEY_EXPIRE': 3600, 'SPEW': False, }
 

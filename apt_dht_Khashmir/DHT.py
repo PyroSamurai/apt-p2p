@@ -46,7 +46,7 @@ class DHT:
         self.bootstrap_node = self.config_parser.getboolean(section, 'BOOTSTRAP_NODE')
         for k in self.config_parser.options(section):
             if k in ['K', 'HASH_LENGTH', 'CONCURRENT_REQS', 'STORE_REDUNDANCY', 
-                     'MAX_FAILURES', 'PORT']:
+                     'RETRIEVE_VALUES', 'MAX_FAILURES', 'PORT']:
                 self.config[k] = self.config_parser.getint(section, k)
             elif k in ['CHECKPOINT_INTERVAL', 'MIN_PING_INTERVAL', 
                        'BUCKET_STALENESS', 'KEY_EXPIRE']:
@@ -184,7 +184,8 @@ class TestSimpleDHT(unittest.TestCase):
     timeout = 2
     DHT_DEFAULTS = {'PORT': 9977, 'K': 8, 'HASH_LENGTH': 160,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 4,
-                    'STORE_REDUNDANCY': 3, 'MAX_FAILURES': 3,
+                    'STORE_REDUNDANCY': 3, 'RETRIEVE_VALUES': -10000,
+                    'MAX_FAILURES': 3,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
                     'KEY_EXPIRE': 3600, 'SPEW': False, }
 
@@ -276,7 +277,8 @@ class TestMultiDHT(unittest.TestCase):
     num = 20
     DHT_DEFAULTS = {'PORT': 9977, 'K': 8, 'HASH_LENGTH': 160,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 4,
-                    'STORE_REDUNDANCY': 3, 'MAX_FAILURES': 3,
+                    'STORE_REDUNDANCY': 3, 'RETRIEVE_VALUES': -10000,
+                    'MAX_FAILURES': 3,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
                     'KEY_EXPIRE': 3600, 'SPEW': False, }
 
