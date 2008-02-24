@@ -187,12 +187,21 @@ class CacheManager:
             reactor.callLater(0, self._scanDirectories)
             return
 
-        # If it's not a file, or it's already properly in the DB, ignore it
-        if not file.isfile() or self.db.isUnchanged(file):
-            if not file.isfile():
-                log.msg('entering directory: %s' % file.path)
-            else:
-                log.msg('file is unchanged: %s' % file.path)
+        # If it's not a file ignore it
+        if not file.isfile():
+            log.msg('entering directory: %s' % file.path)
+            reactor.callLater(0, self._scanDirectories, None, walker)
+            return
+
+        # If it's already properly in the DB, ignore it
+        if self.db.isUnchanged(file):
+            log.msg('file is unchanged: %s' % file.path)
+            reactor.callLater(0, self._scanDirectories, None, walker)
+            return
+        
+        # Don't hash files in the cache that are not in the DB
+        if self.scanning[0] == self.cache_dir:
+            log.msg('ignoring unknown cache file: %s' % file.path)
             reactor.callLater(0, self._scanDirectories, None, walker)
             return
 
