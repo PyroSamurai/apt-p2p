@@ -5,6 +5,14 @@ closest nodes to the target key. Do we store values that we publish
 ourself?
 
 
+Add all cache files to the database.
+
+All files in the cache should be added to the database, so that they can
+be checked to make sure nothing has happened to them. The database would
+then need a flag to indicate files that are hashed and available, but
+that shouldn't be added to the DHT.
+
+
 Packages.diff files need to be considered.
 
 The Packages.diff/Index files contain hashes of Packages.diff/rred.gz 
