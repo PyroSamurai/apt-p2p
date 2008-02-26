@@ -4,9 +4,10 @@ from urllib import unquote_plus
 from twisted.python import log
 from twisted.internet import defer
 #from twisted.protocols import htb
-#from twisted.protocols.policies import ThrottlingFactory
-from twisted.web2 import server, http, resource, channel
+from twisted.web2 import server, http, resource, channel, stream
 from twisted.web2 import static, http_headers, responsecode
+
+from policies import ThrottlingFactory
 
 class FileDownloader(static.File):
     
@@ -40,7 +41,64 @@ class FileDownloader(static.File):
         return self.__class__(path, self.manager, self.defaultType, self.ignoredExts,
                               self.processors, self.indexNames[:])
         
-        
+class FileUploaderStream(stream.FileStream):
+
+    CHUNK_SIZE = 16*1024
+    
+    def read(self, sendfile=False):
+        if self.f is None:
+            return None
+
+        length = self.length
+        if length == 0:
+            self.f = None
+            return None
+
+        readSize = min(length, self.CHUNK_SIZE)
+
+        self.f.seek(self.start)
+        b = self.f.read(readSize)
+        bytesRead = len(b)
+        if not bytesRead:
+            raise RuntimeError("Ran out of data reading file %r, expected %d more bytes" % (self.f, length))
+        else:
+            self.length -= bytesRead
+            self.start += bytesRead
+            return b
+
+
+class FileUploader(static.File):
+
+    def render(self, req):
+        if not self.fp.exists():
+            return responsecode.NOT_FOUND
+
+        if self.fp.isdir():
+            return responsecode.NOT_FOUND
+
+        try:
+            f = self.fp.open()
+        except IOError, e:
+            import errno
+            if e[0] == errno.EACCES:
+                return responsecode.FORBIDDEN
+            elif e[0] == errno.ENOENT:
+                return responsecode.NOT_FOUND
+            else:
+                raise
+
+        response = http.Response()
+        response.stream = FileUploaderStream(f, 0, self.fp.getsize())
+
+        for (header, value) in (
+            ("content-type", self.contentType()),
+            ("content-encoding", self.contentEncoding()),
+        ):
+            if value is not None:
+                response.headers.setHeader(header, value)
+
+        return response
+
 class TopLevel(resource.Resource):
     addSlash = True
     
@@ -65,7 +123,7 @@ class TopLevel(resource.Resource):
 #            serverFilter.buckets[None] = serverBucket
 #
 #            self.factory.protocol = htb.ShapedProtocolFactory(self.factory.protocol, serverFilter)
-#            self.factory = ThrottlingFactory(self.factory, writeLimit = 300*1024)
+            self.factory = ThrottlingFactory(self.factory, writeLimit = 3*1024)
         return self.factory
 
     def render(self, ctx):
@@ -87,7 +145,7 @@ class TopLevel(resource.Resource):
             files = self.db.lookupHash(hash)
             if files:
                 log.msg('Sharing %s with %s' % (files[0]['path'].path, request.remoteAddr))
-                return static.File(files[0]['path'].path), ()
+                return FileUploader(files[0]['path'].path), ()
             else:
                 log.msg('Hash could not be found in database: %s' % hash)
         
@@ -104,9 +162,19 @@ class TopLevel(resource.Resource):
         return None, ()
 
 if __name__ == '__builtin__':
-    # Running from twistd -y
-    t = TopLevel('/home', None)
-    t.setDirectories({'~1': '/tmp', '~2': '/var/log'})
+    # Running from twistd -ny HTTPServer.py
+    # Then test with:
+    #   wget -S 'http://localhost:18080/~/whatever'
+    #   wget -S 'http://localhost:18080/.xsession-errors'
+
+    import os.path
+    from twisted.python.filepath import FilePath
+    
+    class DB:
+        def lookupHash(self, hash):
+            return [{'path': FilePath(os.path.expanduser('~/.xsession-errors'))}]
+    
+    t = TopLevel(FilePath(os.path.expanduser('~')), DB(), None)
     factory = t.getHTTPFactory()
     
     # Standard twisted application Boilerplate
