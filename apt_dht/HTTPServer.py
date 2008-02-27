@@ -43,7 +43,7 @@ class FileDownloader(static.File):
         
 class FileUploaderStream(stream.FileStream):
 
-    CHUNK_SIZE = 16*1024
+    CHUNK_SIZE = 4*1024
     
     def read(self, sendfile=False):
         if self.f is None:
@@ -123,7 +123,7 @@ class TopLevel(resource.Resource):
 #            serverFilter.buckets[None] = serverBucket
 #
 #            self.factory.protocol = htb.ShapedProtocolFactory(self.factory.protocol, serverFilter)
-            self.factory = ThrottlingFactory(self.factory, writeLimit = 3*1024)
+            self.factory = ThrottlingFactory(self.factory, writeLimit = 30*1024)
         return self.factory
 
     def render(self, ctx):
@@ -172,7 +172,7 @@ if __name__ == '__builtin__':
     
     class DB:
         def lookupHash(self, hash):
-            return [{'path': FilePath(os.path.expanduser('~/.xsession-errors'))}]
+            return [{'path': FilePath(os.path.expanduser('~/school/optout'))}]
     
     t = TopLevel(FilePath(os.path.expanduser('~')), DB(), None)
     factory = t.getHTTPFactory()
