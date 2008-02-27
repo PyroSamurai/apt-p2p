@@ -5,6 +5,8 @@ import sys
 from twisted.internet import threads, defer
 from twisted.trial import unittest
 
+PIECE_SIZE = 512*1024
+
 class HashError(ValueError):
     """An error has occurred while hashing a file."""
     
@@ -41,7 +43,9 @@ class HashObject:
         self.expSize = None
         self.expNormHash = None
         self.fileHasher = None
+        self.pieceHasher = None
         self.fileHash = digest
+        self.pieceHash = []
         self.size = size
         self.fileHex = None
         self.fileNormHash = None
@@ -95,15 +99,24 @@ class HashObject:
         """
         if self.result is None or force == True:
             self.result = None
-            self.size = 0
             self.done = False
-            if sys.version_info < (2, 5):
-                mod = __import__(self.ORDER[self.hashTypeNum]['old_module'], globals(), locals(), [])
-                self.fileHasher = mod.new()
-            else:
-                import hashlib
-                func = getattr(hashlib, self.ORDER[self.hashTypeNum]['hashlib_func'])
-                self.fileHasher = func()
+            self.fileHasher = self._new()
+            self.pieceHasher = None
+            self.fileHash = None
+            self.pieceHash = []
+            self.size = 0
+            self.fileHex = None
+            self.fileNormHash = None
+
+    def _new(self):
+        """Create a new hashing object according to the hash type."""
+        if sys.version_info < (2, 5):
+            mod = __import__(self.ORDER[self.hashTypeNum]['old_module'], globals(), locals(), [])
+            return mod.new()
+        else:
+            import hashlib
+            func = getattr(hashlib, self.ORDER[self.hashTypeNum]['hashlib_func'])
+            return func()
 
     def update(self, data):
         """Add more data to the file hasher."""
@@ -112,9 +125,43 @@ class HashObject:
                 raise HashError, "Already done, you can't add more data after calling digest() or verify()"
             if self.fileHasher is None:
                 raise HashError, "file hasher not initialized"
+            
+            if not self.pieceHasher and self.size + len(data) > PIECE_SIZE:
+                # Hash up to the piece size
+                self.fileHasher.update(data[:(PIECE_SIZE - self.size)])
+                data = data[(PIECE_SIZE - self.size):]
+                self.size = PIECE_SIZE
+
+                # Save the first piece digest and initialize a new piece hasher
+                self.pieceHash.append(self.fileHasher.digest())
+                self.pieceHasher = self._new()
+
+            if self.pieceHasher:
+                # Loop in case the data contains multiple pieces
+                piece_size = self.size % PIECE_SIZE
+                while piece_size + len(data) > PIECE_SIZE:
+                    # Save the piece hash and start a new one
+                    self.pieceHasher.update(data[:(PIECE_SIZE - piece_size)])
+                    self.pieceHash.append(self.pieceHasher.digest())
+                    self.pieceHasher = self._new()
+                    
+                    # Don't forget to hash the data normally
+                    self.fileHasher.update(data[:(PIECE_SIZE - piece_size)])
+                    data = data[(PIECE_SIZE - piece_size):]
+                    self.size += PIECE_SIZE - piece_size
+                    piece_size = self.size % PIECE_SIZE
+
+                # Hash any remaining data
+                self.pieceHasher.update(data)
+            
             self.fileHasher.update(data)
             self.size += len(data)
         
+    def pieceDigests(self):
+        """Get the piece hashes of the added file data."""
+        self.digest()
+        return self.pieceHash
+
     def digest(self):
         """Get the hash of the added file data."""
         if self.fileHash is None:
@@ -122,6 +169,13 @@ class HashObject:
                 raise HashError, "you must hash some data first"
             self.fileHash = self.fileHasher.digest()
             self.done = True
+            
+            # Save the last piece hash
+            if self.pieceHasher:
+                self.pieceHash.append(self.pieceHasher.digest())
+            else:
+                # If there are no piece hashes, then the file hash is the only piece hash
+                self.pieceHash.append(self.fileHash)
         return self.fileHash
 
     def hexdigest(self):
@@ -249,6 +303,26 @@ class TestHashObject(unittest.TestCase):
         self.failUnlessRaises(HashError, h.hexdigest)
         self.failUnlessRaises(HashError, h.update, 'gfgf')
     
+    def test_pieces(self):
+        h = HashObject()
+        h.new()
+        h.update('1234567890'*120*1024)
+        self.failUnless(h.digest() == '1(j\xd2q\x0b\n\x91\xd2\x13\x90\x15\xa3E\xcc\xb0\x8d.\xc3\xc5')
+        pieces = h.pieceDigests()
+        self.failUnless(len(pieces) == 3)
+        self.failUnless(pieces[0] == ',G \xd8\xbbPl\xf1\xa3\xa0\x0cW\n\xe6\xe6a\xc9\x95/\xe5')
+        self.failUnless(pieces[1] == '\xf6V\xeb/\xa8\xad[\x07Z\xf9\x87\xa4\xf5w\xdf\xe1|\x00\x8e\x93')
+        self.failUnless(pieces[2] == 'M[\xbf\xee\xaa+\x19\xbaV\xf699\r\x17o\xcb\x8e\xcfP\x19')
+        h.new(True)
+        for i in xrange(120*1024):
+            h.update('1234567890')
+        pieces = h.pieceDigests()
+        self.failUnless(h.digest() == '1(j\xd2q\x0b\n\x91\xd2\x13\x90\x15\xa3E\xcc\xb0\x8d.\xc3\xc5')
+        self.failUnless(len(pieces) == 3)
+        self.failUnless(pieces[0] == ',G \xd8\xbbPl\xf1\xa3\xa0\x0cW\n\xe6\xe6a\xc9\x95/\xe5')
+        self.failUnless(pieces[1] == '\xf6V\xeb/\xa8\xad[\x07Z\xf9\x87\xa4\xf5w\xdf\xe1|\x00\x8e\x93')
+        self.failUnless(pieces[2] == 'M[\xbf\xee\xaa+\x19\xbaV\xf699\r\x17o\xcb\x8e\xcfP\x19')
+        
     def test_sha1(self):
         h = HashObject()
         found = False
