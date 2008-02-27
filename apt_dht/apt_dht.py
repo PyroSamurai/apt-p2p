@@ -58,17 +58,24 @@ class AptDHT:
     def refreshFiles(self):
         """Refresh any files in the DHT that are about to expire."""
         expireAfter = config.gettime('DEFAULT', 'KEY_REFRESH')
-        hashes = self.db.expiredFiles(expireAfter)
+        hashes = self.db.expiredHashes(expireAfter)
         if len(hashes.keys()) > 0:
             log.msg('Refreshing the keys of %d DHT values' % len(hashes.keys()))
-        for raw_hash in hashes:
+        self._refreshFiles(None, hashes)
+        
+    def _refreshFiles(self, result, hashes):
+        if result is not None:
+            log.msg('Storage resulted in: %r' % result)
+
+        if hashes:
+            raw_hash = hashes.keys()[0]
             self.db.refreshHash(raw_hash)
-            hash = HashObject(raw_hash)
-            key = hash.norm(bits = config.getint(config.get('DEFAULT', 'DHT'), 'HASH_LENGTH'))
-            value = {'c': self.my_contact}
-            storeDefer = self.dht.storeValue(key, value)
-            storeDefer.addCallback(self.store_done, hash)
-        reactor.callLater(60, self.refreshFiles)
+            hash = HashObject(raw_hash, pieces = hashes[raw_hash]['pieces'])
+            del hashes[raw_hash]
+            storeDefer = self.store(hash)
+            storeDefer.addBoth(self._refreshFiles, hashes)
+        else:
+            reactor.callLater(60, self.refreshFiles)
 
     def check_freshness(self, req, path, modtime, resp):
         log.msg('Checking if %s is still fresh' % path)
@@ -107,7 +114,7 @@ class AptDHT:
             log.msg('Found hash %s for %s' % (hash.hexexpected(), path))
             
             # Lookup hash in cache
-            locations = self.db.lookupHash(hash.expected())
+            locations = self.db.lookupHash(hash.expected(), filesOnly = True)
             self.getCachedFile(hash, req, path, d, locations)
 
     def getCachedFile(self, hash, req, path, d, locations):
@@ -173,33 +180,37 @@ class AptDHT:
         return response
         
     def new_cached_file(self, file_path, hash, new_hash, url = None, forceDHT = False):
-        """Add a newly cached file to the DHT.
+        """Add a newly cached file to the appropriate places.
         
         If the file was downloaded, set url to the path it was downloaded for.
-        Don't add a file to the DHT unless a hash was found for it
-        (but do add it anyway if forceDHT is True).
+        Doesn't add a file to the DHT unless a hash was found for it
+        (but does add it anyway if forceDHT is True).
         """
         if url:
             self.mirrors.updatedFile(url, file_path)
         
         if self.my_contact and hash and new_hash and (hash.expected() is not None or forceDHT):
-            key = hash.norm(bits = config.getint(config.get('DEFAULT', 'DHT'), 'HASH_LENGTH'))
-            value = {'c': self.my_contact}
-            pieces = hash.pieceDigests()
-            if len(pieces) <= 1:
-                pass
-            elif len(pieces) <= DHT_PIECES:
-                value['t'] = {'t': ''.join(pieces)}
-            elif len(pieces) <= TORRENT_PIECES:
-                s = sha.new().update(''.join(pieces))
-                value['h'] = s.digest()
-            else:
-                s = sha.new().update(''.join(pieces))
-                value['l'] = s.digest()
-            storeDefer = self.dht.storeValue(key, value)
-            storeDefer.addCallback(self.store_done, hash)
-            return storeDefer
+            return self.store(hash)
         return None
+            
+    def store(self, hash):
+        """Add a file to the DHT."""
+        key = hash.norm(bits = config.getint(config.get('DEFAULT', 'DHT'), 'HASH_LENGTH'))
+        value = {'c': self.my_contact}
+        pieces = hash.pieceDigests()
+        if len(pieces) <= 1:
+            pass
+        elif len(pieces) <= DHT_PIECES:
+            value['t'] = {'t': ''.join(pieces)}
+        elif len(pieces) <= TORRENT_PIECES:
+            s = sha.new().update(''.join(pieces))
+            value['h'] = s.digest()
+        else:
+            s = sha.new().update(''.join(pieces))
+            value['l'] = s.digest()
+        storeDefer = self.dht.storeValue(key, value)
+        storeDefer.addCallback(self.store_done, hash)
+        return storeDefer
 
     def store_done(self, result, hash):
         log.msg('Added %s to the DHT: %r' % (hash.hexdigest(), result))

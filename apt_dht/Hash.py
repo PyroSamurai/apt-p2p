@@ -15,6 +15,7 @@ class HashObject:
     
     """The priority ordering of hashes, and how to extract them."""
     ORDER = [ {'name': 'sha1', 
+                   'length': 20,
                    'AptPkgRecord': 'SHA1Hash', 
                    'AptSrcRecord': False, 
                    'AptIndexRecord': 'SHA1',
@@ -22,12 +23,14 @@ class HashObject:
                    'hashlib_func': 'sha1',
                    },
               {'name': 'sha256',
+                   'length': 32,
                    'AptPkgRecord': 'SHA256Hash', 
                    'AptSrcRecord': False, 
                    'AptIndexRecord': 'SHA256',
                    'hashlib_func': 'sha256',
                    },
               {'name': 'md5',
+                   'length': 16,
                    'AptPkgRecord': 'MD5Hash', 
                    'AptSrcRecord': True, 
                    'AptIndexRecord': 'MD5SUM',
@@ -36,8 +39,15 @@ class HashObject:
                    },
             ]
     
-    def __init__(self, digest = None, size = None):
+    def __init__(self, digest = None, size = None, pieces = ''):
         self.hashTypeNum = 0    # Use the first if nothing else matters
+        if sys.version_info < (2, 5):
+            # sha256 is not available in python before 2.5, remove it
+            for hashType in self.ORDER:
+                if hashType['name'] == 'sha256':
+                    del self.ORDER[self.ORDER.index(hashType)]
+                    break
+
         self.expHash = None
         self.expHex = None
         self.expSize = None
@@ -45,18 +55,13 @@ class HashObject:
         self.fileHasher = None
         self.pieceHasher = None
         self.fileHash = digest
-        self.pieceHash = []
+        self.pieceHash = [pieces[x:x+self.ORDER[self.hashTypeNum]['length']]
+                          for x in xrange(0, len(pieces), self.ORDER[self.hashTypeNum]['length'])]
         self.size = size
         self.fileHex = None
         self.fileNormHash = None
         self.done = True
         self.result = None
-        if sys.version_info < (2, 5):
-            # sha256 is not available in python before 2.5, remove it
-            for hashType in self.ORDER:
-                if hashType['name'] == 'sha256':
-                    del self.ORDER[self.ORDER.index(hashType)]
-                    break
         
     def _norm_hash(self, hashString, bits=None, bytes=None):
         if bits is not None:
@@ -173,9 +178,6 @@ class HashObject:
             # Save the last piece hash
             if self.pieceHasher:
                 self.pieceHash.append(self.pieceHasher.digest())
-            else:
-                # If there are no piece hashes, then the file hash is the only piece hash
-                self.pieceHash.append(self.fileHash)
         return self.fileHash
 
     def hexdigest(self):
