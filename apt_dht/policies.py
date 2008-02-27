@@ -159,6 +159,7 @@ class ThrottlingProtocol(ProtocolWrapper):
         ProtocolWrapper.dataReceived(self, data)
 
     def registerProducer(self, producer, streaming):
+        assert streaming, "You can only use the ThrottlingProtocol with streaming (push) producers."
         self.producer = producer
         ProtocolWrapper.registerProducer(self, producer, streaming)
 
