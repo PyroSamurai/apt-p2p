@@ -1,7 +1,7 @@
 
 from binascii import b2a_hex
 from urlparse import urlunparse
-import os, re
+import os, re, sha
 
 from twisted.internet import defer, reactor
 from twisted.web2 import server, http, http_headers, static
@@ -16,6 +16,9 @@ from CacheManager import CacheManager
 from Hash import HashObject
 from db import DB
 from util import findMyIPAddr, compact
+
+DHT_PIECES = 4
+TORRENT_PIECES = 70
 
 download_dir = 'cache'
 
@@ -182,6 +185,17 @@ class AptDHT:
         if self.my_contact and hash and new_hash and (hash.expected() is not None or forceDHT):
             key = hash.norm(bits = config.getint(config.get('DEFAULT', 'DHT'), 'HASH_LENGTH'))
             value = {'c': self.my_contact}
+            pieces = hash.pieceDigests()
+            if len(pieces) <= 1:
+                pass
+            elif len(pieces) <= DHT_PIECES:
+                value['t'] = {'t': ''.join(pieces)}
+            elif len(pieces) <= TORRENT_PIECES:
+                s = sha.new().update(''.join(pieces))
+                value['h'] = s.digest()
+            else:
+                s = sha.new().update(''.join(pieces))
+                value['l'] = s.digest()
             storeDefer = self.dht.storeValue(key, value)
             storeDefer.addCallback(self.store_done, hash)
             return storeDefer
@@ -189,4 +203,17 @@ class AptDHT:
 
     def store_done(self, result, hash):
         log.msg('Added %s to the DHT: %r' % (hash.hexdigest(), result))
-        
+        pieces = hash.pieceDigests()
+        if len(pieces) > DHT_PIECES and len(pieces) <= TORRENT_PIECES:
+            s = sha.new().update(''.join(pieces))
+            key = s.digest()
+            value = {'t': ''.join(pieces)}
+            storeDefer = self.dht.storeValue(key, value)
+            storeDefer.addCallback(self.store_torrent_done, key)
+            return storeDefer
+        return result
+
+    def store_torrent_done(self, result, key):
+        log.msg('Added torrent string %s to the DHT: %r' % (b2ahex(key), result))
+        return result
+    
