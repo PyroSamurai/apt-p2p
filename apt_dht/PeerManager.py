@@ -9,7 +9,7 @@ from twisted.trial import unittest
 from twisted.web2 import stream as stream_mod
 from twisted.web2.http import splitHostPort
 
-from HTTPDownloader import HTTPClientManager
+from HTTPDownloader import Peer
 from util import uncompact
 
 class PeerManager:
@@ -26,23 +26,20 @@ class PeerManager:
             compact_peer = choice(peers)
             peer = uncompact(compact_peer['c'])
             log.msg('Downloading from peer %r' % (peer, ))
-            host, port = peer
+            site = peer
             path = '/~/' + quote_plus(hash.expected())
         else:
             log.msg('Downloading (%s) from mirror %s' % (method, mirror))
             parsed = urlparse(mirror)
             assert parsed[0] == "http", "Only HTTP is supported, not '%s'" % parsed[0]
-            host, port = splitHostPort(parsed[0], parsed[1])
+            site = splitHostPort(parsed[0], parsed[1])
             path = urlunparse(('', '') + parsed[2:])
 
-        return self.getPeer(host, port, path, method, modtime)
+        return self.getPeer(site, path, method, modtime)
         
-    def getPeer(self, host, port, path, method="GET", modtime=None):
-        if not port:
-            port = 80
-        site = host + ":" + str(port)
+    def getPeer(self, site, path, method="GET", modtime=None):
         if site not in self.clients:
-            self.clients[site] = HTTPClientManager(host, port)
+            self.clients[site] = Peer(site[0], site[1])
         return self.clients[site].get(path, method, modtime)
     
     def close(self):

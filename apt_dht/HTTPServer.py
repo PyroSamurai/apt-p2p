@@ -140,7 +140,7 @@ class TopLevel(resource.Resource):
                     return FileUploader(files[0]['path'].path), ()
                 else:
                     log.msg('Sending torrent string %s to %s' % (b2a_hex(hash), request.remoteAddr))
-                    return static.Data(bencode({'t': files[0]['pieces']}), 'application/bencoded'), ()
+                    return static.Data(bencode({'t': files[0]['pieces']}), 'application/x-bencoded'), ()
             else:
                 log.msg('Hash could not be found in database: %s' % hash)
         
