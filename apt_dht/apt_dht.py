@@ -152,7 +152,7 @@ class AptDHT:
 
     def lookupHash(self, hash, path, d):
         log.msg('Looking up hash in DHT for file: %s' % path)
-        key = hash.normexpected(bits = config.getint(config.get('DEFAULT', 'DHT'), 'HASH_LENGTH'))
+        key = hash.expected()
         lookupDefer = self.dht.getValue(key)
         lookupDefer.addCallback(self.lookupHash_done, hash, path, d)
 
@@ -195,7 +195,7 @@ class AptDHT:
             
     def store(self, hash):
         """Add a file to the DHT."""
-        key = hash.norm(bits = config.getint(config.get('DEFAULT', 'DHT'), 'HASH_LENGTH'))
+        key = hash.digest()
         value = {'c': self.my_contact}
         pieces = hash.pieceDigests()
         if len(pieces) <= 1:

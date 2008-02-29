@@ -32,10 +32,15 @@ class IDHT(Interface):
         
     def getValue(self, key):
         """Get a value from the DHT for the specified key.
+        
+        The length of the key may be adjusted for use with the DHT.
 
         @rtype: C{Deferred}
         @return: a deferred that will fire with the stored values
         """
         
     def storeValue(self, key, value):
-        """Store a value in the DHT for the specified key."""
+        """Store a value in the DHT for the specified key.
+
+        The length of the key may be adjusted for use with the DHT.
+        """

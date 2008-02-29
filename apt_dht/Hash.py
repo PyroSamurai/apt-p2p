@@ -63,18 +63,6 @@ class HashObject:
         self.done = True
         self.result = None
         
-    def _norm_hash(self, hashString, bits=None, bytes=None):
-        if bits is not None:
-            bytes = (bits - 1) // 8 + 1
-        else:
-            if bytes is None:
-                raise HashError, "you must specify one of bits or bytes"
-        if len(hashString) < bytes:
-            hashString = hashString + '\000'*(bytes - len(hashString))
-        elif len(hashString) > bytes:
-            hashString = hashString[:bytes]
-        return hashString
-
     #### Methods for returning the expected hash
     def expected(self):
         """Get the expected hash."""
@@ -86,15 +74,6 @@ class HashObject:
             self.expHex = b2a_hex(self.expHash)
         return self.expHex
     
-    def normexpected(self, bits=None, bytes=None):
-        """Normalize the binary hash for the given length.
-        
-        You must specify one of bits or bytes.
-        """
-        if self.expNormHash is None and self.expHash is not None:
-            self.expNormHash = self._norm_hash(self.expHash, bits, bytes)
-        return self.expNormHash
-
     #### Methods for hashing data
     def new(self, force = False):
         """Generate a new hashing object suitable for hashing a file.
@@ -186,15 +165,6 @@ class HashObject:
             self.fileHex = b2a_hex(self.digest())
         return self.fileHex
         
-    def norm(self, bits=None, bytes=None):
-        """Normalize the binary hash for the given length.
-        
-        You must specify one of bits or bytes.
-        """
-        if self.fileNormHash is None:
-            self.fileNormHash = self._norm_hash(self.digest(), bits, bytes)
-        return self.fileNormHash
-
     def verify(self):
         """Verify that the added file data hash matches the expected hash."""
         if self.result is None and self.fileHash is not None and self.expHash is not None:
@@ -280,27 +250,9 @@ class TestHashObject(unittest.TestCase):
     if sys.version_info < (2, 4):
         skip = "skippingme"
     
-    def test_normalize(self):
-        h = HashObject()
-        h.set(h.ORDER[0], b2a_hex('12345678901234567890'), '0')
-        self.failUnless(h.normexpected(bits = 160) == '12345678901234567890')
-        h = HashObject()
-        h.set(h.ORDER[0], b2a_hex('12345678901234567'), '0')
-        self.failUnless(h.normexpected(bits = 160) == '12345678901234567\000\000\000')
-        h = HashObject()
-        h.set(h.ORDER[0], b2a_hex('1234567890123456789012345'), '0')
-        self.failUnless(h.normexpected(bytes = 20) == '12345678901234567890')
-        h = HashObject()
-        h.set(h.ORDER[0], b2a_hex('1234567890123456789'), '0')
-        self.failUnless(h.normexpected(bytes = 20) == '1234567890123456789\000')
-        h = HashObject()
-        h.set(h.ORDER[0], b2a_hex('123456789012345678901'), '0')
-        self.failUnless(h.normexpected(bits = 160) == '12345678901234567890')
-
     def test_failure(self):
         h = HashObject()
         h.set(h.ORDER[0], b2a_hex('12345678901234567890'), '0')
-        self.failUnlessRaises(HashError, h.normexpected)
         self.failUnlessRaises(HashError, h.digest)
         self.failUnlessRaises(HashError, h.hexdigest)
         self.failUnlessRaises(HashError, h.update, 'gfgf')
