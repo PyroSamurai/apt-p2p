@@ -1,13 +1,14 @@
 
 from urllib import unquote_plus
+from binascii import b2a_hex
 
 from twisted.python import log
 from twisted.internet import defer
-#from twisted.protocols import htb
 from twisted.web2 import server, http, resource, channel, stream
 from twisted.web2 import static, http_headers, responsecode
 
 from policies import ThrottlingFactory
+from apt_dht_Khashmir.bencode import bencode
 
 class FileDownloader(static.File):
     
@@ -113,16 +114,6 @@ class TopLevel(resource.Resource):
             self.factory = channel.HTTPFactory(server.Site(self),
                                                **{'maxPipeline': 10, 
                                                   'betweenRequestsTimeOut': 60})
-#            serverFilter = htb.HierarchicalBucketFilter()
-#            serverBucket = htb.Bucket()
-#
-#            # Cap total server traffic at 20 kB/s
-#            serverBucket.maxburst = 20000
-#            serverBucket.rate = 20000
-#
-#            serverFilter.buckets[None] = serverBucket
-#
-#            self.factory.protocol = htb.ShapedProtocolFactory(self.factory.protocol, serverFilter)
             self.factory = ThrottlingFactory(self.factory, writeLimit = 30*1024)
         return self.factory
 
@@ -144,8 +135,12 @@ class TopLevel(resource.Resource):
             hash = unquote_plus(segments[1])
             files = self.db.lookupHash(hash)
             if files:
-                log.msg('Sharing %s with %s' % (files[0]['path'].path, request.remoteAddr))
-                return FileUploader(files[0]['path'].path), ()
+                if 'path' in files[0]:
+                    log.msg('Sharing %s with %s' % (files[0]['path'].path, request.remoteAddr))
+                    return FileUploader(files[0]['path'].path), ()
+                else:
+                    log.msg('Sending torrent string %s to %s' % (b2a_hex(hash), request.remoteAddr))
+                    return static.Data(bencode({'t': files[0]['pieces']}), 'application/bencoded'), ()
             else:
                 log.msg('Hash could not be found in database: %s' % hash)
         
@@ -165,13 +160,15 @@ if __name__ == '__builtin__':
     # Running from twistd -ny HTTPServer.py
     # Then test with:
     #   wget -S 'http://localhost:18080/~/whatever'
-    #   wget -S 'http://localhost:18080/.xsession-errors'
+    #   wget -S 'http://localhost:18080/~/pieces'
 
     import os.path
     from twisted.python.filepath import FilePath
     
     class DB:
         def lookupHash(self, hash):
+            if hash == 'pieces':
+                return [{'pieces': 'abcdefghij0123456789\xca\xec\xb8\x0c\x00\xe7\x07\xf8~])\x8f\x9d\xe5_B\xff\x1a\xc4!'}]
             return [{'path': FilePath(os.path.expanduser('~/school/optout'))}]
     
     t = TopLevel(FilePath(os.path.expanduser('~')), DB(), None)
