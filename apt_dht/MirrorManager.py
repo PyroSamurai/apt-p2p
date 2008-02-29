@@ -1,4 +1,9 @@
 
+"""Manage the multiple mirrors that may be requested.
+
+@var aptpkg_dir: the name of the directory to use for mirror files
+"""
+
 from urlparse import urlparse
 import os
 
@@ -16,7 +21,15 @@ class MirrorError(Exception):
     """Exception raised when there's a problem with the mirror."""
 
 class MirrorManager:
-    """Manages all requests for mirror objects."""
+    """Manages all requests for mirror information.
+    
+    @type cache_dir: L{twisted.python.filepath.FilePath}
+    @ivar cache_dir: the directory to use for storing all files
+    @type unload_delay: C{int}
+    @ivar unload_delay: the time to wait before unloading the apt cache
+    @type apt_caches: C{dictionary}
+    @ivar apt_caches: the avaliable mirrors
+    """
     
     def __init__(self, cache_dir, unload_delay):
         self.cache_dir = cache_dir
@@ -24,11 +37,27 @@ class MirrorManager:
         self.apt_caches = {}
     
     def extractPath(self, url):
+        """Break the full URI down into the site, base directory and path.
+        
+        Site is the host and port of the mirror. Base directory is the
+        directory to the mirror location (usually just '/debian'). Path is
+        the remaining path to get to the file.
+        
+        E.g. http://ftp.debian.org/debian/dists/sid/binary-i386/Packages.bz2
+        would return ('ftp.debian.org:80', '/debian', 
+        '/dists/sid/binary-i386/Packages.bz2').
+        
+        @param url: the URI of the file's location on the mirror
+        @rtype: (C{string}, C{string}, C{string})
+        @return: the site, base directory and path to the file
+        """
+        # Extract the host and port
         parsed = urlparse(url)
         host, port = splitHostPort(parsed[0], parsed[1])
         site = host + ":" + str(port)
         path = parsed[2]
-            
+
+        # Try to find the base directory (most can be found this way)
         i = max(path.rfind('/dists/'), path.rfind('/pool/'))
         if i >= 0:
             baseDir = path[:i]
@@ -36,6 +65,9 @@ class MirrorManager:
         else:
             # Uh oh, this is not good
             log.msg("Couldn't find a good base directory for path: %s" % (site + path))
+            
+            # Try to find an existing cache that starts with this one
+            # (fallback to using an empty base directory)
             baseDir = ''
             if site in self.apt_caches:
                 longest_match = 0
@@ -54,6 +86,7 @@ class MirrorManager:
         return site, baseDir, path
         
     def init(self, site, baseDir):
+        """Make sure an L{AptPackages} exists for this mirror."""
         if site not in self.apt_caches:
             self.apt_caches[site] = {}
             
@@ -63,11 +96,21 @@ class MirrorManager:
             self.apt_caches[site][baseDir] = AptPackages(site_cache, self.unload_delay)
     
     def updatedFile(self, url, file_path):
+        """A file in the mirror has changed or been added.
+        
+        @see: L{AptPackages.PackageFileList.update_file}
+        """
         site, baseDir, path = self.extractPath(url)
         self.init(site, baseDir)
         self.apt_caches[site][baseDir].file_updated(path, file_path)
 
     def findHash(self, url):
+        """Find the hash for a given url.
+
+        @param url: the URI of the file's location on the mirror
+        @rtype: L{twisted.internet.defer.Deferred}
+        @return: a deferred that will fire with the returned L{Hash.HashObject}
+        """
         site, baseDir, path = self.extractPath(url)
         if site in self.apt_caches and baseDir in self.apt_caches[site]:
             return self.apt_caches[site][baseDir].findHash(path)
@@ -86,6 +129,7 @@ class TestMirrorManager(unittest.TestCase):
         self.client = MirrorManager(FilePath('/tmp/.apt-dht'), 300)
         
     def test_extractPath(self):
+        """Test extracting the site and base directory from various mirrors."""
         site, baseDir, path = self.client.extractPath('http://ftp.us.debian.org/debian/dists/unstable/Release')
         self.failUnless(site == "ftp.us.debian.org:80", "no match: %s" % site)
         self.failUnless(baseDir == "/debian", "no match: %s" % baseDir)
@@ -106,13 +150,18 @@ class TestMirrorManager(unittest.TestCase):
                     "%s hashes don't match: %s != %s" % (path, found_hash.hexexpected(), true_hash))
 
     def test_findHash(self):
+        """Tests finding the hash of an index file, binary package, source package, and another index file."""
+        # Find the largest index files that are for 'main'
         self.packagesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Packages$" | tail -n 1').read().rstrip('\n')
         self.sourcesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Sources$" | tail -n 1').read().rstrip('\n')
+        
+        # Find the Release file corresponding to the found Packages file
         for f in os.walk('/var/lib/apt/lists').next()[2]:
             if f[-7:] == "Release" and self.packagesFile.startswith(f[:-7]):
                 self.releaseFile = f
                 break
         
+        # Add all the found files to the mirror
         self.client.updatedFile('http://' + self.releaseFile.replace('_','/'), 
                                 FilePath('/var/lib/apt/lists/' + self.releaseFile))
         self.client.updatedFile('http://' + self.releaseFile[:self.releaseFile.find('_dists_')+1].replace('_','/') +
@@ -124,6 +173,7 @@ class TestMirrorManager(unittest.TestCase):
 
         lastDefer = defer.Deferred()
         
+        # Lookup a Packages.bz2 file
         idx_hash = os.popen('grep -A 3000 -E "^SHA1:" ' + 
                             '/var/lib/apt/lists/' + self.releaseFile + 
                             ' | grep -E " main/binary-i386/Packages.bz2$"'
@@ -133,6 +183,7 @@ class TestMirrorManager(unittest.TestCase):
         d = self.client.findHash(idx_path)
         d.addCallback(self.verifyHash, idx_path, idx_hash)
 
+        # Lookup the binary 'dpkg' package
         pkg_hash = os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
                             '/var/lib/apt/lists/' + self.packagesFile + 
                             ' | grep -E "^SHA1:" | head -n 1' + 
@@ -146,6 +197,7 @@ class TestMirrorManager(unittest.TestCase):
         d = self.client.findHash(pkg_path)
         d.addCallback(self.verifyHash, pkg_path, pkg_hash)
 
+        # Lookup the source 'dpkg' package
         src_dir = os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
                             '/var/lib/apt/lists/' + self.sourcesFile + 
                             ' | grep -E "^Directory:" | head -n 1' + 
@@ -164,6 +216,7 @@ class TestMirrorManager(unittest.TestCase):
             d = self.client.findHash(src_path)
             d.addCallback(self.verifyHash, src_path, src_hashes[i])
             
+        # Lookup a Sources.bz2 file
         idx_hash = os.popen('grep -A 3000 -E "^SHA1:" ' + 
                             '/var/lib/apt/lists/' + self.releaseFile + 
                             ' | grep -E " main/source/Sources.bz2$"'
