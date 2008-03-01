@@ -123,7 +123,7 @@ DHT_DEFAULTS = {
 class AptDHTConfigParser(SafeConfigParser):
     """Adds 'gettime' and 'getstringlist' to ConfigParser objects.
     
-    @param time_multipliers: the 'gettime' suffixes and the multipliers needed
+    @ivar time_multipliers: the 'gettime' suffixes and the multipliers needed
         to convert them to seconds
     """
     
