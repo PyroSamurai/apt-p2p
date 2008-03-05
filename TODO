@@ -1,3 +1,15 @@
+Evaluate and fix some errors in the ktable khashmir module.
+
+The KTable implementation has some possible errors in it. insertNode
+does not remove the original and use the new node when updating a node
+already in the table, as claimed by the comments. justSeenNode doesn't
+verify that the found node is the node that was being looked for, nor
+does it move the node to the end of the list of nodes (since they are
+supposed to be sorted by their lastSeen time) or update the bucket's
+last touched time.nodeFailed also doesn't verify the found node is the
+right node.
+
+
 Consider what happens when we are the closest node.
 
 In some of the actions it is unclear what happens when we are one of the
@@ -47,3 +59,20 @@ originally provided the piece is probably at fault, since he is now
 providing a later piece. This doesn't work if the differing piece is the 
 first piece, in which case it is downloaded from a 3rd peer, with 
 consensus revealing the misbehaving peer.
+
+
+Consider adding peer characteristics to the DHT.
+
+Bad peers could be indicated in the DHT by adding a new value that is
+the NOT of their ID (so they are guaranteed not to store it) indicating
+information about the peer. This could be bad votes on the peer, as
+otherwise a peer could add good info about itself.
+
+
+Consider adding pieces to the DHT instead of files.
+
+Instead of adding file hashes to the DHT, only piece hashes could be
+added. This would allow a peer to upload to other peers while it is
+still downloading the rest of the file. It is not clear that this is
+needed, since peer's will not be uploading and downloading ery much of
+the time.
