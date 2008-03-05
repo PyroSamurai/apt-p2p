@@ -1,5 +1,9 @@
-## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
-# see LICENSE.txt for license information
+
+"""Some utitlity functions for use in the apt-dht program.
+
+@var isLocal: a compiled regular expression suitable for testing if an
+    IP address is from a known local or private range
+"""
 
 import os, re
 
@@ -23,6 +27,7 @@ def findMyIPAddr(addrs, intended_port, local_ok = False):
     log.msg("got addrs: %r" % (addrs,))
     my_addr = None
     
+    # Try to find an address using the ifconfig function
     try:
         ifconfig = os.popen("/sbin/ifconfig |/bin/grep inet|"+
                             "/usr/bin/awk '{print $2}' | "+
@@ -30,19 +35,20 @@ def findMyIPAddr(addrs, intended_port, local_ok = False):
     except:
         ifconfig = []
 
-    # Get counts for all the non-local addresses returned
+    # Get counts for all the non-local addresses returned from ifconfig
     addr_count = {}
     for addr in ifconfig:
         if local_ok or not isLocal.match(addr):
             addr_count.setdefault(addr, 0)
             addr_count[addr] += 1
     
+    # If only one was found, use it as a starting point
     local_addrs = addr_count.keys()    
     if len(local_addrs) == 1:
         my_addr = local_addrs[0]
         log.msg('Found remote address from ifconfig: %r' % (my_addr,))
     
-    # Get counts for all the non-local addresses returned
+    # Get counts for all the non-local addresses returned from the DHT
     addr_count = {}
     port_count = {}
     for addr in addrs:
@@ -71,7 +77,8 @@ def findMyIPAddr(addrs, intended_port, local_ok = False):
             popular_count = port_count[port]
         elif port_count[port] == popular_count:
             popular_port.append(port)
-            
+
+    # Check to make sure the port isn't being changed
     port = intended_port
     if len(port_count.keys()) > 1:
         log.msg('Problem, multiple ports have been found: %r' % (port_count,))
@@ -82,6 +89,7 @@ def findMyIPAddr(addrs, intended_port, local_ok = False):
     else:
         log.msg('Port was not found')
 
+    # If one is popular, use that address
     if len(popular_addr) == 1:
         log.msg('Found popular address: %r' % (popular_addr[0],))
         if my_addr and my_addr != popular_addr[0]:
@@ -100,6 +108,7 @@ def findMyIPAddr(addrs, intended_port, local_ok = False):
     return my_addr
 
 def ipAddrFromChicken():
+    """Retrieve a possible IP address from the ipchecken website."""
     import urllib
     ip_search = re.compile('\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
     try:
@@ -112,7 +121,7 @@ def ipAddrFromChicken():
          return []
 
 def uncompact(s):
-    """Extract the contatc info from a compact peer representation.
+    """Extract the contact info from a compact peer representation.
     
     @type s: C{string}
     @param s: the compact representation
@@ -152,6 +161,7 @@ class TestUtil(unittest.TestCase):
     port = 61234
 
     def test_compact(self):
+        """Make sure compacting is reversed correctly by uncompacting."""
         d = uncompact(compact(self.ip, self.port))
         self.failUnlessEqual(d[0], self.ip)
         self.failUnlessEqual(d[1], self.port)

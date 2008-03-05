@@ -1,18 +1,20 @@
 ## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
+"""Functions to deal with hashes (node IDs and keys)."""
+
 from sha import sha
 from os import urandom
 
 from twisted.trial import unittest
 
 def intify(hstr):
-    """20 bit hash, big-endian -> long python integer"""
+    """Convert a hash (big-endian) to a long python integer."""
     assert len(hstr) == 20
     return long(hstr.encode('hex'), 16)
 
 def stringify(num):
-    """long int -> 20-character string"""
+    """Convert a long python integer to a hash."""
     str = hex(num)[2:]
     if str[-1] == 'L':
         str = str[:-1]
@@ -22,26 +24,29 @@ def stringify(num):
     return (20 - len(str)) *'\x00' + str
     
 def distance(a, b):
-    """distance between two 160-bit hashes expressed as 20-character strings"""
+    """Calculate the distance between two hashes expressed as strings."""
     return intify(a) ^ intify(b)
 
-
 def newID():
-    """returns a new pseudorandom globally unique ID string"""
+    """Get a new pseudorandom globally unique hash string."""
     h = sha()
     h.update(urandom(20))
     return h.digest()
 
 def newIDInRange(min, max):
+    """Get a new pseudorandom globally unique hash string in the range."""
     return stringify(randRange(min,max))
     
 def randRange(min, max):
+    """Get a new pseudorandom globally unique hash number in the range."""
     return min + intify(newID()) % (max - min)
     
 def newTID():
+    """Get a new pseudorandom transaction ID number."""
     return randRange(-2**30, 2**30)
 
 class TestNewID(unittest.TestCase):
+    """Test the newID function."""
     def testLength(self):
         self.failUnlessEqual(len(newID()), 20)
     def testHundreds(self):
@@ -49,6 +54,7 @@ class TestNewID(unittest.TestCase):
             self.testLength
 
 class TestIntify(unittest.TestCase):
+    """Test the intify function."""
     known = [('\0' * 20, 0),
             ('\xff' * 20, 2L**160 - 1),
             ]
@@ -66,6 +72,7 @@ class TestIntify(unittest.TestCase):
             self.testEndianessOnce()
 
 class TestDisantance(unittest.TestCase):
+    """Test the distance function."""
     known = [
             (("\0" * 20, "\xff" * 20), 2**160L -1),
             ((sha("foo").digest(), sha("foo").digest()), 0),
@@ -80,6 +87,7 @@ class TestDisantance(unittest.TestCase):
             self.failUnlessEqual(distance(x,y) ^ distance(y, z), distance(x, z))
         
 class TestRandRange(unittest.TestCase):
+    """Test the randRange function."""
     def testOnce(self):
         a = intify(newID())
         b = intify(newID())

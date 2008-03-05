@@ -1,4 +1,6 @@
 
+"""Manage a set of peers and the requests to them."""
+
 from random import choice
 from urlparse import urlparse, urlunparse
 from urllib import quote_plus
@@ -13,16 +15,35 @@ from HTTPDownloader import Peer
 from util import uncompact
 
 class PeerManager:
+    """Manage a set of peers and the requests to them.
+    
+    @type clients: C{dictionary}
+    @ivar clients: the available peers that have been previously contacted
+    """
+
     def __init__(self):
+        """Initialize the instance."""
         self.clients = {}
         
     def get(self, hash, mirror, peers = [], method="GET", modtime=None):
         """Download from a list of peers or fallback to a mirror.
         
+        @type hash: L{Hash.HashObject}
+        @param hash: the hash object containing the expected hash for the file
+        @param mirror: the URI of the file on the mirror
         @type peers: C{list} of C{string}
-        @param peers: a list of the peers where the file can be found
+        @param peers: a list of the peer info where the file can be found
+            (optional, defaults to downloading from the mirror)
+        @type method: C{string}
+        @param method: the HTTP method to use, 'GET' or 'HEAD'
+            (optional, defaults to 'GET')
+        @type modtime: C{int}
+        @param modtime: the modification time to use for an 'If-Modified-Since'
+            header, as seconds since the epoch
+            (optional, defaults to not sending that header)
         """
         if peers:
+            # Choose one of the peers at random
             compact_peer = choice(peers)
             peer = uncompact(compact_peer['c'])
             log.msg('Downloading from peer %r' % (peer, ))
@@ -38,11 +59,26 @@ class PeerManager:
         return self.getPeer(site, path, method, modtime)
         
     def getPeer(self, site, path, method="GET", modtime=None):
+        """Create a new peer if necessary and forward the request to it.
+        
+        @type site: (C{string}, C{int})
+        @param site: the IP address and port of the peer
+        @type path: C{string}
+        @param path: the path to the file on the peer
+        @type method: C{string}
+        @param method: the HTTP method to use, 'GET' or 'HEAD'
+            (optional, defaults to 'GET')
+        @type modtime: C{int}
+        @param modtime: the modification time to use for an 'If-Modified-Since'
+            header, as seconds since the epoch
+            (optional, defaults to not sending that header)
+        """
         if site not in self.clients:
             self.clients[site] = Peer(site[0], site[1])
         return self.clients[site].get(path, method, modtime)
     
     def close(self):
+        """Close all the connections to peers."""
         for site in self.clients:
             self.clients[site].close()
         self.clients = {}
@@ -64,6 +100,7 @@ class TestPeerManager(unittest.TestCase):
         stream_mod.readStream(resp.stream, print_).addCallback(printdone)
     
     def test_download(self):
+        """Tests a normal download."""
         self.manager = PeerManager()
         self.timeout = 10
         
@@ -73,6 +110,7 @@ class TestPeerManager(unittest.TestCase):
         return d
         
     def test_head(self):
+        """Tests a 'HEAD' request."""
         self.manager = PeerManager()
         self.timeout = 10
         
@@ -82,6 +120,7 @@ class TestPeerManager(unittest.TestCase):
         return d
         
     def test_multiple_downloads(self):
+        """Tests multiple downloads with queueing and connection closing."""
         self.manager = PeerManager()
         self.timeout = 120
         lastDefer = defer.Deferred()

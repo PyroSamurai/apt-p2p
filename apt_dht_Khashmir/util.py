@@ -1,10 +1,12 @@
 ## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
+"""Some utitlity functions for use in apt-dht's khashmir DHT."""
+
 from twisted.trial import unittest
 
 def bucket_stats(l):
-    """given a list of khashmir instances, finds min, max, and average number of nodes in tables"""
+    """Given a list of khashmir instances, finds min, max, and average number of nodes in tables."""
     max = avg = 0
     min = None
     def count(buckets):

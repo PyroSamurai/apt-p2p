@@ -1,4 +1,9 @@
 
+"""The main interface to the Khashmir DHT.
+
+@var khashmir_dir: the name of the directory to use for DHT files
+"""
+
 from datetime import datetime
 import os, sha, random
 
@@ -18,10 +23,46 @@ class DHTError(Exception):
     """Represents errors that occur in the DHT."""
 
 class DHT:
+    """The main interface instance to the Khashmir DHT.
+    
+    @type config: C{dictionary}
+    @ivar config: the DHT configuration values
+    @type cache_dir: C{string}
+    @ivar cache_dir: the directory to use for storing files
+    @type bootstrap: C{list} of C{string}
+    @ivar bootstrap: the nodes to contact to bootstrap into the system
+    @type bootstrap_node: C{boolean}
+    @ivar bootstrap_node: whether this node is a bootstrap node
+    @type joining: L{twisted.internet.defer.Deferred}
+    @ivar joining: if a join is underway, the deferred that will signal it's end
+    @type joined: C{boolean}
+    @ivar joined: whether the DHT network has been successfully joined
+    @type outstandingJoins: C{int}
+    @ivar outstandingJoins: the number of bootstrap nodes that have yet to respond
+    @type foundAddrs: C{list} of (C{string}, C{int})
+    @ivar foundAddrs: the IP address an port that were returned by bootstrap nodes
+    @type storing: C{dictionary}
+    @ivar storing: keys are keys for which store requests are active, values
+        are dictionaries with keys the values being stored and values the
+        deferred to call when complete
+    @type retrieving: C{dictionary}
+    @ivar retrieving: keys are the keys for which getValue requests are active,
+        values are lists of the deferreds waiting for the requests
+    @type retrieved: C{dictionary}
+    @ivar retrieved: keys are the keys for which getValue requests are active,
+        values are list of the values returned so far
+    @type config_parser: L{apt_dht.apt_dht_conf.AptDHTConfigParser}
+    @ivar config_parser: the configuration info for the main program
+    @type section: C{string}
+    @ivar section: the section of the configuration info that applies to the DHT
+    @type khashmir: L{khashmir.Khashmir}
+    @ivar khashmir: the khashmir DHT instance to use
+    """
     
     implements(IDHT)
     
     def __init__(self):
+        """Initialize the DHT."""
         self.config = None
         self.cache_dir = ''
         self.bootstrap = []
@@ -39,20 +80,26 @@ class DHT:
         self.config_parser = config
         self.section = section
         self.config = {}
+        
+        # Get some initial values
         self.cache_dir = os.path.join(self.config_parser.get(section, 'cache_dir'), khashmir_dir)
         if not os.path.exists(self.cache_dir):
             os.makedirs(self.cache_dir)
         self.bootstrap = self.config_parser.getstringlist(section, 'BOOTSTRAP')
         self.bootstrap_node = self.config_parser.getboolean(section, 'BOOTSTRAP_NODE')
         for k in self.config_parser.options(section):
+            # The numbers in the config file
             if k in ['K', 'HASH_LENGTH', 'CONCURRENT_REQS', 'STORE_REDUNDANCY', 
                      'RETRIEVE_VALUES', 'MAX_FAILURES', 'PORT']:
                 self.config[k] = self.config_parser.getint(section, k)
+            # The times in the config file
             elif k in ['CHECKPOINT_INTERVAL', 'MIN_PING_INTERVAL', 
                        'BUCKET_STALENESS', 'KEY_EXPIRE']:
                 self.config[k] = self.config_parser.gettime(section, k)
+            # The booleans in the config file
             elif k in ['SPEW']:
                 self.config[k] = self.config_parser.getboolean(section, k)
+            # Everything else is a string
             else:
                 self.config[k] = self.config_parser.get(section, k)
     
@@ -63,12 +110,15 @@ class DHT:
         if self.joining:
             raise DHTError, "a join is already in progress"
 
+        # Create the new khashmir instance
         self.khashmir = Khashmir(self.config, self.cache_dir)
         
         self.joining = defer.Deferred()
         for node in self.bootstrap:
             host, port = node.rsplit(':', 1)
             port = int(port)
+            
+            # Translate host names into IP addresses
             if isIPAddress(host):
                 self._join_gotIP(host, port)
             else:
@@ -77,12 +127,15 @@ class DHT:
         return self.joining
 
     def _join_gotIP(self, ip, port):
-        """Called after an IP address has been found for a single bootstrap node."""
+        """Join the DHT using a single bootstrap nodes IP address."""
         self.outstandingJoins += 1
         self.khashmir.addContact(ip, port, self._join_single, self._join_error)
     
     def _join_single(self, addr):
-        """Called when a single bootstrap node has been added."""
+        """Process the response from the bootstrap node.
+        
+        Finish the join by contacting close nodes.
+        """
         self.outstandingJoins -= 1
         if addr:
             self.foundAddrs.append(addr)
@@ -91,14 +144,18 @@ class DHT:
         log.msg('Got back from bootstrap node: %r' % (addr,))
     
     def _join_error(self, failure = None):
-        """Called when a single bootstrap node has failed."""
+        """Process an error in contacting the bootstrap node.
+        
+        If no bootstrap nodes remain, finish the process by contacting
+        close nodes.
+        """
         self.outstandingJoins -= 1
         log.msg("bootstrap node could not be reached")
         if self.outstandingJoins <= 0:
             self.khashmir.findCloseNodes(self._join_complete, self._join_complete)
 
     def _join_complete(self, result):
-        """Called when the tables have been initialized with nodes."""
+        """End the joining process and return the addresses found for this node."""
         if not self.joined and len(result) > 0:
             self.joined = True
         if self.joining and self.outstandingJoins <= 0:
@@ -111,6 +168,7 @@ class DHT:
                 df.errback(DHTError('could not find any nodes to bootstrap to'))
         
     def getAddrs(self):
+        """Get the list of addresses returned by bootstrap nodes for this node."""
         return self.foundAddrs
         
     def leave(self):
@@ -126,14 +184,18 @@ class DHT:
             self.khashmir.shutdown()
         
     def _normKey(self, key, bits=None, bytes=None):
+        """Normalize the length of keys used in the DHT."""
         bits = self.config["HASH_LENGTH"]
         if bits is not None:
             bytes = (bits - 1) // 8 + 1
         else:
             if bytes is None:
                 raise DHTError, "you must specify one of bits or bytes for normalization"
+            
+        # Extend short keys with null bytes
         if len(key) < bytes:
             key = key + '\000'*(bytes - len(key))
+        # Truncate long keys
         elif len(key) > bytes:
             key = key[:bytes]
         return key
@@ -154,9 +216,12 @@ class DHT:
         return d
         
     def _getValue(self, key, result):
+        """Process a returned list of values from the DHT."""
+        # Save the list of values to return when it is complete
         if result:
             self.retrieved.setdefault(key, []).extend([bdecode(r) for r in result])
         else:
+            # Empty list, the get is complete, return the result
             final_result = []
             if key in self.retrieved:
                 final_result = self.retrieved[key]
@@ -185,7 +250,9 @@ class DHT:
         return d
     
     def _storeValue(self, key, bvalue, result):
+        """Process the response from the DHT."""
         if key in self.storing and bvalue in self.storing[key]:
+            # Check if the store succeeded
             if len(result) > 0:
                 self.storing[key][bvalue].callback(result)
             else:
@@ -195,7 +262,7 @@ class DHT:
                 del self.storing[key]
 
 class TestSimpleDHT(unittest.TestCase):
-    """Unit tests for the DHT."""
+    """Simple 2-node unit tests for the DHT."""
     
     timeout = 2
     DHT_DEFAULTS = {'PORT': 9977, 'K': 8, 'HASH_LENGTH': 160,
@@ -300,6 +367,7 @@ class TestSimpleDHT(unittest.TestCase):
             pass
 
 class TestMultiDHT(unittest.TestCase):
+    """More complicated 20-node tests for the DHT."""
     
     timeout = 60
     num = 20

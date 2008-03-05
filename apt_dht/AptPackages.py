@@ -15,6 +15,12 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+"""Manage a mirror's index files.
+
+@type TRACKED_FILES: C{list} of C{string}
+@var TRACKED_FILES: the file names of files that contain index information
+"""
+
 # Disable the FutureWarning from the apt module
 import warnings
 warnings.simplefilter("ignore", FutureWarning)
@@ -41,13 +47,16 @@ apt_pkg.init()
 TRACKED_FILES = ['release', 'sources', 'packages']
 
 class PackageFileList(DictMixin):
-    """Manages a list of package files belonging to a backend.
+    """Manages a list of index files belonging to a mirror.
     
+    @type cache_dir: L{twisted.python.filepath.FilePath}
+    @ivar cache_dir: the directory to use for storing all files
     @type packages: C{shelve dictionary}
-    @ivar packages: the files stored for this backend
+    @ivar packages: the files tracked for this mirror
     """
     
     def __init__(self, cache_dir):
+        """Initialize the list by opening the dictionary."""
         self.cache_dir = cache_dir
         self.cache_dir.restat(False)
         if not self.cache_dir.exists():
@@ -56,7 +65,7 @@ class PackageFileList(DictMixin):
         self.open()
 
     def open(self):
-        """Open the persistent dictionary of files in this backend."""
+        """Open the persistent dictionary of files for this mirror."""
         if self.packages is None:
             self.packages = shelve.open(self.cache_dir.child('packages.db').path)
 
@@ -70,6 +79,13 @@ class PackageFileList(DictMixin):
 
         Called from the mirror manager when files get updated so we can update our
         fake lists and sources.list.
+        
+        @type cache_path: C{string}
+        @param cache_path: the location of the file within the mirror
+        @type file_path: L{twisted.python.filepath.FilePath}
+        @param file_path: The location of the file in the file system
+        @rtype: C{boolean}
+        @return: whether the file is an index file
         """
         filename = cache_path.split('/')[-1]
         if filename.lower() in TRACKED_FILES:
@@ -79,7 +95,7 @@ class PackageFileList(DictMixin):
         return False
 
     def check_files(self):
-        """Check all files in the database to make sure they exist."""
+        """Check all files in the database to remove any that don't exist."""
         files = self.packages.keys()
         for f in files:
             self.packages[f].restat(False)
@@ -87,16 +103,46 @@ class PackageFileList(DictMixin):
                 log.msg("File in packages database has been deleted: "+f)
                 del self.packages[f]
 
-    # Standard dictionary implementation so this class can be used like a dictionary.
+    #{ Dictionary interface details
     def __getitem__(self, key): return self.packages[key]
     def __setitem__(self, key, item): self.packages[key] = item
     def __delitem__(self, key): del self.packages[key]
     def keys(self): return self.packages.keys()
 
 class AptPackages:
-    """Uses python-apt to answer queries about packages.
-
-    Makes a fake configuration for python-apt for each backend.
+    """Answers queries about packages available from a mirror.
+    
+    Uses the python-apt tools to parse and provide information about the
+    files that are available on a single mirror.
+    
+    @ivar DEFAULT_APT_CONFIG: the default configuration parameters to use for apt
+    @ivar essential_dirs: directories that must be created for apt to work
+    @ivar essential_files: files that must be created for apt to work
+    @type cache_dir: L{twisted.python.filepath.FilePath}
+    @ivar cache_dir: the directory to use for storing all files
+    @type unload_delay: C{int}
+    @ivar unload_delay: the time to wait before unloading the apt cache
+    @ivar apt_config: the configuration parameters to use for apt
+    @type packages: L{PackageFileList}
+    @ivar packages: the persistent storage of tracked apt index files
+    @type loaded: C{boolean}
+    @ivar loaded: whether the apt cache is currently loaded
+    @type loading: L{twisted.internet.defer.Deferred}
+    @ivar loading: if the cache is currently being loaded, this will be
+        called when it is loaded, otherwise it is None
+    @type unload_later: L{twisted.internet.interfaces.IDelayedCall}
+    @ivar unload_later: the delayed call to unload the apt cache
+    @type indexrecords: C{dictionary}
+    @ivar indexrecords: the hashes of index files for the mirror, keys are
+        mirror directories, values are dictionaries with keys the path to the
+        index file in the mirror directory and values are dictionaries with
+        keys the hash type and values the hash
+    @type cache: C{apt_pkg.GetCache()}
+    @ivar cache: the apt cache of the mirror
+    @type records: C{apt_pkg.GetPkgRecords()}
+    @ivar records: the apt package records for all binary packages in a mirror
+    @type srcrecords: C{apt_pkg.GetPkgSrcRecords}
+    @ivar srcrecords: the apt package records for all source packages in a mirror
     """
 
     DEFAULT_APT_CONFIG = {
@@ -138,12 +184,13 @@ class AptPackages:
     def __init__(self, cache_dir, unload_delay):
         """Construct a new packages manager.
 
-        @param cache_dir: cache directory from config file
+        @param cache_dir: directory to use to store files for this mirror
         """
         self.cache_dir = cache_dir
         self.unload_delay = unload_delay
         self.apt_config = deepcopy(self.DEFAULT_APT_CONFIG)
 
+        # Create the necessary files and directories for apt
         for dir in self.essential_dirs:
             path = self.cache_dir.preauthChild(dir)
             if not path.exists():
@@ -156,7 +203,7 @@ class AptPackages:
         self.apt_config['Dir'] = self.cache_dir.path
         self.apt_config['Dir::State::status'] = self.cache_dir.preauthChild(self.apt_config['Dir::State']).preauthChild(self.apt_config['Dir::State::status']).path
         self.packages = PackageFileList(cache_dir)
-        self.loaded = 0
+        self.loaded = False
         self.loading = None
         self.unload_later = None
         
@@ -164,7 +211,9 @@ class AptPackages:
         self.cleanup()
         
     def addRelease(self, cache_path, file_path):
-        """Dirty hack until python-apt supports apt-pkg/indexrecords.h
+        """Add a Release file's info to the list of index files.
+        
+        Dirty hack until python-apt supports apt-pkg/indexrecords.h
         (see Bug #456141)
         """
         self.indexrecords[cache_path] = {}
@@ -172,6 +221,7 @@ class AptPackages:
         read_packages = False
         f = file_path.open('r')
         
+        # Use python-debian routines to parse the file for hashes
         rel = deb822.Release(f, fields = ['MD5Sum', 'SHA1', 'SHA256'])
         for hash_type in rel:
             for file in rel[hash_type]:
@@ -180,19 +230,23 @@ class AptPackages:
         f.close()
 
     def file_updated(self, cache_path, file_path):
-        """A file in the backend has changed, manage it.
+        """A file in the mirror has changed or been added.
         
-        If this affects us, unload our apt database
+        If this affects us, unload our apt database.
+        @see: L{PackageFileList.update_file}
         """
         if self.packages.update_file(cache_path, file_path):
             self.unload()
 
     def load(self):
-        """Make sure the package is initialized and loaded."""
+        """Make sure the package cache is initialized and loaded."""
+        # Reset the pending unload call
         if self.unload_later and self.unload_later.active():
             self.unload_later.reset(self.unload_delay)
         else:
             self.unload_later = reactor.callLater(self.unload_delay, self.unload)
+            
+        # Make sure it's not already being loaded
         if self.loading is None:
             log.msg('Loading the packages cache')
             self.loading = threads.deferToThread(self._load)
@@ -206,8 +260,10 @@ class AptPackages:
         return loadResult
         
     def _load(self):
-        """Regenerates the fake configuration and load the packages cache."""
+        """Regenerates the fake configuration and loads the packages caches."""
         if self.loaded: return True
+        
+        # Modify the default configuration to create the fake one.
         apt_pkg.InitSystem()
         self.cache_dir.preauthChild(self.apt_config['Dir::State']
                      ).preauthChild(self.apt_config['Dir::State::Lists']).remove()
@@ -221,6 +277,8 @@ class AptPackages:
         deb_src_added = False
         self.packages.check_files()
         self.indexrecords = {}
+        
+        # Create an entry in sources.list for each needed index file
         for f in self.packages:
             # we should probably clear old entries from self.packages and
             # take into account the recorded mtime as optimization
@@ -262,7 +320,7 @@ class AptPackages:
         else:
             self.srcrecords = None
 
-        self.loaded = 1
+        self.loaded = True
         return True
 
     def unload(self):
@@ -272,11 +330,12 @@ class AptPackages:
         self.unload_later = None
         if self.loaded:
             log.msg('Unloading the packages cache')
+            # This should save memory
             del self.cache
             del self.records
             del self.srcrecords
             del self.indexrecords
-            self.loaded = 0
+            self.loaded = False
 
     def cleanup(self):
         """Cleanup and close any loaded caches."""
@@ -288,7 +347,10 @@ class AptPackages:
     def findHash(self, path):
         """Find the hash for a given path in this mirror.
         
-        Returns a deferred so it can make sure the cache is loaded first.
+        @type path: C{string}
+        @param path: the path within the mirror of the file to lookup
+        @rtype: L{twisted.internet.defer.Deferred}
+        @return: a deferred so it can make sure the cache is loaded first
         """
         d = defer.Deferred()
 
@@ -299,27 +361,33 @@ class AptPackages:
         return d
 
     def _findHash_error(self, failure, path, d):
-        """An error occurred while trying to find a hash."""
+        """An error occurred, return an empty hash."""
         log.msg('An error occurred while looking up a hash for: %s' % path)
         log.err(failure)
         d.callback(HashObject())
+        return failure
 
     def _findHash(self, loadResult, path, d):
-        """Really find the hash for a path.
+        """Search the records for the hash of a path.
         
-        Have to pass the returned loadResult on in case other calls to this
-        function are pending.
+        @type loadResult: C{boolean}
+        @param loadResult: whether apt's cache was successfully loaded
+        @type path: C{string}
+        @param path: the path within the mirror of the file to lookup
+        @type d: L{twisted.internet.defer.Deferred}
+        @param d: the deferred to callback with the result
         """
         if not loadResult:
             d.callback(HashObject())
             return loadResult
+        
+        h = HashObject()
         
         # First look for the path in the cache of index files
         for release in self.indexrecords:
             if path.startswith(release[:-7]):
                 for indexFile in self.indexrecords[release]:
                     if release[:-7] + indexFile == path:
-                        h = HashObject()
                         h.setFromIndexRecord(self.indexrecords[release][indexFile])
                         d.callback(h)
                         return loadResult
@@ -333,7 +401,6 @@ class AptPackages:
                 for verFile in version.FileList:
                     if self.records.Lookup(verFile):
                         if '/' + self.records.FileName == path:
-                            h = HashObject()
                             h.setFromPkgRecord(self.records, size)
                             d.callback(h)
                             return loadResult
@@ -346,12 +413,13 @@ class AptPackages:
             if self.srcrecords.Lookup(package):
                 for f in self.srcrecords.Files:
                     if path == '/' + f[2]:
-                        h = HashObject()
                         h.setFromSrcRecord(f)
                         d.callback(h)
                         return loadResult
         
-        d.callback(HashObject())
+        d.callback(h)
+        
+        # Have to pass the returned loadResult on in case other calls to this function are pending.
         return loadResult
 
 class TestAptPackages(unittest.TestCase):
@@ -365,15 +433,20 @@ class TestAptPackages(unittest.TestCase):
     releaseFile = ''
     
     def setUp(self):
+        """Initializes the cache with files found in the traditional apt location."""
         self.client = AptPackages(FilePath('/tmp/.apt-dht'), 300)
     
+        # Find the largest index files that are for 'main'
         self.packagesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Packages$" | tail -n 1').read().rstrip('\n')
         self.sourcesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Sources$" | tail -n 1').read().rstrip('\n')
+        
+        # Find the Release file corresponding to the found Packages file
         for f in os.walk('/var/lib/apt/lists').next()[2]:
             if f[-7:] == "Release" and self.packagesFile.startswith(f[:-7]):
                 self.releaseFile = f
                 break
-        
+
+        # Add all the found files to the PackageFileList
         self.client.file_updated(self.releaseFile[self.releaseFile.find('_dists_'):].replace('_','/'), 
                                  FilePath('/var/lib/apt/lists/' + self.releaseFile))
         self.client.file_updated(self.packagesFile[self.packagesFile.find('_dists_'):].replace('_','/'), 
@@ -382,6 +455,7 @@ class TestAptPackages(unittest.TestCase):
                                  FilePath('/var/lib/apt/lists/' + self.sourcesFile))
     
     def test_pkg_hash(self):
+        """Tests loading the binary package records cache."""
         self.client._load()
 
         self.client.records.Lookup(self.client.cache['dpkg'].VersionList[0].FileList[0])
@@ -395,6 +469,7 @@ class TestAptPackages(unittest.TestCase):
                         "Hashes don't match: %s != %s" % (self.client.records.SHA1Hash, pkg_hash))
 
     def test_src_hash(self):
+        """Tests loading the source package records cache."""
         self.client._load()
 
         self.client.srcrecords.Lookup('dpkg')
@@ -408,6 +483,7 @@ class TestAptPackages(unittest.TestCase):
             self.failUnless(f[0] in src_hashes, "Couldn't find %s in: %r" % (f[0], src_hashes))
 
     def test_index_hash(self):
+        """Tests loading the cache of index file information."""
         self.client._load()
 
         indexhash = self.client.indexrecords[self.releaseFile[self.releaseFile.find('_dists_'):].replace('_','/')]['main/binary-i386/Packages.bz2']['SHA1'][0]
@@ -424,6 +500,7 @@ class TestAptPackages(unittest.TestCase):
                     "%s hashes don't match: %s != %s" % (path, found_hash.hexexpected(), true_hash))
 
     def test_findIndexHash(self):
+        """Tests finding the hash of a single index file."""
         lastDefer = defer.Deferred()
         
         idx_hash = os.popen('grep -A 3000 -E "^SHA1:" ' + 
@@ -439,6 +516,7 @@ class TestAptPackages(unittest.TestCase):
         return lastDefer
 
     def test_findPkgHash(self):
+        """Tests finding the hash of a single binary package."""
         lastDefer = defer.Deferred()
         
         pkg_hash = os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
@@ -457,6 +535,7 @@ class TestAptPackages(unittest.TestCase):
         return lastDefer
 
     def test_findSrcHash(self):
+        """Tests finding the hash of a single source package."""
         lastDefer = defer.Deferred()
         
         src_dir = '/' + os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
@@ -480,8 +559,10 @@ class TestAptPackages(unittest.TestCase):
         return lastDefer
 
     def test_multipleFindHash(self):
+        """Tests finding the hash of an index file, binary package, source package, and another index file."""
         lastDefer = defer.Deferred()
         
+        # Lookup a Packages.bz2 file
         idx_hash = os.popen('grep -A 3000 -E "^SHA1:" ' + 
                             '/var/lib/apt/lists/' + self.releaseFile + 
                             ' | grep -E " main/binary-i386/Packages.bz2$"'
@@ -491,6 +572,7 @@ class TestAptPackages(unittest.TestCase):
         d = self.client.findHash(idx_path)
         d.addCallback(self.verifyHash, idx_path, idx_hash)
 
+        # Lookup the binary 'dpkg' package
         pkg_hash = os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
                             '/var/lib/apt/lists/' + self.packagesFile + 
                             ' | grep -E "^SHA1:" | head -n 1' + 
@@ -503,6 +585,7 @@ class TestAptPackages(unittest.TestCase):
         d = self.client.findHash(pkg_path)
         d.addCallback(self.verifyHash, pkg_path, pkg_hash)
 
+        # Lookup the source 'dpkg' package
         src_dir = '/' + os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
                             '/var/lib/apt/lists/' + self.sourcesFile + 
                             ' | grep -E "^Directory:" | head -n 1' + 
@@ -520,6 +603,7 @@ class TestAptPackages(unittest.TestCase):
             d = self.client.findHash(src_dir + '/' + src_paths[i])
             d.addCallback(self.verifyHash, src_dir + '/' + src_paths[i], src_hashes[i])
             
+        # Lookup a Sources.bz2 file
         idx_hash = os.popen('grep -A 3000 -E "^SHA1:" ' + 
                             '/var/lib/apt/lists/' + self.releaseFile + 
                             ' | grep -E " main/source/Sources.bz2$"'

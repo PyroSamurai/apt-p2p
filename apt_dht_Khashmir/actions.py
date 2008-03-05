@@ -1,6 +1,8 @@
 ## Copyright 2002-2004 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
+"""Details of how to perform actions on remote peers."""
+
 from twisted.internet import reactor
 from twisted.python import log
 
@@ -8,9 +10,64 @@ from khash import intify
 from util import uncompact
 
 class ActionBase:
-    """ base class for some long running asynchronous proccesses like finding nodes or values """
+    """Base class for some long running asynchronous proccesses like finding nodes or values.
+    
+    @type caller: L{khashmir.Khashmir}
+    @ivar caller: the DHT instance that is performing the action
+    @type target: C{string}
+    @ivar target: the target of the action, usually a DHT key
+    @type config: C{dictionary}
+    @ivar config: the configuration variables for the DHT
+    @type action: C{string}
+    @ivar action: the name of the action to call on remote nodes
+    @type num: C{long}
+    @ivar num: the target key in integer form
+    @type queried: C{dictionary}
+    @ivar queried: the nodes that have been queried for this action,
+        keys are node IDs, values are the node itself
+    @type answered: C{dictionary}
+    @ivar answered: the nodes that have answered the queries
+    @type found: C{dictionary}
+    @ivar found: nodes that have been found so far by the action
+    @type sorted_nodes: C{list} of L{node.Node}
+    @ivar sorted_nodes: a sorted list of nodes by there proximity to the key
+    @type results: C{dictionary}
+    @ivar results: keys are the results found so far by the action
+    @type desired_results: C{int}
+    @ivar desired_results: the minimum number of results that are needed
+        before the action should stop
+    @type callback: C{method}
+    @ivar callback: the method to call with the results
+    @type outstanding: C{int}
+    @ivar outstanding: the number of requests currently outstanding
+    @type outstanding_results: C{int}
+    @ivar outstanding_results: the number of results that are expected from
+        the requests that are currently outstanding
+    @type finished: C{boolean}
+    @ivar finished: whether the action is done
+    @type sort: C{method}
+    @ivar sort: used to sort nodes by their proximity to the target
+    """
+    
     def __init__(self, caller, target, callback, config, action, num_results = None):
-        """Initialize the action."""
+        """Initialize the action.
+        
+        @type caller: L{khashmir.Khashmir}
+        @param caller: the DHT instance that is performing the action
+        @type target: C{string}
+        @param target: the target of the action, usually a DHT key
+        @type callback: C{method}
+        @param callback: the method to call with the results
+        @type config: C{dictionary}
+        @param config: the configuration variables for the DHT
+        @type action: C{string}
+        @param action: the name of the action to call on remote nodes
+        @type num_results: C{int}
+        @param num_results: the minimum number of results that are needed before
+            the action should stop (optional, defaults to getting all the results)
+        
+        """
+        
         self.caller = caller
         self.target = target
         self.config = config
@@ -25,7 +82,7 @@ class ActionBase:
         self.callback = callback
         self.outstanding = 0
         self.outstanding_results = 0
-        self.finished = 0
+        self.finished = False
     
         def sort(a, b, num=self.num):
             """Sort nodes relative to the ID we are looking for."""
@@ -36,7 +93,8 @@ class ActionBase:
                 return -1
             return 0
         self.sort = sort
-        
+
+    #{ Main operation
     def goWithNodes(self, nodes):
         """Start the action's process with a list of nodes to contact."""
         for node in nodes:
@@ -53,7 +111,7 @@ class ActionBase:
         if self.desired_results and ((len(self.results) >= abs(self.desired_results)) or
                                      (self.desired_results < 0 and
                                       len(self.answered) >= self.config['STORE_REDUNDANCY'])):
-            self.finished=1
+            self.finished = True
             result = self.generateResult()
             reactor.callLater(0, self.callback, *result)
 
@@ -61,7 +119,9 @@ class ActionBase:
                              len(self.results) + self.outstanding_results >= abs(self.desired_results)):
             return
         
+        # Loop for each node that should be processed
         for node in self.getNodesToProcess():
+            # Don't send requests twice or to ourself
             if node.id not in self.queried and node.id != self.caller.node.id:
                 self.queried[node.id] = 1
                 
@@ -96,7 +156,7 @@ class ActionBase:
 
         # If no requests are outstanding, then we are done
         if self.outstanding == 0:
-            self.finished = 1
+            self.finished = True
             result = self.generateResult()
             reactor.callLater(0, self.callback, *result)
 
@@ -122,7 +182,11 @@ class ActionBase:
         self.schedule()
     
     def handleGotNodes(self, nodes):
-        """Process any received node contact info in the response."""
+        """Process any received node contact info in the response.
+        
+        Not called by default, but suitable for being called by
+        L{processResponse} in a recursive node search.
+        """
         for compact_node in nodes:
             node_contact = uncompact(compact_node)
             node = self.caller.Node(node_contact)
@@ -138,7 +202,7 @@ class ActionBase:
             self.sorted_nodes = self.found.values()
             self.sorted_nodes.sort(self.sort)
                 
-    # The methods below are meant to be subclassed by actions
+    #{ Subclass for specific actions
     def getNodesToProcess(self):
         """Generate a list of nodes to process next.
         
@@ -162,7 +226,7 @@ class ActionBase:
         self.handleGotNodes(dict['nodes'])
 
     def generateResult(self, nodes):
-        """Create the result to return to the callback function."""
+        """Create the final result to return to the L{callback} function."""
         return []
         
 
@@ -185,7 +249,7 @@ class FindNode(ActionBase):
     
 
 class FindValue(ActionBase):
-    """Find the closest nodes to the key and check their values."""
+    """Find the closest nodes to the key and check for values."""
 
     def __init__(self, caller, target, callback, config, action="findValue"):
         ActionBase.__init__(self, caller, target, callback, config, action)
@@ -203,18 +267,25 @@ class FindValue(ActionBase):
     
 
 class GetValue(ActionBase):
+    """Retrieve values from a list of nodes."""
+    
     def __init__(self, caller, target, local_results, num_results, callback, config, action="getValue"):
+        """Initialize the action with the locally available results.
+        
+        @type local_results: C{list} of C{string}
+        @param local_results: the values that were available in this node
+        """
         ActionBase.__init__(self, caller, target, callback, config, action, num_results)
         if local_results:
             for result in local_results:
                 self.results[result] = 1
 
     def getNodesToProcess(self):
-        """Nodes are never added, always return the same thing."""
+        """Nodes are never added, always return the same sorted node list."""
         return self.sorted_nodes
     
     def generateArgs(self, node):
-        """Args include the number of values to request."""
+        """Arguments include the number of values to request."""
         if node.num_values > 0:
             # Request all desired results from each node, just to be sure.
             num_values = abs(self.desired_results) - len(self.results)
@@ -226,7 +297,7 @@ class GetValue(ActionBase):
             raise ValueError, "Don't try and get values from this node because it doesn't have any"
 
     def processResponse(self, dict):
-        """Save the returned values, calling the callback each time there are new ones."""
+        """Save the returned values, calling the L{callback} each time there are new ones."""
         if dict.has_key('values'):
             def x(y, z=self.results):
                 if not z.has_key(y):
@@ -240,21 +311,28 @@ class GetValue(ActionBase):
                 reactor.callLater(0, self.callback, self.target, v)
 
     def generateResult(self):
-        """Results have all been returned, now send the empty list to end it."""
+        """Results have all been returned, now send the empty list to end the action."""
         return (self.target, [])
         
 
 class StoreValue(ActionBase):
+    """Store a value in a list of nodes."""
+
     def __init__(self, caller, target, value, num_results, callback, config, action="storeValue"):
+        """Initialize the action with the value to store.
+        
+        @type value: C{string}
+        @param value: the value to store in the nodes
+        """
         ActionBase.__init__(self, caller, target, callback, config, action, num_results)
         self.value = value
         
     def getNodesToProcess(self):
-        """Nodes are never added, always return the same thing."""
+        """Nodes are never added, always return the same sorted list."""
         return self.sorted_nodes
 
     def generateArgs(self, node):
-        """Args include the value to request and the node's token."""
+        """Args include the value to store and the node's token."""
         if node.token:
             return (self.target, self.value, node.token), 1
         else:
