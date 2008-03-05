@@ -172,7 +172,7 @@ decode_func['9'] = decode_string
 decode_func['u'] = decode_unicode
 decode_func['t'] = decode_datetime
   
-def bdecode(x, sloppy = 0):
+def bdecode(x, sloppy = False):
     """Bdecode a string of data.
     
     @type x: C{string}

@@ -82,7 +82,7 @@ class ActionBase:
         self.callback = callback
         self.outstanding = 0
         self.outstanding_results = 0
-        self.finished = 0
+        self.finished = False
     
         def sort(a, b, num=self.num):
             """Sort nodes relative to the ID we are looking for."""
@@ -111,7 +111,7 @@ class ActionBase:
         if self.desired_results and ((len(self.results) >= abs(self.desired_results)) or
                                      (self.desired_results < 0 and
                                       len(self.answered) >= self.config['STORE_REDUNDANCY'])):
-            self.finished=1
+            self.finished = True
             result = self.generateResult()
             reactor.callLater(0, self.callback, *result)
 
@@ -156,7 +156,7 @@ class ActionBase:
 
         # If no requests are outstanding, then we are done
         if self.outstanding == 0:
-            self.finished = 1
+            self.finished = True
             result = self.generateResult()
             reactor.callLater(0, self.callback, *result)
 

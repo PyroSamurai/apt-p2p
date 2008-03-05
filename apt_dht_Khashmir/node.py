@@ -21,6 +21,8 @@ NULL_ID = 20 * '\0'
 class Node:
     """Encapsulate a node's contact info.
     
+    @ivar conn: the connection to the remote node (added externally)
+    @ivar table: the routing table (added externally)
     @type fails: C{int}
     @ivar fails: number of times this node has failed in a row
     @type lastSeen: C{datetime.datetime}

@@ -1,6 +1,13 @@
 
 """The main apt-dht modules.
 
+To run apt-dht, you probably want to do something like::
+
+  from apt_dht.apt_dht import AptDHT
+  myapp = AptDHT(myDHT)
+
+where myDHT is a DHT that implements interfaces.IDHT.
+
 Diagram of the interaction between the given modules::
   
   +---------------+    +-----------------------------------+    +-------------

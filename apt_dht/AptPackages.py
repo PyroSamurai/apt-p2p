@@ -203,7 +203,7 @@ class AptPackages:
         self.apt_config['Dir'] = self.cache_dir.path
         self.apt_config['Dir::State::status'] = self.cache_dir.preauthChild(self.apt_config['Dir::State']).preauthChild(self.apt_config['Dir::State::status']).path
         self.packages = PackageFileList(cache_dir)
-        self.loaded = 0
+        self.loaded = False
         self.loading = None
         self.unload_later = None
         
@@ -321,7 +321,7 @@ class AptPackages:
         else:
             self.srcrecords = None
 
-        self.loaded = 1
+        self.loaded = True
         return True
 
     def unload(self):
@@ -336,7 +336,7 @@ class AptPackages:
             del self.records
             del self.srcrecords
             del self.indexrecords
-            self.loaded = 0
+            self.loaded = False
 
     def cleanup(self):
         """Cleanup and close any loaded caches."""

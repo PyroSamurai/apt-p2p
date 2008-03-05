@@ -108,10 +108,7 @@ class DB:
         self.conn.commit()
         
     def getRoutingTable(self):
-        """Load routing table nodes from database.
-        
-        It's usually a good idea to call refreshTable(force=1) after loading the table.
-        """
+        """Load routing table nodes from database."""
         c = self.conn.cursor()
         c.execute("SELECT * FROM nodes")
         return c.fetchall()
