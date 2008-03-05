@@ -75,6 +75,13 @@ class MirrorManager:
         d.errback(MirrorError("Site Not Found"))
         return d
     
+    def cleanup(self):
+        for site in self.apt_caches.keys():
+            for baseDir in self.apt_caches[site].keys():
+                self.apt_caches[site][baseDir].cleanup()
+                del self.apt_caches[site][baseDir]
+            del self.apt_caches[site]
+    
 class TestMirrorManager(unittest.TestCase):
     """Unit tests for the mirror manager."""
     
@@ -180,5 +187,6 @@ class TestMirrorManager(unittest.TestCase):
         for p in self.pending_calls:
             if p.active():
                 p.cancel()
+        self.client.cleanup()
         self.client = None
         

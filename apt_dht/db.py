@@ -88,7 +88,7 @@ class DB:
             hashID = row['hashID']
         else:
             c = self.conn.cursor()
-            c.execute("INSERT OR REPLACE INTO hashes (hash, pieces, piecehash, refreshed) VALUES (?, ?, ?)",
+            c.execute("INSERT OR REPLACE INTO hashes (hash, pieces, piecehash, refreshed) VALUES (?, ?, ?, ?)",
                       (khash(hash), khash(pieces), khash(piecehash), datetime.now()))
             self.conn.commit()
             new_hash = True

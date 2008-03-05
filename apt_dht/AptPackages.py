@@ -162,7 +162,6 @@ class AptPackages:
         
     def __del__(self):
         self.cleanup()
-        self.packages.close()
         
     def addRelease(self, cache_path, file_path):
         """Dirty hack until python-apt supports apt-pkg/indexrecords.h
@@ -282,6 +281,8 @@ class AptPackages:
     def cleanup(self):
         """Cleanup and close any loaded caches."""
         self.unload()
+        if self.unload_later and self.unload_later.active():
+            self.unload_later.cancel()
         self.packages.close()
         
     def findHash(self, path):
