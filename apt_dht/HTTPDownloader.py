@@ -15,7 +15,7 @@ from twisted.web2 import version as web2_version
 from twisted.trial import unittest
 from zope.interface import implements
 
-from apt_dht_conf import version
+from apt_p2p_conf import version
 
 class Peer(ClientFactory):
     """A manager for all HTTP requests to a single peer.
@@ -158,7 +158,7 @@ class Peer(ClientFactory):
         """Get the common HTTP headers for all requests."""
         headers = http_headers.Headers()
         headers.setHeader('Host', self.host)
-        headers.setHeader('User-Agent', 'apt-dht/%s (twisted/%s twisted.web2/%s)' % 
+        headers.setHeader('User-Agent', 'apt-p2p/%s (twisted/%s twisted.web2/%s)' % 
                           (version.short(), twisted_version.short(), web2_version.short()))
         return headers
     

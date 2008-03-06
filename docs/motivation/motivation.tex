@@ -324,7 +324,7 @@ method as file downloads), should return the torrent string.
 
 A sample implementation has been created that functions as described
 in section \ref{opportunity}. This software, called
-\texttt{apt-dht}, interacts with the \texttt{apt} tool found in most
+\texttt{apt-p2p}, interacts with the \texttt{apt} tool found in most
 Debian-based Linux distributions. Apt uses SHA1 hashes to
 verify most downloaded files, including the large index files that
 contain the hashes of the individual packages. We chose this
@@ -362,7 +362,7 @@ smaller pieces of a large file using the Range request header.
 
 \begin{figure}
 \centering
-\includegraphics[width=\columnwidth]{apt_dht_simulation-size_CDF.eps}
+\includegraphics[width=\columnwidth]{apt_p2p_simulation-size_CDF.eps}
 \caption{The CDF of the size of packages in a Debian system, both
 for the actual size and adjusted size based on the popularity of
 the package.}

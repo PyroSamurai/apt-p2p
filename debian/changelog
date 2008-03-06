@@ -1,4 +1,4 @@
-apt-dht (0.0.1~2.gbpc98e84) UNRELEASED; urgency=low
+apt-p2p (0.0.1~2.gbpc98e84) UNRELEASED; urgency=low
 
   ** SNAPSHOT build @c98e840e6f67e2971ffc26a698d76c09a919db91 **
 
@@ -19,7 +19,7 @@ apt-dht (0.0.1~2.gbpc98e84) UNRELEASED; urgency=low
 
  -- Cameron Dale <camrdale@gmail.com>  Wed, 20 Feb 2008 11:35:14 -0800
 
-apt-dht (0.0.0) unstable; urgency=low
+apt-p2p (0.0.0) unstable; urgency=low
 
   * Initial release.
 

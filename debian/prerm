@@ -16,7 +16,7 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-PACKAGE="apt-dht"
+PACKAGE="apt-p2p"
 
 dpkg --listfiles $PACKAGE |
         awk '$0~/\.py$/ {print $0"c\n" $0"o"}' |

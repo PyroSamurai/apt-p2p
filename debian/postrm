@@ -1,5 +1,5 @@
 #! /bin/sh
-# postrm script for apt-dht
+# postrm script for apt-p2p
 #
 # see: dh_installdeb(1)
 
@@ -19,13 +19,13 @@ set -e
 
 if test "$1" = "purge"; then
   # Remove the logs
-  rm -rf /var/log/apt-dht.log*
+  rm -rf /var/log/apt-p2p.log*
   
-  echo Purging apt-dht cache directory
-  rm -rf /var/cache/apt-dht
+  echo Purging apt-p2p cache directory
+  rm -rf /var/cache/apt-p2p
 
-  if id aptdht >/dev/null; then
-    deluser aptdht
+  if id aptp2p >/dev/null; then
+    deluser aptp2p
   fi
 fi
 

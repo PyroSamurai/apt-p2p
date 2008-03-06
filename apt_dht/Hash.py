@@ -299,10 +299,10 @@ class TestHashObject(unittest.TestCase):
                 found = True
                 break
         self.failUnless(found == True)
-        h.set(hashType, 'c722df87e1acaa64b27aac4e174077afc3623540', '19')
+        h.set(hashType, '3bba0a5d97b7946ad2632002bf9caefe2cb18e00', '19')
         h.new()
-        h.update('apt-dht is the best')
-        self.failUnless(h.hexdigest() == 'c722df87e1acaa64b27aac4e174077afc3623540')
+        h.update('apt-p2p is the best')
+        self.failUnless(h.hexdigest() == '3bba0a5d97b7946ad2632002bf9caefe2cb18e00')
         self.failUnlessRaises(HashError, h.update, 'gfgf')
         self.failUnless(h.verify() == True)
         
@@ -315,10 +315,10 @@ class TestHashObject(unittest.TestCase):
                 found = True
                 break
         self.failUnless(found == True)
-        h.set(hashType, '2a586bcd1befc5082c872dcd96a01403', '19')
+        h.set(hashType, '6b5abdd30d7ed80edd229f9071d8c23c', '19')
         h.new()
-        h.update('apt-dht is the best')
-        self.failUnless(h.hexdigest() == '2a586bcd1befc5082c872dcd96a01403')
+        h.update('apt-p2p is the best')
+        self.failUnless(h.hexdigest() == '6b5abdd30d7ed80edd229f9071d8c23c')
         self.failUnlessRaises(HashError, h.update, 'gfgf')
         self.failUnless(h.verify() == True)
         
@@ -331,10 +331,10 @@ class TestHashObject(unittest.TestCase):
                 found = True
                 break
         self.failUnless(found == True)
-        h.set(hashType, '55b971f64d9772f733de03f23db39224f51a455cc5ad4c2db9d5740d2ab259a7', '19')
+        h.set(hashType, '47f2238a30a0340faa2bf01a9bdc42ba77b07b411cda1e24cd8d7b5c4b7d82a7', '19')
         h.new()
-        h.update('apt-dht is the best')
-        self.failUnless(h.hexdigest() == '55b971f64d9772f733de03f23db39224f51a455cc5ad4c2db9d5740d2ab259a7')
+        h.update('apt-p2p is the best')
+        self.failUnless(h.hexdigest() == '47f2238a30a0340faa2bf01a9bdc42ba77b07b411cda1e24cd8d7b5c4b7d82a7')
         self.failUnlessRaises(HashError, h.update, 'gfgf')
         self.failUnless(h.verify() == True)
 

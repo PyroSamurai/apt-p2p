@@ -22,7 +22,7 @@ class ConfigError(Exception):
     def __str__(self):
         return repr(self.message)
 
-version = versions.Version('apt-dht', 0, 0, 0)
+version = versions.Version('apt-p2p', 0, 0, 0)
 
 # Set the home parameter
 home = os.path.expandvars('${HOME}')
@@ -31,8 +31,8 @@ if home == '${HOME}' or not os.path.isdir(home):
     if not os.path.isdir(home):
         home = os.path.abspath(os.path.dirname(sys.argv[0]))
 
-DEFAULT_CONFIG_FILES=['/etc/apt-dht/apt-dht.conf',
-                      home + '/.apt-dht/apt-dht.conf']
+DEFAULT_CONFIG_FILES=['/etc/apt-p2p/apt-p2p.conf',
+                      home + '/.apt-p2p/apt-p2p.conf']
 
 DEFAULTS = {
 
@@ -40,7 +40,7 @@ DEFAULTS = {
     'PORT': '9977',
     
     # Directory to store the downloaded files in
-    'CACHE_DIR': home + '/.apt-dht/cache',
+    'CACHE_DIR': home + '/.apt-p2p/cache',
     
     # Other directories containing packages to share with others
     # WARNING: all files in these directories will be hashed and available
@@ -65,7 +65,7 @@ DEFAULTS = {
     # Which DHT implementation to use.
     # It must be possile to do "from <DHT>.DHT import DHT" to get a class that
     # implements the IDHT interface.
-    'DHT': 'apt_dht_Khashmir',
+    'DHT': 'apt_p2p_Khashmir',
 
     # Whether to only run the DHT (for providing only a bootstrap node)
     'DHT-ONLY': 'no',
@@ -120,7 +120,7 @@ DHT_DEFAULTS = {
     'SPEW': 'yes',
 }
 
-class AptDHTConfigParser(SafeConfigParser):
+class AptP2PConfigParser(SafeConfigParser):
     """Adds 'gettime' and 'getstringlist' to ConfigParser objects.
     
     @ivar time_multipliers: the 'gettime' suffixes and the multipliers needed
@@ -159,7 +159,7 @@ class AptDHTConfigParser(SafeConfigParser):
         return option.upper()
 
 # Initialize the default config parameters
-config = AptDHTConfigParser(DEFAULTS)
+config = AptP2PConfigParser(DEFAULTS)
 config.add_section(config.get('DEFAULT', 'DHT'))
 for k in DHT_DEFAULTS:
     config.set(config.get('DEFAULT', 'DHT'), k, DHT_DEFAULTS[k])

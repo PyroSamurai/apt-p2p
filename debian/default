@@ -1,7 +1,7 @@
-# apt-dht configuration
+# apt-p2p configuration
 
 ## Filename to store pid of process
-#pidfile=/var/run/apt-dht/apt-dht.pid 
+#pidfile=/var/run/apt-p2p/apt-p2p.pid 
 
 ## Log file
-#logfile=/var/log/apt-dht.log
+#logfile=/var/log/apt-p2p.log

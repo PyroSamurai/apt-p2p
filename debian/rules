@@ -8,7 +8,7 @@
 PYTHON_VERSION=$(shell /usr/bin/python -V 2>&1 | /usr/bin/perl -le 'print "$$1.$$2" if <> =~m/^Python\s+(\d+)\.(\d+)(\.\d+)*/')
 
 
-build-stamp: apt-dht.8 apt-dht.conf.5
+build-stamp: apt-p2p.8 apt-p2p.conf.5
 	dh_testdir
 	touch build-stamp
 
@@ -18,7 +18,7 @@ build-stamp: apt-dht.8 apt-dht.conf.5
 clean:
 	dh_testdir
 	dh_testroot
-	rm -rf build/ apt_dht/*.pyc apt_dht_Khashmir/*.pyc *.pyc
+	rm -rf build/ apt_p2p/*.pyc apt_p2p_Khashmir/*.pyc *.pyc
 	rm -f debian/*.[58]
 	rm -f build-stamp
 	dh_clean
@@ -31,14 +31,14 @@ install: build-stamp
 	dh_clean -k
 	dh_installdirs
 
-	./setup.py install --prefix=$(CURDIR)/debian/apt-dht/usr \
-		--install-lib=$(CURDIR)/debian/apt-dht/usr/share/python-support/apt-dht \
-		--install-scripts=$(CURDIR)/debian/apt-dht/usr/sbin
+	./setup.py install --prefix=$(CURDIR)/debian/apt-p2p/usr \
+		--install-lib=$(CURDIR)/debian/apt-p2p/usr/share/python-support/apt-p2p \
+		--install-scripts=$(CURDIR)/debian/apt-p2p/usr/sbin
 
 	# Remove the generated .pyc files
-	( cd debian/apt-dht/usr/share/python-support/apt-dht/apt_dht_Khashmir && \
+	( cd debian/apt-p2p/usr/share/python-support/apt-p2p/apt_p2p_Khashmir && \
 	  rm -f *.pyc  && \
-	  cd ../apt_dht && \
+	  cd ../apt_p2p && \
 	  rm -f *.pyc )
 
 # Build architecture-independent files here.
@@ -49,7 +49,7 @@ binary-indep: install
 	dh_installman
 	
 	# Remove the .py from the end of each of these
-	mv debian/apt-dht/usr/sbin/apt-dht.py debian/apt-dht/usr/sbin/apt-dht
+	mv debian/apt-p2p/usr/sbin/apt-p2p.py debian/apt-p2p/usr/sbin/apt-p2p
 
 	dh_installchangelogs 
 	dh_install

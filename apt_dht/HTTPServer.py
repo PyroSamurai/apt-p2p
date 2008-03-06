@@ -10,7 +10,7 @@ from twisted.web2 import server, http, resource, channel, stream
 from twisted.web2 import static, http_headers, responsecode
 
 from policies import ThrottlingFactory
-from apt_dht_Khashmir.bencode import bencode
+from apt_p2p_Khashmir.bencode import bencode
 
 class FileDownloader(static.File):
     """Modified to make it suitable for apt requests.
@@ -19,7 +19,7 @@ class FileDownloader(static.File):
     freshness before being sent. Requests for unfound and stale files are
     forwarded to the main program for downloading.
     
-    @type manager: L{apt_dht.AptDHT}
+    @type manager: L{apt_p2p.AptP2P}
     @ivar manager: the main program to query 
     """
     
@@ -134,7 +134,7 @@ class TopLevel(resource.Resource):
     @ivar directory: the directory to check for cached files
     @type db: L{db.DB}
     @ivar db: the database to use for looking up files and hashes
-    @type manager: L{apt_dht.AptDHT}
+    @type manager: L{apt_p2p.AptP2P}
     @ivar manager: the main program object to send requests to
     @type factory: L{twisted.web2.channel.HTTPFactory} or L{policies.ThrottlingFactory}
     @ivar factory: the factory to use to server HTTP requests
@@ -150,7 +150,7 @@ class TopLevel(resource.Resource):
         @param directory: the directory to check for cached files
         @type db: L{db.DB}
         @param db: the database to use for looking up files and hashes
-        @type manager: L{apt_dht.AptDHT}
+        @type manager: L{apt_p2p.AptP2P}
         @param manager: the main program object to send requests to
         """
         self.directory = directory

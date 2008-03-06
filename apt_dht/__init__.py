@@ -1,17 +1,17 @@
 
-"""The main apt-dht modules.
+"""The main apt-p2p modules.
 
-To run apt-dht, you probably want to do something like::
+To run apt-p2p, you probably want to do something like::
 
-  from apt_dht.apt_dht import AptDHT
-  myapp = AptDHT(myDHT)
+  from apt_p2p.apt_p2p import AptP2P
+  myapp = AptP2P(myDHT)
 
 where myDHT is a DHT that implements interfaces.IDHT.
 
 Diagram of the interaction between the given modules::
   
   +---------------+    +-----------------------------------+    +-------------
-  |     AptDHT    |    |               DHT                 |    |  Internet
+  |     AptP2P    |    |               DHT                 |    |  Internet
   |               |--->|join                            DHT|----|--\    
   |               |--->|loadConfig                         |    |  | Another
   |               |--->|getValue                           |    |  | Node

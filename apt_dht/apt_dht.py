@@ -18,7 +18,7 @@ from twisted.web2 import server, http, http_headers, static
 from twisted.python import log, failure
 from twisted.python.filepath import FilePath
 
-from apt_dht_conf import config
+from apt_p2p_conf import config
 from PeerManager import PeerManager
 from HTTPServer import TopLevel
 from MirrorManager import MirrorManager
@@ -32,7 +32,7 @@ TORRENT_PIECES = 70
 
 download_dir = 'cache'
 
-class AptDHT:
+class AptP2P:
     """The main code object that does all of the work.
     
     Contains all of the sub-components that do all the low-level work, and
@@ -65,11 +65,11 @@ class AptDHT:
         @type dht: L{interfaces.IDHT}
         @param dht: the DHT instance to use
         """
-        log.msg('Initializing the main apt_dht application')
+        log.msg('Initializing the main apt_p2p application')
         self.cache_dir = FilePath(config.get('DEFAULT', 'cache_dir'))
         if not self.cache_dir.child(download_dir).exists():
             self.cache_dir.child(download_dir).makedirs()
-        self.db = DB(self.cache_dir.child('apt-dht.db'))
+        self.db = DB(self.cache_dir.child('apt-p2p.db'))
         self.dht = dht
         self.dht.loadConfig(config, config.get('DEFAULT', 'DHT'))
         self.dht.join().addCallbacks(self.joinComplete, self.joinError)

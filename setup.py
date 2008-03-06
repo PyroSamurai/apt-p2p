@@ -12,14 +12,14 @@ c = changelog.Changelog(file=data, max_blocks=1)
 del data
 
 setup(
-    name = "apt-dht",
+    name = "apt-p2p",
     version = c.full_version,
     author = "Cameron Dale",
     author_email = "<camrdale@gmail.com>",
-    url = "http://www.camrdale.org/apt-dht.html",
+    url = "http://www.camrdale.org/apt-p2p.html",
     license = "GPL",
 
-    packages = ["apt_dht", "apt_dht_Khashmir"],
+    packages = ["apt_p2p", "apt_p2p_Khashmir"],
 
-    scripts = ['apt-dht.py']
+    scripts = ['apt-p2p.py']
     )

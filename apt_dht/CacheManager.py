@@ -200,7 +200,7 @@ class CacheManager:
     @ivar all_dirs: all the directories that have cached files in them
     @type db: L{db.DB}
     @ivar db: the database to use for tracking files and hashes
-    @type manager: L{apt_dht.AptDHT}
+    @type manager: L{apt_p2p.AptP2P}
     @ivar manager: the main program object to send requests to
     @type scanning: C{list} of L{twisted.python.filepath.FilePath}
     @ivar scanning: all the directories that are currectly being scanned or waiting to be scanned
@@ -216,7 +216,7 @@ class CacheManager:
         @type other_dirs: C{list} of L{twisted.python.filepath.FilePath}
         @param other_dirs: the other directories that have shared files in them
             (optional, defaults to only using the cache directory)
-        @type manager: L{apt_dht.AptDHT}
+        @type manager: L{apt_p2p.AptP2P}
         @param manager: the main program object to send requests to
             (optional, defaults to not calling back with cached files)
         """
@@ -430,7 +430,7 @@ class TestMirrorManager(unittest.TestCase):
     client = None
     
     def setUp(self):
-        self.client = CacheManager(FilePath('/tmp/.apt-dht'))
+        self.client = CacheManager(FilePath('/tmp/.apt-p2p'))
         
     def tearDown(self):
         for p in self.pending_calls:

@@ -10,8 +10,8 @@
   <!ENTITY dhsection   "<manvolnum>8</manvolnum>">
   <!ENTITY dhemail     "<email>camrdale@gmail.com</email>">
   <!ENTITY dhusername  "Cameron Dale">
-  <!ENTITY dhucpackage "<refentrytitle>apt-dht</refentrytitle>">
-  <!ENTITY dhpackage   "apt-dht">
+  <!ENTITY dhucpackage "<refentrytitle>apt-p2p</refentrytitle>">
+  <!ENTITY dhpackage   "apt-p2p">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -47,7 +47,7 @@
   <refsynopsisdiv>
     <para>Normally &dhpackage; is run from init.d using <command>twistd</command>, in which case no &dhpackage;
         options can be specified on the command-line, and all configuration variables are
-        read from the default config file locations of ${HOME}/.apt-dht.conf and /etc/apt-dht/apt-dht.conf.
+        read from the default config file locations of ${HOME}/.apt-p2p.conf and /etc/apt-p2p/apt-p2p.conf.
         The command is then:</para>
     <cmdsynopsis>
       <command>twistd</command> <arg choice="Req">-y /path/to/&dhpackage;</arg> <arg rep="Repeat"><option>twistd options</option></arg>
@@ -66,7 +66,7 @@
     <para>This manual page documents briefly the options available to the &dhpackage; command.</para>
 
     <para><command>&dhpackage;</command> is a helper for downloading Debian packages files with APT.
-        It will download any needed files from other Apt-DHT peers in a
+        It will download any needed files from other Apt-P2P peers in a
         bittorrent-like manner, and so reduce the strain on the Debian mirrors.</para>
 
     <para>In order for APT to send it's requests to &dhpackage;, the source.list entries must be modified to point to the
@@ -95,8 +95,8 @@
         <term><option>-c <replaceable>filename</replaceable>,</option> <option>--configfile=<replaceable>filename</replaceable></option></term>
          <listitem>
           <para>the <replaceable>filename</replaceable> to use for the configuration file, options found in this
-              file are combined with those in ${HOME}/.apt-dht/apt-dht.conf and /etc/apt-dht/apt-dht.conf
-              (see <citerefentry><refentrytitle>apt-dht.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry> for the format of the file)</para>
+              file are combined with those in ${HOME}/.apt-p2p/apt-p2p.conf and /etc/apt-p2p/apt-p2p.conf
+              (see <citerefentry><refentrytitle>apt-p2p.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry> for the format of the file)</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -104,7 +104,7 @@
          <listitem>
           <para>the <replaceable>filename</replaceable> to print log messages to,
               or `-' to log to standard output, if not specified then
-              /var/log/apt-dht.log will be used</para>
+              /var/log/apt-p2p.log will be used</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -126,7 +126,7 @@
     <title>SEE ALSO</title>
 
     <para>
-      <citerefentry><refentrytitle>apt-dht.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+      <citerefentry><refentrytitle>apt-p2p.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
       <citerefentry><refentrytitle>twistd</refentrytitle><manvolnum>1</manvolnum></citerefentry>
     </para>
   </refsect1>

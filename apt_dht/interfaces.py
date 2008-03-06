@@ -1,5 +1,5 @@
 
-"""Some interfaces that are used by the apt-dht classes."""
+"""Some interfaces that are used by the apt-p2p classes."""
 
 from zope.interface import Interface
 

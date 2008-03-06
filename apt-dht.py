@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-# Load apt-dht application
+# Load apt-p2p application
 #
-# There are two ways apt-dht can be started:
-#  1. twistd -y apt-dht
+# There are two ways apt-p2p can be started:
+#  1. twistd -y apt-p2p
 #     - twistd will load this file and execute the app
 #       in 'application' variable
 #  2. from command line
@@ -16,14 +16,14 @@ from twisted.internet import reactor
 from twisted.python import usage, log
 from twisted.web2 import channel
 
-from apt_dht.apt_dht_conf import config, version, DEFAULT_CONFIG_FILES
-from apt_dht.interfaces import IDHT
+from apt_p2p.apt_p2p_conf import config, version, DEFAULT_CONFIG_FILES
+from apt_p2p.interfaces import IDHT
 
 config_file = ''
 
 if __name__ == '__main__':
     # Parse command line parameters when started on command line
-    class AptDHTOptions(usage.Options):
+    class AptP2POptions(usage.Options):
         optFlags = [
             ['help', 'h', 'Print this help message'],
             ]
@@ -31,12 +31,12 @@ if __name__ == '__main__':
             ['config-file', 'c', '', "Configuration file"],
             ['log-file', 'l', '-', "File to log to, - for stdout"],
             ]
-        longdesc="apt-dht is a peer-to-peer downloader for apt users"
+        longdesc="apt-p2p is a peer-to-peer downloader for apt users"
         def opt_version(self):
-            print "apt-dht %s" % version.short()
+            print "apt-p2p %s" % version.short()
             sys.exit(0)
 
-    opts = AptDHTOptions()
+    opts = AptP2POptions()
     try:
         opts.parseOptions()
     except usage.UsageError, ue:
@@ -60,9 +60,9 @@ else:
     uid,gid = None,None
 
 log.msg('Starting application')
-application = service.Application("apt-dht", uid, gid)
+application = service.Application("apt-p2p", uid, gid)
 #print service.IProcess(application).processName
-#service.IProcess(application).processName = 'apt-dht'
+#service.IProcess(application).processName = 'apt-p2p'
 
 log.msg('Starting DHT')
 DHT = __import__(config.get('DEFAULT', 'DHT')+'.DHT', globals(), locals(), ['DHT'])
@@ -71,8 +71,8 @@ myDHT = DHT.DHT()
 
 if not config.getboolean('DEFAULT', 'DHT-only'):
     log.msg('Starting main application server')
-    from apt_dht.apt_dht import AptDHT
-    myapp = AptDHT(myDHT)
+    from apt_p2p.apt_p2p import AptP2P
+    myapp = AptP2P(myDHT)
     factory = myapp.getHTTPFactory()
     s = strports.service('tcp:'+config.get('DEFAULT', 'port'), factory)
     s.setServiceParent(application)

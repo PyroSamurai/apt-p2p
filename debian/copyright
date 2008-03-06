@@ -1,14 +1,14 @@
-This is the Debian GNU/Linux packaged version of apt-dht
+This is the Debian GNU/Linux packaged version of apt-p2p
 
 The package is written and maintained by Cameron Dale.
 
 The original source can always be found at:
-    http://ftp.debian.org/debian/pool/main/a/apt-dht/
+    http://ftp.debian.org/debian/pool/main/a/apt-p2p/
 
 The project homepage is at
-  http://www.camrdale.org/apt-dht.html
+  http://www.camrdale.org/apt-p2p.html
 
-Apt-dht is Copyright (C) 2008 Cameron Dale <camrdale@gmail.com>
+Apt-p2p is Copyright (C) 2008 Cameron Dale <camrdale@gmail.com>
 
 This software is released under the terms of the GNU General Public License,
 with the exceptions noted below.
@@ -16,7 +16,7 @@ with the exceptions noted below.
 On Debian systems, the complete text of the GNU General Public License
 can be found in /usr/share/common-licenses/GPL.
 
-The module apt_dht_Khashmir is a modified version of the original khashmir,
+The module apt_p2p_Khashmir is a modified version of the original khashmir,
 the source of which can be found at http://sourceforge.net/projects/khashmir.
 It is covered by the following copyright and permission notice:
 

@@ -1,6 +1,6 @@
 etc/default
 etc/init.d
-usr/share/doc/apt-dht
+usr/share/doc/apt-p2p
 usr/sbin
-var/cache/apt-dht
-var/lib/apt-dht
+var/cache/apt-p2p
+var/lib/apt-p2p

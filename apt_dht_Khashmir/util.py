@@ -1,7 +1,7 @@
 ## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
-"""Some utitlity functions for use in apt-dht's khashmir DHT."""
+"""Some utitlity functions for use in apt-p2p's khashmir DHT."""
 
 from twisted.trial import unittest
 

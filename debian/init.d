@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ### BEGIN INIT INFO
-# Provides:          apt-dht
+# Provides:          apt-p2p
 # Required-Start:    $network
 # Required-Stop:
 # Should-Start:      $named
@@ -9,25 +9,25 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: apt helper for peer-to-peer downloads of Debian packages
-# Description:       Apt-DHT is a helper for downloading Debian packages
+# Description:       Apt-p2p is a helper for downloading Debian packages
 #                    files with APT. It will download any needed files from
-#                    other Apt-DHT peers in a bittorrent-like manner, and so
+#                    other Apt-p2p peers in a bittorrent-like manner, and so
 #                    reduce the strain on the Debian mirrors.
 ### END INIT INFO
 
-# /etc/init.d/apt-dht: start and stop the apt-dht daemon
+# /etc/init.d/apt-p2p: start and stop the apt-p2p daemon
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
-rundir=/var/run/apt-dht/ 
-pidfile=$rundir/apt-dht.pid 
-logfile=/var/log/apt-dht.log
-application=/usr/sbin/apt-dht
+rundir=/var/run/apt-p2p/ 
+pidfile=$rundir/apt-p2p.pid 
+logfile=/var/log/apt-p2p.log
+application=/usr/sbin/apt-p2p
 twistd=/usr/bin/twistd
-user=aptdht
+user=aptp2p
 group=nogroup
 
-[ -r /etc/default/apt-dht ] && . /etc/default/apt-dht
+[ -r /etc/default/apt-p2p ] && . /etc/default/apt-p2p
 
 test -x $twistd || exit 0
 test -r $application || exit 0
@@ -50,7 +50,7 @@ alive()
 
 case "$1" in
     start)
-        echo -n "Starting apt-dht"
+        echo -n "Starting apt-p2p"
         [ ! -d $rundir ] && mkdir $rundir
         [ ! -f $logfile ] && touch $logfile
         chown $user $rundir $logfile 
@@ -64,7 +64,7 @@ case "$1" in
     ;;
 
     stop)
-        echo -n "Stopping apt-dht"
+        echo -n "Stopping apt-p2p"
         start-stop-daemon --stop --quiet --pidfile $pidfile
         #
         # Continue stopping until daemon finished or time over
@@ -100,7 +100,7 @@ case "$1" in
     ;;
 
     *)
-        echo "Usage: /etc/init.d/apt-dht {start|stop|restart|force-reload}" >&2
+        echo "Usage: /etc/init.d/apt-p2p {start|stop|restart|force-reload}" >&2
         exit 1
     ;;
 esac

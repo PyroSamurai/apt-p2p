@@ -310,12 +310,12 @@ class TestDB(unittest.TestCase):
     timeout = 5
     db = FilePath('/tmp/khashmir.db')
     hash = '\xca\xec\xb8\x0c\x00\xe7\x07\xf8~])\x8f\x9d\xe5_B\xff\x1a\xc4!'
-    directory = FilePath('/tmp/apt-dht/')
-    file = FilePath('/tmp/apt-dht/khashmir.test')
+    directory = FilePath('/tmp/apt-p2p/')
+    file = FilePath('/tmp/apt-p2p/khashmir.test')
     testfile = 'tmp/khashmir.test'
-    dirs = [FilePath('/tmp/apt-dht/top1'),
-            FilePath('/tmp/apt-dht/top2/sub1'),
-            FilePath('/tmp/apt-dht/top2/sub2/')]
+    dirs = [FilePath('/tmp/apt-p2p/top1'),
+            FilePath('/tmp/apt-p2p/top2/sub1'),
+            FilePath('/tmp/apt-p2p/top2/sub2/')]
 
     def setUp(self):
         if not self.file.parent().exists():

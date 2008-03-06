@@ -1,11 +1,11 @@
-Apt-DHT: a peer-to-peer proxy for apt downloads
+Apt-P2P: a peer-to-peer proxy for apt downloads
 
 ### Goal
 
-Similar to DebTorrent[1], Apt-DHT will act as a proxy between apt
+Similar to DebTorrent[1], Apt-P2P will act as a proxy between apt
 requests and a debian repository server, downloading any requested
 files from peers (if possible), but falling back to a direct HTTP
-download. Unlike DebTorrent, Apt-DHT will be simple, efficient, and
+download. Unlike DebTorrent, Apt-P2P will be simple, efficient, and
 fast.
 
 [1]: http://debtorrent.alioth.debian.org/
@@ -60,12 +60,12 @@ future.
 ### Installing
 
 There are detailed instructions on the web site[6] showing how to
-install the Apt-DHT program. If you have any trouble using the
+install the Apt-P2P program. If you have any trouble using the
 program, you can email me[7], or come and find me in the
 DebTorrent IRC channel (#debtorrent on OFTC[8]). If you think
 you've found a bug in the program, please let me know.
 
-[6]: http://www.camrdale.org/apt-dht.html
+[6]: http://www.camrdale.org/apt-p2p.html
 [7]: mailto:camrdale@gmail.com
 [8]: http://irc.oftc.net
 
@@ -80,7 +80,7 @@ libraries. Dealing with apt's repository files is handled by
 python-apt, the code for which is based on that of the
 apt-proxy[12] program.
 
-[9]: http://git.camrdale.org/?p=apt-dht.git;a=summary
+[9]: http://git.camrdale.org/?p=apt-p2p.git;a=summary
 [10]: http://khashmir.sourceforge.net/
 [11]: http://en.wikipedia.org/wiki/Kademlia
 [12]: http://apt-proxy.sourceforge.net/

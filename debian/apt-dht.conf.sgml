@@ -10,8 +10,8 @@
   <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
   <!ENTITY dhemail     "<email>camrdale@gmail.com</email>">
   <!ENTITY dhusername  "Cameron Dale">
-  <!ENTITY dhucpackage "<refentrytitle>apt-dht.conf</refentrytitle>">
-  <!ENTITY dhpackage   "apt-dht">
+  <!ENTITY dhucpackage "<refentrytitle>apt-p2p.conf</refentrytitle>">
+  <!ENTITY dhpackage   "apt-p2p">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -51,8 +51,8 @@
     <para>Configuration information for &dhpackage; is searched for in the following order, with later
       entries overriding former ones:
       <OrderedList>
-        <ListItem><para>/etc/apt-dht/apt-dht.conf</para></ListItem>
-        <ListItem><para>${HOME}/.apt-dht/apt-dht.conf</para></ListItem>
+        <ListItem><para>/etc/apt-p2p/apt-p2p.conf</para></ListItem>
+        <ListItem><para>${HOME}/.apt-p2p/apt-p2p.conf</para></ListItem>
         <ListItem><para>the location specified by the config-file parameter</para></ListItem>
       </OrderedList>
     </para>
@@ -97,7 +97,7 @@
 	    <term><option>CACHE_DIR = <replaceable>directory</replaceable></option></term>
 	     <listitem>
 	      <para>The <replaceable>directory</replaceable> to store the downloaded files in.
-	        (Default is ${HOME}/.apt-dht/cache.)</para>
+	        (Default is ${HOME}/.apt-p2p/cache.)</para>
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
@@ -137,7 +137,7 @@
 	      <para>The DHT implementation to use. It must be possile to do (in python)
 	        ``from &lt;DHT&gt;.DHT import DHT'' to get a class that implements the IDHT interface.
 	        There should also be a similarly named section below to specify the options for the DHT.
-	        (Default is `apt_dht_Khashmir')</para>
+	        (Default is `apt_p2p_Khashmir')</para>
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
@@ -150,7 +150,7 @@
 	</variablelist>
       </refsect2>
       <refsect2>
-	<title>apt_dht_Khashmir</title>
+	<title>apt_p2p_Khashmir</title>
 
         <variablelist>
 	  <varlistentry>
@@ -267,7 +267,7 @@
     <title>SEE ALSO</title>
 
     <para>
-      <citerefentry><refentrytitle>apt-dht</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+      <citerefentry><refentrytitle>apt-p2p</refentrytitle><manvolnum>8</manvolnum></citerefentry>
     </para>
   </refsect1>
   <refsect1>

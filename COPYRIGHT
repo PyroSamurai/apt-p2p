@@ -1,14 +1,14 @@
 Unless otherwise noted, all files are released under the GNU General
 Public License, exceptions are noted below.
 
-Apt-dht is Copyright (C) 2008 Cameron Dale <camrdale@gmail.com>
+Apt-p2p is Copyright (C) 2008 Cameron Dale <camrdale@gmail.com>
 
-Apt-dht is licensed under the terms of the GNU General Public License (GPL),
+Apt-p2p is licensed under the terms of the GNU General Public License (GPL),
 version 2 or later, as published by the Free Software Foundation.  See
 /usr/share/common-licenses/GPL, or <http://www.gnu.org/copyleft/gpl.txt>
 for the terms of the latest version of the GNU General Public License.
 
-The module apt_dht_Khashmir is a modified version of the original khashmir,
+The module apt_p2p_Khashmir is a modified version of the original khashmir,
 the source of which can be found at http://sourceforge.net/projects/khashmir.
 It is covered by the following copyright and permission notice:
 

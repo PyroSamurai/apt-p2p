@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-"""Automated tests of the apt-dht functionality.
+"""Automated tests of the apt-p2p functionality.
 
 This script runs several automatic tests of some of the functionality in
-the apt-dht program.
+the apt-p2p program.
 
 @type tests: C{dictionary}
 @var tests: all of the tests that can be run.
@@ -15,11 +15,11 @@ the apt-dht program.
     
     The bootstrap nodes keys are integers, which must be in the range 1-9.
     The values are the dictionary of string formatting values for creating
-    the apt-dht configuration file (see L{apt_dht_conf_template} below).
+    the apt-p2p configuration file (see L{apt_p2p_conf_template} below).
     
     The downloaders keys are also integers in the range 1-99. The values are
-    the dictionary of string formatting values for creating the apt-dht
-    configuration file (see L{apt_dht_conf_template} below).
+    the dictionary of string formatting values for creating the apt-p2p
+    configuration file (see L{apt_p2p_conf_template} below).
     
     The apt-get commands' list elements are tuples with 2 elements: the
     downloader to run the command on, and the list of command-line
@@ -312,7 +312,7 @@ Debug
 
 }
 """
-apt_dht_conf_template = """
+apt_p2p_conf_template = """
 [DEFAULT]
 
 # Port to listen on for all requests (TCP and UDP)
@@ -344,12 +344,12 @@ KEY_REFRESH = 57m
 # Which DHT implementation to use.
 # It must be possile to do "from <DHT>.DHT import DHT" to get a class that
 # implements the IDHT interface.
-DHT = apt_dht_Khashmir
+DHT = apt_p2p_Khashmir
 
 # Whether to only run the DHT (for providing only a bootstrap node)
 DHT-ONLY = %(DHT-ONLY)s
 
-[apt_dht_Khashmir]
+[apt_p2p_Khashmir]
 # bootstrap nodes to contact to join the DHT
 BOOTSTRAP = %(BOOTSTRAP)s
 
@@ -579,7 +579,7 @@ def start_downloader(bootstrap_addresses, num_down, options = {},
     @param num_down: the number of the downloader to use
     @type options: C{dictionary}
     @param options: the dictionary of string formatting values for creating
-        the apt-dht configuration file (see L{apt_dht_conf_template} above).
+        the apt-p2p configuration file (see L{apt_p2p_conf_template} above).
         (optional, defaults to only using the default arguments)
     @type mirror: C{string}
     @param mirror: the Debian mirror to use
@@ -635,20 +635,20 @@ def start_downloader(bootstrap_addresses, num_down, options = {},
 
     for k in options:
         defaults[k] = options[k]
-    f = open(join([downloader_dir, 'apt-dht.conf']), 'w')
-    f.write(apt_dht_conf_template % defaults)
+    f = open(join([downloader_dir, 'apt-p2p.conf']), 'w')
+    f.write(apt_p2p_conf_template % defaults)
     f.close()
     
-    pid = start('python', [join([sys.path[0], 'apt-dht.py']),
-                           '--config-file=' + join([downloader_dir, 'apt-dht.conf']),
-                           '--log-file=' + join([downloader_dir, 'apt-dht.log']),],
+    pid = start('python', [join([sys.path[0], 'apt-p2p.py']),
+                           '--config-file=' + join([downloader_dir, 'apt-p2p.conf']),
+                           '--log-file=' + join([downloader_dir, 'apt-p2p.log']),],
                 downloader_dir)
     return pid
 
 def start_bootstrap(bootstrap_addresses, num_boot, options = [], clean = True):
     """Initialize a new bootstrap node process.
 
-    The default arguments specified to the apt-dht invocation are
+    The default arguments specified to the apt-p2p invocation are
     the state file and port to use. Any additional arguments needed 
     should be specified by L{options}.
     
@@ -687,13 +687,13 @@ def start_bootstrap(bootstrap_addresses, num_boot, options = [], clean = True):
 
     for k in options:
         defaults[k] = options[k]
-    f = open(join([bootstrap_dir, 'apt-dht.conf']), 'w')
-    f.write(apt_dht_conf_template % defaults)
+    f = open(join([bootstrap_dir, 'apt-p2p.conf']), 'w')
+    f.write(apt_p2p_conf_template % defaults)
     f.close()
     
-    pid = start('python', [join([sys.path[0], 'apt-dht.py']),
-                           '--config-file=' + join([bootstrap_dir, 'apt-dht.conf']),
-                           '--log-file=' + join([bootstrap_dir, 'apt-dht.log']),],
+    pid = start('python', [join([sys.path[0], 'apt-p2p.py']),
+                           '--config-file=' + join([bootstrap_dir, 'apt-p2p.conf']),
+                           '--log-file=' + join([bootstrap_dir, 'apt-p2p.log']),],
                 bootstrap_dir)
 
     return pid

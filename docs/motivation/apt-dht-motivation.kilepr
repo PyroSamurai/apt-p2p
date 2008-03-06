@@ -5,7 +5,7 @@ kileprversion=1
 kileversion=1.9.2
 lastDocument=motivation.tex
 masterDocument=
-name=apt-dht-motivation
+name=apt-p2p-motivation
 pkg_extIsRegExp=false
 pkg_extensions=.cls .sty .dtx
 src_extIsRegExp=false
@@ -23,7 +23,7 @@ highlight=BibTeX
 line=225
 open=true
 
-[item:apt-dht-motivation.kilepr]
+[item:apt-p2p-motivation.kilepr]
 archive=true
 column=0
 encoding=

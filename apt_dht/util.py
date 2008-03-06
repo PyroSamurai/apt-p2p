@@ -1,5 +1,5 @@
 
-"""Some utitlity functions for use in the apt-dht program.
+"""Some utitlity functions for use in the apt-p2p program.
 
 @var isLocal: a compiled regular expression suitable for testing if an
     IP address is from a known local or private range

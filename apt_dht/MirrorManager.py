@@ -133,7 +133,7 @@ class TestMirrorManager(unittest.TestCase):
     client = None
     
     def setUp(self):
-        self.client = MirrorManager(FilePath('/tmp/.apt-dht'), 300)
+        self.client = MirrorManager(FilePath('/tmp/.apt-p2p'), 300)
         
     def test_extractPath(self):
         """Test extracting the site and base directory from various mirrors."""

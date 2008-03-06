@@ -13,11 +13,11 @@ from twisted.python import log
 from twisted.trial import unittest
 from zope.interface import implements
 
-from apt_dht.interfaces import IDHT
+from apt_p2p.interfaces import IDHT
 from khashmir import Khashmir
 from bencode import bencode, bdecode
 
-khashmir_dir = 'apt-dht-Khashmir'
+khashmir_dir = 'apt-p2p-Khashmir'
 
 class DHTError(Exception):
     """Represents errors that occur in the DHT."""
@@ -51,7 +51,7 @@ class DHT:
     @type retrieved: C{dictionary}
     @ivar retrieved: keys are the keys for which getValue requests are active,
         values are list of the values returned so far
-    @type config_parser: L{apt_dht.apt_dht_conf.AptDHTConfigParser}
+    @type config_parser: L{apt_p2p.apt_p2p_conf.AptP2PConfigParser}
     @ivar config_parser: the configuration info for the main program
     @type section: C{string}
     @ivar section: the section of the configuration info that applies to the DHT
@@ -76,7 +76,7 @@ class DHT:
         self.retrieved = {}
     
     def loadConfig(self, config, section):
-        """See L{apt_dht.interfaces.IDHT}."""
+        """See L{apt_p2p.interfaces.IDHT}."""
         self.config_parser = config
         self.section = section
         self.config = {}
@@ -104,7 +104,7 @@ class DHT:
                 self.config[k] = self.config_parser.get(section, k)
     
     def join(self):
-        """See L{apt_dht.interfaces.IDHT}."""
+        """See L{apt_p2p.interfaces.IDHT}."""
         if self.config is None:
             raise DHTError, "configuration not loaded"
         if self.joining:
@@ -172,7 +172,7 @@ class DHT:
         return self.foundAddrs
         
     def leave(self):
-        """See L{apt_dht.interfaces.IDHT}."""
+        """See L{apt_p2p.interfaces.IDHT}."""
         if self.config is None:
             raise DHTError, "configuration not loaded"
         
@@ -201,7 +201,7 @@ class DHT:
         return key
 
     def getValue(self, key):
-        """See L{apt_dht.interfaces.IDHT}."""
+        """See L{apt_p2p.interfaces.IDHT}."""
         if self.config is None:
             raise DHTError, "configuration not loaded"
         if not self.joined:
@@ -232,7 +232,7 @@ class DHT:
             del self.retrieving[key]
 
     def storeValue(self, key, value):
-        """See L{apt_dht.interfaces.IDHT}."""
+        """See L{apt_p2p.interfaces.IDHT}."""
         if self.config is None:
             raise DHTError, "configuration not loaded"
         if not self.joined:

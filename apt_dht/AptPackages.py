@@ -285,7 +285,7 @@ class AptPackages:
             file = self.packages[f]
             if f.split('/')[-1] == "Release":
                 self.addRelease(f, file)
-            fake_uri='http://apt-dht'+f
+            fake_uri='http://apt-p2p'+f
             fake_dirname = '/'.join(fake_uri.split('/')[:-1])
             if f.endswith('Sources'):
                 deb_src_added = True
@@ -434,7 +434,7 @@ class TestAptPackages(unittest.TestCase):
     
     def setUp(self):
         """Initializes the cache with files found in the traditional apt location."""
-        self.client = AptPackages(FilePath('/tmp/.apt-dht'), 300)
+        self.client = AptPackages(FilePath('/tmp/.apt-p2p'), 300)
     
         # Find the largest index files that are for 'main'
         self.packagesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Packages$" | tail -n 1').read().rstrip('\n')

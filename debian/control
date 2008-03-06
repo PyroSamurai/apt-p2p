@@ -1,31 +1,31 @@
-Source: apt-dht
+Source: apt-p2p
 Section: net
 Priority: optional
 Maintainer: Cameron Dale <camrdale@gmail.com>
-Homepage: http://www.camrdale.org/apt-dht.html
+Homepage: http://www.camrdale.org/apt-p2p.html
 Standards-Version: 3.7.3
 Build-Depends: debhelper (>= 5.0.37.2)
 Build-Depends-Indep: python-dev, python-support (>= 0.5.4), docbook-to-man, python-debian (>= 0.1.4)
-Vcs-Git: git://git.camrdale.org/git/apt-dht.git
-Vcs-Browser: http://git.camrdale.org/?p=apt-dht.git;a=summary
+Vcs-Git: git://git.camrdale.org/git/apt-p2p.git
+Vcs-Browser: http://git.camrdale.org/?p=apt-p2p.git;a=summary
 XS-Dm-Upload-Allowed: yes
 
-Package: apt-dht
+Package: apt-p2p
 Architecture: all
 Depends: ${python:Depends}, python-twisted-web2 (>= 0.2), adduser, python-debian (>= 0.1.4), python-apt (>= 0.6.20), python-pysqlite2 (>= 2.1)
-Provides: python-apt-dht, python-apt-dht-khashmir
+Provides: python-apt-p2p, python-apt-p2p-khashmir
 Description: apt helper for peer-to-peer downloads of Debian packages
- Apt-DHT is a helper for downloading Debian packages files with APT.
- It will download any needed files from other Apt-DHT peers in a
+ Apt-P2P is a helper for downloading Debian packages files with APT.
+ It will download any needed files from other Apt-P2P peers in a
  bittorrent-like manner, and so reduce the strain on the Debian mirrors.
  .
- The Apt-DHT daemon runs automatically on startup and listens for
+ The Apt-P2P daemon runs automatically on startup and listens for
  requests from APT for files, as well as maintaining membership in a
  Distributed Hash Table (DHT). For any files which have a hash
  available (most files), peers that have the file are looked for in the
  DHT. The file can then be downloaded from them, using the uploading
  bandwidth of other peers while reducing the demand on the Debian mirror
- network. However, if a package cannot be found on any peers, Apt-DHT
+ network. However, if a package cannot be found on any peers, Apt-P2P
  will fall back to downloading from a mirror to ensure all packages are
  downloaded. Once downloaded, the file is hash checked and added to the
  DHT so that other peers can download it without the mirror.

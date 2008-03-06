@@ -1,5 +1,5 @@
 
-"""The apt-dht implementation of the Khashmir DHT.
+"""The apt-p2p implementation of the Khashmir DHT.
 
 These modules implement a modified Khashmir, which is a kademlia-like
 Distributed Hash Table available at::
@@ -8,11 +8,11 @@ Distributed Hash Table available at::
 
 The protocol for the implementation's communication is described here::
 
-  http://www.camrdale.org/apt-dht/protocol.html
+  http://www.camrdale.org/apt-p2p/protocol.html
 
 To run the DHT you probably want to do something like::
 
-  from apt_dht_Khashmir import DHT
+  from apt_p2p_Khashmir import DHT
   myDHT = DHT.DHT()
   myDHT.loadConfig(config, section)
   myDHT.join()
