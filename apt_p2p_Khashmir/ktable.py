@@ -41,8 +41,8 @@ class KTable:
         """Find the index of the bucket that should hold the node's ID number."""
         return bisect_left(self.buckets, num)
     
-    def findNodes(self, id):
-        """Find the K nodes in our own local table closest to the ID.
+    def _nodeNum(self, id):
+        """Takes different types of input and converts to the node ID number.
 
         @type id: C{string} of C{int} or L{node.Node}
         @param id: the ID to find nodes that are close to
@@ -51,27 +51,27 @@ class KTable:
 
         # Get the ID number from the input
         if isinstance(id, str):
-            num = khash.intify(id)
+            return khash.intify(id)
         elif isinstance(id, Node):
-            num = id.num
+            return id.num
         elif isinstance(id, int) or isinstance(id, long):
-            num = id
+            return id
         else:
-            raise TypeError, "findNodes requires an int, string, or Node"
+            raise TypeError, "requires an int, string, or Node input"
             
-        nodes = []
+    def findNodes(self, id):
+        """Find the K nodes in our own local table closest to the ID.
+
+        @type id: C{string} of C{int} or L{node.Node}
+        @param id: the ID to find nodes that are close to
+        """
+
+        # Get the ID number from the input
+        num = self._nodeNum(id)
+            
+        # Get the K closest nodes from the appropriate bucket
         i = self._bucketIndexForInt(num)
-        
-        # If this node is already in our table then return it
-        try:
-            index = self.buckets[i].l.index(num)
-        except ValueError:
-            pass
-        else:
-            return [self.buckets[i].l[index]]
-            
-        # Don't have the node, get the K closest nodes from the appropriate bucket
-        nodes = nodes + self.buckets[i].l
+        nodes = list(self.buckets[i].l)
         
         # Make sure we have enough
         if len(nodes) < self.config['K']:
@@ -156,7 +156,7 @@ class KTable:
         if node.id == self.node.id: return
 
         # Get the bucket for this node
-        i = self. _bucketIndexForInt(node.num)
+        i = self._bucketIndexForInt(node.num)
 
         # Check to see if node is in the bucket already
         try:
@@ -212,11 +212,18 @@ class KTable:
         @rtype: C{datetime.datetime}
         @return: the old lastSeen time of the node, or None if it's not in the table
         """
+        # Get the bucket number
+        num = self._nodeNum(id)
+        i = self._bucketIndexForInt(num)
+
+        # Check to see if node is in the bucket
         try:
-            n = self.findNodes(id)[0]
-        except IndexError:
+            it = self.buckets[i].l.index(num)
+        except ValueError:
             return None
         else:
+            # The node is in the bucket
+            n = self.buckets[i].l[it]
             tstamp = n.lastSeen
             n.updateLastSeen()
             return tstamp
@@ -230,11 +237,18 @@ class KTable:
     
     def nodeFailed(self, node):
         """Mark a node as having failed once, and remove it if it has failed too much."""
+        # Get the bucket number
+        num = self._nodeNum(node)
+        i = self._bucketIndexForInt(num)
+
+        # Check to see if node is in the bucket
         try:
-            n = self.findNodes(node.num)[0]
-        except IndexError:
+            it = self.buckets[i].l.index(num)
+        except ValueError:
             return None
         else:
+            # The node is in the bucket
+            n = self.buckets[i].l[it]
             if n.msgFailed() >= self.config['MAX_FAILURES']:
                 self.invalidateNode(n)
                         
