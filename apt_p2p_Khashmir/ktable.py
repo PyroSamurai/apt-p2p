@@ -169,11 +169,10 @@ class KTable:
                 # It responded, so update it
                 node.updateLastSeen()
                 # move node to end of bucket
-                xnode = self.buckets[i].l[it]
                 del(self.buckets[i].l[it])
                 # note that we removed the original and replaced it with the new one
                 # utilizing this nodes new contact info
-                self.buckets[i].l.append(xnode)
+                self.buckets[i].l.append(node)
                 self.buckets[i].touch()
             return
         
