@@ -1,15 +1,3 @@
-Evaluate and fix some errors in the ktable khashmir module.
-
-The KTable implementation has some possible errors in it. insertNode
-does not remove the original and use the new node when updating a node
-already in the table, as claimed by the comments. justSeenNode doesn't
-verify that the found node is the node that was being looked for, nor
-does it move the node to the end of the list of nodes (since they are
-supposed to be sorted by their lastSeen time) or update the bucket's
-last touched time.nodeFailed also doesn't verify the found node is the
-right node.
-
-
 Consider what happens when we are the closest node.
 
 In some of the actions it is unclear what happens when we are one of the

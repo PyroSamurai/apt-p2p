@@ -226,6 +226,12 @@ class KTable:
             n = self.buckets[i].l[it]
             tstamp = n.lastSeen
             n.updateLastSeen()
+            
+            # Move the node to the end and touch the bucket
+            del(self.buckets[i].l[it])
+            self.buckets[i].l.append(n)
+            self.buckets[i].touch()
+            
             return tstamp
     
     def invalidateNode(self, n):
