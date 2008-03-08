@@ -61,6 +61,16 @@ first piece, in which case it is downloaded from a 3rd peer, with
 consensus revealing the misbehaving peer.
 
 
+Consider tracking security issues with packages.
+
+Since sharing information with others about what packages you have
+downloaded (and probably installed) is a possible security
+vulnerability, it would be advantageous to not share that information
+for packages that have known security vulnerabilities. This would
+require some way of obtaining a list of which packages (and versions)
+are vulnerable, which is not currently available.
+
+
 Consider adding peer characteristics to the DHT.
 
 Bad peers could be indicated in the DHT by adding a new value that is
