@@ -336,12 +336,10 @@ class AptP2P:
             value['t'] = {'t': ''.join(pieces)}
         elif len(pieces) <= TORRENT_PIECES:
             # Short enough to be stored in a separate key in the DHT
-            s = sha.new().update(''.join(pieces))
-            value['h'] = s.digest()
+            value['h'] = sha.new(''.join(pieces)).digest()
         else:
             # Too long, must be served up by our peer HTTP server
-            s = sha.new().update(''.join(pieces))
-            value['l'] = s.digest()
+            value['l'] = sha.new(''.join(pieces)).digest()
 
         storeDefer = self.dht.storeValue(key, value)
         storeDefer.addCallback(self.store_done, hash)
@@ -353,8 +351,7 @@ class AptP2P:
         pieces = hash.pieceDigests()
         if len(pieces) > DHT_PIECES and len(pieces) <= TORRENT_PIECES:
             # Add the piece data key and value to the DHT
-            s = sha.new().update(''.join(pieces))
-            key = s.digest()
+            key = sha.new(''.join(pieces)).digest()
             value = {'t': ''.join(pieces)}
 
             storeDefer = self.dht.storeValue(key, value)
@@ -364,6 +361,6 @@ class AptP2P:
 
     def store_torrent_done(self, result, key):
         """Adding the file to the DHT is complete, and so is the workflow."""
-        log.msg('Added torrent string %s to the DHT: %r' % (b2ahex(key), result))
+        log.msg('Added torrent string %s to the DHT: %r' % (b2a_hex(key), result))
         return result
     

@@ -114,8 +114,7 @@ class DB:
         # Hash the pieces to get the piecehash
         piecehash = ''
         if pieces:
-            s = sha.new().update(pieces)
-            piecehash = sha.digest()
+            piecehash = sha.new(pieces).digest()
             
         # Check the database for the hash
         c = self.conn.cursor()
