@@ -20,6 +20,7 @@ from ktable import KTable
 from knode import KNodeBase, KNodeRead, KNodeWrite, NULL_ID
 from khash import newID, newIDInRange
 from actions import FindNode, FindValue, GetValue, StoreValue
+from stats import StatsLogger
 import krpc
 
 class KhashmirBase(protocol.Factory):
@@ -75,9 +76,10 @@ class KhashmirBase(protocol.Factory):
         self.node = self._loadSelfNode('', self.port)
         self.table = KTable(self.node, config)
         self.token_secrets = [newID()]
+        self.stats = StatsLogger(self.table, self.store, self.config)
         
         # Start listening
-        self.udp = krpc.hostbroker(self, config)
+        self.udp = krpc.hostbroker(self, self.stats, config)
         self.udp.protocol = krpc.KRPC
         self.listenport = reactor.listenUDP(self.port, self.udp)
         
@@ -284,17 +286,6 @@ class KhashmirBase(protocol.Factory):
                 id = newIDInRange(bucket.min, bucket.max)
                 self.findNode(id, callback)
 
-    def stats(self):
-        """Collect some statistics about the DHT.
-        
-        @rtype: (C{int}, C{int})
-        @return: the number contacts in our routing table, and the estimated
-            number of nodes in the entire DHT
-        """
-        num_contacts = reduce(lambda a, b: a + len(b.l), self.table.buckets, 0)
-        num_nodes = self.config['K'] * (2**(len(self.table.buckets) - 1))
-        return (num_contacts, num_nodes)
-    
     def shutdown(self):
         """Closes the port and cancels pending later calls."""
         self.listenport.stopListening()
