@@ -14,10 +14,9 @@ import pwd,sys
 from twisted.application import service, internet, app, strports
 from twisted.internet import reactor
 from twisted.python import usage, log
-from twisted.web2 import channel
 
 from apt_p2p.apt_p2p_conf import config, version, DEFAULT_CONFIG_FILES
-from apt_p2p.interfaces import IDHT
+from apt_p2p.interfaces import IDHT, IDHTStatsFactory
 
 config_file = ''
 
@@ -67,16 +66,22 @@ application = service.Application("apt-p2p", uid, gid)
 log.msg('Starting DHT')
 DHT = __import__(config.get('DEFAULT', 'DHT')+'.DHT', globals(), locals(), ['DHT'])
 assert IDHT.implementedBy(DHT.DHT), "You must provide a DHT implementation that implements the IDHT interface."
-myDHT = DHT.DHT()
 
 if not config.getboolean('DEFAULT', 'DHT-only'):
     log.msg('Starting main application server')
     from apt_p2p.apt_p2p import AptP2P
-    myapp = AptP2P(myDHT)
+    myapp = AptP2P(DHT.DHT)
     factory = myapp.getHTTPFactory()
     s = strports.service('tcp:'+config.get('DEFAULT', 'port'), factory)
     s.setServiceParent(application)
 else:
+    myDHT = DHT.DHT()
+    if IDHTStatsFactory.implementedBy(DHT.DHT):
+        log.msg("Starting the DHT's HTTP stats displayer")
+        factory = myDHT.getStatsFactory()
+        s = strports.service('tcp:'+config.get('DEFAULT', 'port'), factory)
+        s.setServiceParent(application)
+        
     myDHT.loadConfig(config, config.get('DEFAULT', 'DHT'))
     myDHT.join()
 

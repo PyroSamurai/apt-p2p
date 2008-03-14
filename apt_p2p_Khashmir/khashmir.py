@@ -40,6 +40,8 @@ class KhashmirBase(protocol.Factory):
     @ivar table: the routing table
     @type token_secrets: C{list} of C{string}
     @ivar token_secrets: the current secrets to use to create tokens
+    @type stats: L{stats.StatsLogger}
+    @ivar stats: the statistics gatherer
     @type udp: L{krpc.hostbroker}
     @ivar udp: the factory for the KRPC protocol
     @type listenport: L{twisted.internet.interfaces.IListeningPort}
@@ -294,6 +296,10 @@ class KhashmirBase(protocol.Factory):
         except:
             pass
         self.store.close()
+    
+    def getStats(self):
+        """Gather the statistics for the DHT."""
+        return self.stats.gather()
 
     #{ Remote interface
     def krpc_ping(self, id, _krpc_sender):

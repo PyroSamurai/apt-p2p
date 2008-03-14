@@ -171,9 +171,9 @@ class StatsLogger:
         for stat in stats:
             val = getattr(self, stat['name'], None)
             if stat['name'] == 'uptime':
-                stat['value'] = dattime.now() - self.startTime
+                stat['value'] = datetime.now() - self.startTime
             elif stat['name'] == 'actions':
-                stat['value'] = deepcopy(actions)
+                stat['value'] = deepcopy(self.actions)
             elif val is not None:
                 stat['value'] = val
                 

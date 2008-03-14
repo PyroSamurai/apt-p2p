@@ -41,3 +41,26 @@ class IDHT(Interface):
 
         The length of the key may be adjusted for use with the DHT.
         """
+
+class IDHTStats(Interface):
+    """An abstract interface for DHTs that support statistics gathering."""
+    
+    def getStats(self):
+        """Gather and format all the statistics for the DHT.
+        
+        The statistics will be formatted for inclusion in the body
+        of an HTML page.
+        
+        @rtype: C{string}
+        @return: the formatted statistics, suitable for displaying to the user
+        """
+    
+class IDHTStatsFactory(Interface):
+    """An abstract interface for DHTs that support statistics displaying."""
+    
+    def getStatsFactory(self):
+        """Create and return an HTTP factory for displaying statistics.
+        
+        @rtype: 
+        """
+        

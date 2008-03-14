@@ -5,6 +5,7 @@
 """
 
 from datetime import datetime
+from StringIO import StringIO
 import os, sha, random
 
 from twisted.internet import defer, reactor
@@ -13,9 +14,15 @@ from twisted.python import log
 from twisted.trial import unittest
 from zope.interface import implements
 
-from apt_p2p.interfaces import IDHT
+from apt_p2p.interfaces import IDHT, IDHTStats, IDHTStatsFactory
 from khashmir import Khashmir
 from bencode import bencode, bdecode
+
+try:
+    from twisted.web2 import channel, server, resource, http, http_headers
+    _web2 = True
+except ImportError:
+    _web2 = False
 
 khashmir_dir = 'apt-p2p-Khashmir'
 
@@ -51,6 +58,8 @@ class DHT:
     @type retrieved: C{dictionary}
     @ivar retrieved: keys are the keys for which getValue requests are active,
         values are list of the values returned so far
+    @type factory: L{twisted.web2.channel.HTTPFactory}
+    @ivar factory: the factory to use to serve HTTP requests for statistics
     @type config_parser: L{apt_p2p.apt_p2p_conf.AptP2PConfigParser}
     @ivar config_parser: the configuration info for the main program
     @type section: C{string}
@@ -59,8 +68,11 @@ class DHT:
     @ivar khashmir: the khashmir DHT instance to use
     """
     
-    implements(IDHT)
-    
+    if _web2:
+        implements(IDHT, IDHTStats, IDHTStatsFactory)
+    else:
+        implements(IDHT, IDHTStats)
+        
     def __init__(self):
         """Initialize the DHT."""
         self.config = None
@@ -74,6 +86,7 @@ class DHT:
         self.storing = {}
         self.retrieving = {}
         self.retrieved = {}
+        self.factory = None
     
     def loadConfig(self, config, section):
         """See L{apt_p2p.interfaces.IDHT}."""
@@ -260,6 +273,57 @@ class DHT:
             del self.storing[key][bvalue]
             if len(self.storing[key].keys()) == 0:
                 del self.storing[key]
+    
+    def getStats(self):
+        """See L{apt_p2p.interfaces.IDHTStats}."""
+        stats = self.khashmir.getStats()
+        out = StringIO()
+        out.write('<h2>DHT Statistics</h2>\n')
+        old_group = None
+        for stat in stats:
+            if stat['group'] != old_group:
+                if old_group is not None:
+                    out.write('</table>\n')
+                out.write('\n<h3>' + stat['group'] + '</h3>\n')
+                out.write("<table border='1'>\n")
+                if stat['group'] != 'Actions':
+                    out.write("<tr><th>Statistic</th><th>Value</th></tr>\n")
+                else:
+                    out.write("<tr><th>Action</th><th>Sent</th><th>OK</th><th>Failed</th><th>Received</th><th>Error</th></tr>\n")
+                old_group = stat['group']
+            if stat['group'] != 'Actions':
+                out.write("<tr title='" + stat['tip'] + "'><td>" + stat['desc'] + '</td><td>' + str(stat['value']) + '</td></tr>\n')
+            else:
+                actions = stat['value'].keys()
+                actions.sort()
+                for action in actions:
+                    out.write("<tr><td>" + action + "</td>")
+                    for i in xrange(5):
+                        out.write("<td>" + str(stat['value'][action][i]) + "</td>")
+                    out.write('</tr>\n')
+                    
+        return out.getvalue()
+
+    def getStatsFactory(self):
+        """See L{apt_p2p.interfaces.IDHTStatsFactory}."""
+        assert _web2, "NOT IMPLEMENTED: twisted.web2 must be installed to use the stats factory."
+        if self.factory is None:
+            # Create a simple HTTP factory for stats
+            class StatsResource(resource.Resource):
+                def __init__(self, manager):
+                    self.manager = manager
+                def render(self, ctx):
+                    return http.Response(
+                        200,
+                        {'content-type': http_headers.MimeType('text', 'html')},
+                        '<html><body>\n\n' + self.manager.getStats() + '\n</body></html>\n')
+                def locateChild(self, request, segments):
+                    log.msg('Got HTTP stats request from %s' % (request.remoteAddr, ))
+                    return self, ()
+            
+            self.factory = channel.HTTPFactory(server.Site(StatsResource(self)))
+        return self.factory
+        
 
 class TestSimpleDHT(unittest.TestCase):
     """Simple 2-node unit tests for the DHT."""

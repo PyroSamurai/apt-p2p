@@ -18,6 +18,7 @@ from twisted.web2 import server, http, http_headers, static
 from twisted.python import log, failure
 from twisted.python.filepath import FilePath
 
+from interfaces import IDHT, IDHTStats
 from apt_p2p_conf import config
 from PeerManager import PeerManager
 from HTTPServer import TopLevel
@@ -38,12 +39,14 @@ class AptP2P:
     Contains all of the sub-components that do all the low-level work, and
     coordinates communication between them.
     
+    @type dhtClass: L{interfaces.IDHT}
+    @ivar dhtClass: the DHT class to use
     @type cache_dir: L{twisted.python.filepath.FilePath}
     @ivar cache_dir: the directory to use for storing all files
     @type db: L{db.DB}
     @ivar db: the database to use for tracking files and hashes
     @type dht: L{interfaces.IDHT}
-    @ivar dht: the DHT instance to use
+    @ivar dht: the DHT instance
     @type http_server: L{HTTPServer.TopLevel}
     @ivar http_server: the web server that will handle all requests from apt
         and from other peers
@@ -59,18 +62,19 @@ class AptP2P:
         download information (IP address and port)
     """
     
-    def __init__(self, dht):
+    def __init__(self, dhtClass):
         """Initialize all the sub-components.
         
         @type dht: L{interfaces.IDHT}
-        @param dht: the DHT instance to use
+        @param dht: the DHT class to use
         """
         log.msg('Initializing the main apt_p2p application')
+        self.dhtClass = dhtClass
         self.cache_dir = FilePath(config.get('DEFAULT', 'cache_dir'))
         if not self.cache_dir.child(download_dir).exists():
             self.cache_dir.child(download_dir).makedirs()
         self.db = DB(self.cache_dir.child('apt-p2p.db'))
-        self.dht = dht
+        self.dht = dhtClass()
         self.dht.loadConfig(config, config.get('DEFAULT', 'DHT'))
         self.dht.join().addCallbacks(self.joinComplete, self.joinError)
         self.http_server = TopLevel(self.cache_dir.child(download_dir), self.db, self)
@@ -124,6 +128,18 @@ class AptP2P:
             storeDefer.addBoth(self._refreshFiles, hashes)
         else:
             reactor.callLater(60, self.refreshFiles)
+    
+    def getStats(self):
+        """Retrieve and format the statistics for the program.
+        
+        @rtype: C{string}
+        @return: the formatted HTML page containing the statistics
+        """
+        out = '<html><body>\n\n'
+        if IDHTStats.implementedBy(self.dhtClass):
+            out += self.dht.getStats()
+        out += '\n</body></html>\n'
+        return out
 
     #{ Main workflow
     def check_freshness(self, req, url, modtime, resp):

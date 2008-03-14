@@ -137,8 +137,7 @@ class TopLevel(resource.Resource):
     @type manager: L{apt_p2p.AptP2P}
     @ivar manager: the main program object to send requests to
     @type factory: L{twisted.web2.channel.HTTPFactory} or L{policies.ThrottlingFactory}
-    @ivar factory: the factory to use to server HTTP requests
-    
+    @ivar factory: the factory to use to serve HTTP requests
     """
     
     addSlash = True
@@ -172,9 +171,7 @@ class TopLevel(resource.Resource):
         return http.Response(
             200,
             {'content-type': http_headers.MimeType('text', 'html')},
-            """<html><body>
-            <h2>Statistics</h2>
-            <p>TODO: eventually some stats will be shown here.</body></html>""")
+            self.manager.getStats())
 
     def locateChild(self, request, segments):
         """Process the incoming request."""
