@@ -301,7 +301,7 @@ class KhashmirBase(protocol.Factory):
     
     def getStats(self):
         """Gather the statistics for the DHT."""
-        return self.stats.gather()
+        return self.stats.formatHTML()
 
     #{ Remote interface
     def krpc_ping(self, id, _krpc_sender):

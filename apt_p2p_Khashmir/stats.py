@@ -2,12 +2,11 @@
 """Store statistics for the Khashmir DHT."""
 
 from datetime import datetime, timedelta
-from copy import deepcopy
+from StringIO import StringIO
 
 class StatsLogger:
     """Store the statistics for the Khashmir DHT.
     
-    @ivar _StatsTemplate: a template for returning all the statistics
     @type config: C{dictionary}
     @ivar config: the configuration parameters for the DHT
     @ivar startTime: the time the program was started
@@ -32,86 +31,6 @@ class StatsLogger:
         generated an error
     """
     
-    _StatsTemplate = [{'name': 'uptime',
-                       'group': 'General',
-                       'desc': 'Up time',
-                       'tip': 'The elapsed time since the program started',
-                       'value': None,
-                       },
-                      {'name': 'reachable',
-                       'group': 'General',
-                       'desc': 'Reachable',
-                       'tip': 'Whether other nodes can contact us (not NATted or firewalled)',
-                       'value': None,
-                       },
-                      {'name': 'nodes',
-                       'group': 'Routing Table',
-                       'desc': 'Number of nodes',
-                       'tip': 'The number of nodes we are connected to',
-                       'value': None,
-                       },
-                      {'name': 'users',
-                       'group': 'Routing Table',
-                       'desc': 'Total number of users',
-                       'tip': 'The estimated total number of users in the DHT',
-                       'value': None,
-                       },
-                      {'name': 'keys',
-                       'group': 'Database',
-                       'desc': 'Keys',
-                       'tip': 'The number of distinct keys in the database',
-                       'value': None,
-                       },
-                      {'name': 'values',
-                       'group': 'Database',
-                       'desc': 'Values',
-                       'tip': 'The total number of values in the database',
-                       'value': None,
-                       },
-                      {'name': 'downPackets',
-                       'group': 'Transport',
-                       'desc': 'Downloaded packets',
-                       'tip': 'The number of received packets',
-                       'value': None,
-                       },
-                      {'name': 'upPackets',
-                       'group': 'Transport',
-                       'desc': 'Uploaded packets',
-                       'tip': 'The number of sent packets',
-                       'value': None,
-                       },
-                      {'name': 'downBytes',
-                       'group': 'Transport',
-                       'desc': 'Downloaded bytes',
-                       'tip': 'The number of bytes received by the DHT',
-                       'value': None,
-                       },
-                      {'name': 'upBytes',
-                       'group': 'Transport',
-                       'desc': 'Uploaded bytes',
-                       'tip': 'The number of bytes sent by the DHT',
-                       'value': None,
-                       },
-                      {'name': 'downSpeed',
-                       'group': 'Transport',
-                       'desc': 'Downloaded bytes/second',
-                       'tip': 'The number of bytes received by the DHT per second',
-                       'value': None,
-                       },
-                      {'name': 'upSpeed',
-                       'group': 'Transport',
-                       'desc': 'Uploaded bytes/second',
-                       'tip': 'The number of bytes sent by the DHT per second',
-                       'value': None,
-                       },
-                      {'name': 'actions',
-                       'group': 'Actions',
-                       'desc': 'Actions',
-                       'tip': 'The number of requests for each action',
-                       'value': None,
-                       },
-                      ]
-    
     def __init__(self, table, store, config):
         """Initialize the statistics.
         
@@ -124,7 +43,7 @@ class StatsLogger:
         """
         # General
         self.config = config
-        self.startTime = datetime.now()
+        self.startTime = datetime.now().replace(microsecond=0)
         self.reachable = False
         
         # Routing Table
@@ -170,32 +89,72 @@ class StatsLogger:
             self.keys, self.values = self.store.keyStats()
         return (self.keys, self.values)
     
-    def gather(self):
-        """Gather all the statistics for the DHT.
+    def formatHTML(self):
+        """Gather statistics for the DHT and format them for display in a browser.
         
-        @rtype: C{list} of C{dictionary}
-        @return: each dictionary has keys describing the statistic:
-            name, group, desc, tip, and value
+        @rtype: C{string}
+        @return: the stats, formatted for display in the body of an HTML page
         """
         self.tableStats()
         self.dbStats()
-        stats = self._StatsTemplate[:]
-        elapsed = datetime.now() - self.startTime
-        for stat in stats:
-            val = getattr(self, stat['name'], None)
-            if stat['name'] == 'uptime':
-                stat['value'] = elapsed
-            elif stat['name'] == 'actions':
-                stat['value'] = deepcopy(self.actions)
-            elif stat['name'] == 'downSpeed':
-                stat['value'] = self.downBytes / (elapsed.days*86400.0 + elapsed.seconds + elapsed.microseconds/1000000.0)
-            elif stat['name'] == 'upSpeed':
-                stat['value'] = self.upBytes / (elapsed.days*86400.0 + elapsed.seconds + elapsed.microseconds/1000000.0)
-            elif val is not None:
-                stat['value'] = val
-                
-        return stats
-    
+        elapsed = datetime.now().replace(microsecond=0) - self.startTime
+        out = StringIO()
+        out.write('<h2>DHT Statistics</h2>\n')
+        out.write("<table border='0' cellspacing='20px'>\n<tr>\n")
+        out.write('<td>\n')
+        out.write("<table border='1' cellpadding='4px'>\n")
+
+        # General
+        out.write("<tr><th><h3>General</h3></th><th>Value</th></tr>\n")
+        out.write("<tr title='Elapsed time since the DHT was started'><td>Up time</td><td>" + str(elapsed) + '</td></tr>\n')
+        out.write("<tr title='Whether this node is reachable by other nodes'><td>Reachable</td><td>" + str(self.reachable) + '</td></tr>\n')
+        out.write("</table>\n")
+        out.write('</td><td>\n')
+        out.write("<table border='1' cellpadding='4px'>\n")
+        
+        # Routing
+        out.write("<tr><th><h3>Routing Table</h3></th><th>Value</th></tr>\n")
+        out.write("<tr title='The number of connected nodes'><td>Number of nodes</td><td>" + str(self.nodes) + '</td></tr>\n')
+        out.write("<tr title='The estimated number of connected users in the entire DHT'><td>Total number of users</td><td>" + str(self.users) + '</td></tr>\n')
+        out.write("</table>\n")
+        out.write('</td><td>\n')
+        out.write("<table border='1' cellpadding='4px'>\n")
+        
+        # Database
+        out.write("<tr><th><h3>Database</h3></th><th>Value</th></tr>\n")
+        out.write("<tr title='Number of distinct keys in the database'><td>Keys</td><td>" + str(self.keys) + '</td></tr>\n')
+        out.write("<tr title='Total number of values stored locally'><td>Values</td><td>" + str(self.values) + '</td></tr>\n')
+        out.write("</table>\n")
+        out.write("</td></tr><tr><td colspan='3'>\n")
+        out.write("<table border='1' cellpadding='4px'>\n")
+        out.write("<tr><th><h3>Transport</h3></th><th>Packets</th><th>Bytes</th><th>Bytes/second</th></tr>\n")
+        out.write("<tr title='Stats for packets received from the DHT'><td>Downloaded</td>")
+        out.write('<td>' + str(self.downPackets) + '</td>')
+        out.write('<td>' + str(self.downBytes) + '</td>')
+        out.write('<td>%0.2f</td></tr>\n' % (self.downBytes / (elapsed.days*86400.0 + elapsed.seconds), ))
+        out.write("<tr title='Stats for packets sent to the DHT'><td>Uploaded</td>")
+        out.write('<td>' + str(self.upPackets) + '</td>')
+        out.write('<td>' + str(self.upBytes) + '</td>')
+        out.write('<td>%0.2f</td></tr>\n' % (self.upBytes / (elapsed.days*86400.0 + elapsed.seconds), ))
+        out.write("</table>\n")
+        out.write("</td></tr><tr><td colspan='3'>\n")
+        out.write("<table border='1' cellpadding='4px'>\n")
+        
+        # Actions
+        out.write("<tr><th><h3>Actions</h3></th><th>Started</th><th>Sent</th><th>OK</th><th>Failed</th><th>Received</th><th>Error</th></tr>\n")
+        actions = self.actions.keys()
+        actions.sort()
+        for action in actions:
+            out.write("<tr><td>" + action + "</td>")
+            for i in xrange(6):
+                out.write("<td>" + str(self.actions[action][i]) + "</td>")
+            out.write('</tr>\n')
+        out.write("</table>\n")
+        out.write("</td></tr>\n")
+        out.write("</table>\n")
+        
+        return out.getvalue()
+
     #{ Called by the action
     def startedAction(self, action):
         """Record that an action was started.
