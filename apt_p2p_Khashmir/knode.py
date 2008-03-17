@@ -43,7 +43,7 @@ class KNodeBase(Node):
         df.addCallback(self.checkSender)
         return df
     
-    def findNode(self, id, target):
+    def find_node(self, id, target):
         """Request the nearest nodes to the target that the node knows about."""
         df = self.conn.sendRequest('find_node', {"target" : target, "id": id})
         df.addErrback(self.errBack)
@@ -53,14 +53,14 @@ class KNodeBase(Node):
 class KNodeRead(KNodeBase):
     """More advanced node that can also find and send values."""
     
-    def findValue(self, id, key):
+    def find_value(self, id, key):
         """Request the nearest nodes to the key that the node knows about."""
         df =  self.conn.sendRequest('find_value', {"key" : key, "id" : id})
         df.addErrback(self.errBack)
         df.addCallback(self.checkSender)
         return df
 
-    def getValue(self, id, key, num):
+    def get_value(self, id, key, num):
         """Request the values that the node has for the key."""
         df = self.conn.sendRequest('get_value', {"key" : key, "num": num, "id" : id})
         df.addErrback(self.errBack)
@@ -70,7 +70,7 @@ class KNodeRead(KNodeBase):
 class KNodeWrite(KNodeRead):
     """Most advanced node that can also store values."""
     
-    def storeValue(self, id, key, value, token):
+    def store_value(self, id, key, value, token):
         """Store a value in the node."""
         df = self.conn.sendRequest('store_value', {"key" : key, "value" : value, "token" : token, "id": id})
         df.addErrback(self.errBack)

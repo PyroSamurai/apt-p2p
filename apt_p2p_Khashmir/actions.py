@@ -236,7 +236,7 @@ class ActionBase:
 class FindNode(ActionBase):
     """Find the closest nodes to the key."""
 
-    def __init__(self, caller, target, callback, config, stats, action="findNode"):
+    def __init__(self, caller, target, callback, config, stats, action="find_node"):
         ActionBase.__init__(self, caller, target, callback, config, stats, action)
 
     def processResponse(self, dict):
@@ -254,7 +254,7 @@ class FindNode(ActionBase):
 class FindValue(ActionBase):
     """Find the closest nodes to the key and check for values."""
 
-    def __init__(self, caller, target, callback, config, stats, action="findValue"):
+    def __init__(self, caller, target, callback, config, stats, action="find_value"):
         ActionBase.__init__(self, caller, target, callback, config, stats, action)
 
     def processResponse(self, dict):
@@ -272,7 +272,7 @@ class FindValue(ActionBase):
 class GetValue(ActionBase):
     """Retrieve values from a list of nodes."""
     
-    def __init__(self, caller, target, local_results, num_results, callback, config, stats, action="getValue"):
+    def __init__(self, caller, target, local_results, num_results, callback, config, stats, action="get_value"):
         """Initialize the action with the locally available results.
         
         @type local_results: C{list} of C{string}
@@ -321,7 +321,7 @@ class GetValue(ActionBase):
 class StoreValue(ActionBase):
     """Store a value in a list of nodes."""
 
-    def __init__(self, caller, target, value, num_results, callback, config, stats, action="storeValue"):
+    def __init__(self, caller, target, value, num_results, callback, config, stats, action="store_value"):
         """Initialize the action with the value to store.
         
         @type value: C{string}
