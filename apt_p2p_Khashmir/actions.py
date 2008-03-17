@@ -49,7 +49,7 @@ class ActionBase:
     @ivar sort: used to sort nodes by their proximity to the target
     """
     
-    def __init__(self, caller, target, callback, config, action, num_results = None):
+    def __init__(self, caller, target, callback, config, stats, action, num_results = None):
         """Initialize the action.
         
         @type caller: L{khashmir.Khashmir}
@@ -60,6 +60,8 @@ class ActionBase:
         @param callback: the method to call with the results
         @type config: C{dictionary}
         @param config: the configuration variables for the DHT
+        @type stats: L{stats.StatsLogger}
+        @param stats: the statistics gatherer
         @type action: C{string}
         @param action: the name of the action to call on remote nodes
         @type num_results: C{int}
@@ -72,6 +74,7 @@ class ActionBase:
         self.target = target
         self.config = config
         self.action = action
+        stats.startedAction(action)
         self.num = intify(target)
         self.queried = {}
         self.answered = {}
@@ -233,8 +236,8 @@ class ActionBase:
 class FindNode(ActionBase):
     """Find the closest nodes to the key."""
 
-    def __init__(self, caller, target, callback, config, action="findNode"):
-        ActionBase.__init__(self, caller, target, callback, config, action)
+    def __init__(self, caller, target, callback, config, stats, action="findNode"):
+        ActionBase.__init__(self, caller, target, callback, config, stats, action)
 
     def processResponse(self, dict):
         """Save the token received from each node."""
@@ -251,8 +254,8 @@ class FindNode(ActionBase):
 class FindValue(ActionBase):
     """Find the closest nodes to the key and check for values."""
 
-    def __init__(self, caller, target, callback, config, action="findValue"):
-        ActionBase.__init__(self, caller, target, callback, config, action)
+    def __init__(self, caller, target, callback, config, stats, action="findValue"):
+        ActionBase.__init__(self, caller, target, callback, config, stats, action)
 
     def processResponse(self, dict):
         """Save the number of values each node has."""
@@ -269,13 +272,13 @@ class FindValue(ActionBase):
 class GetValue(ActionBase):
     """Retrieve values from a list of nodes."""
     
-    def __init__(self, caller, target, local_results, num_results, callback, config, action="getValue"):
+    def __init__(self, caller, target, local_results, num_results, callback, config, stats, action="getValue"):
         """Initialize the action with the locally available results.
         
         @type local_results: C{list} of C{string}
         @param local_results: the values that were available in this node
         """
-        ActionBase.__init__(self, caller, target, callback, config, action, num_results)
+        ActionBase.__init__(self, caller, target, callback, config, stats, action, num_results)
         if local_results:
             for result in local_results:
                 self.results[result] = 1
@@ -318,13 +321,13 @@ class GetValue(ActionBase):
 class StoreValue(ActionBase):
     """Store a value in a list of nodes."""
 
-    def __init__(self, caller, target, value, num_results, callback, config, action="storeValue"):
+    def __init__(self, caller, target, value, num_results, callback, config, stats, action="storeValue"):
         """Initialize the action with the value to store.
         
         @type value: C{string}
         @param value: the value to store in the nodes
         """
-        ActionBase.__init__(self, caller, target, callback, config, action, num_results)
+        ActionBase.__init__(self, caller, target, callback, config, stats, action, num_results)
         self.value = value
         
     def getNodesToProcess(self):

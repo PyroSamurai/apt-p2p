@@ -289,7 +289,7 @@ class DHT:
                 if stat['group'] != 'Actions':
                     out.write("<tr><th>Statistic</th><th>Value</th></tr>\n")
                 else:
-                    out.write("<tr><th>Action</th><th>Sent</th><th>OK</th><th>Failed</th><th>Received</th><th>Error</th></tr>\n")
+                    out.write("<tr><th>Action</th><th>Started</th><th>Sent</th><th>OK</th><th>Failed</th><th>Received</th><th>Error</th></tr>\n")
                 old_group = stat['group']
             if stat['group'] != 'Actions':
                 out.write("<tr title='" + stat['tip'] + "'><td>" + stat['desc'] + '</td><td>' + str(stat['value']) + '</td></tr>\n')
@@ -298,7 +298,7 @@ class DHT:
                 actions.sort()
                 for action in actions:
                     out.write("<tr><td>" + action + "</td>")
-                    for i in xrange(5):
+                    for i in xrange(6):
                         out.write("<td>" + str(stat['value'][action][i]) + "</td>")
                     out.write('</tr>\n')
                     

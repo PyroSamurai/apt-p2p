@@ -185,7 +185,7 @@ class KhashmirBase(protocol.Factory):
             d.callback(nodes)
         else:
             # Start the finding nodes action
-            state = FindNode(self, id, d.callback, self.config)
+            state = FindNode(self, id, d.callback, self.config, self.stats)
             reactor.callLater(0, state.goWithNodes, nodes)
     
     def insertNode(self, node, contacted = True):
@@ -219,6 +219,7 @@ class KhashmirBase(protocol.Factory):
                     self.table.justSeenNode(old.id)
             
             # Bucket is full, check to see if old node is still available
+            self.stats.startedAction('ping')
             df = old.ping(self.node.id)
             df.addCallbacks(_notStaleNodeHandler, _staleNodeHandler)
 
@@ -251,6 +252,7 @@ class KhashmirBase(protocol.Factory):
             elif callback:
                 callback(None)
         
+        self.stats.startedAction('join')
         df = node.join(self.node.id)
         df.addCallbacks(_pongHandler, _defaultPong)
 
@@ -374,7 +376,7 @@ class KhashmirRead(KhashmirBase):
             d.addCallback(callback)
 
         # Search for others starting with the locally found ones
-        state = FindValue(self, key, d.callback, self.config)
+        state = FindValue(self, key, d.callback, self.config, self.stats)
         reactor.callLater(0, state.goWithNodes, nodes)
 
     def valueForKey(self, key, callback, searchlocal = True):
@@ -401,7 +403,7 @@ class KhashmirRead(KhashmirBase):
 
         def _getValueForKey(nodes, key=key, local_values=l, response=callback, self=self):
             """Use the found nodes to send requests for values to."""
-            state = GetValue(self, key, local_values, self.config['RETRIEVE_VALUES'], response, self.config)
+            state = GetValue(self, key, local_values, self.config['RETRIEVE_VALUES'], response, self.config, self.stats)
             reactor.callLater(0, state.goWithNodes, nodes)
             
         # First lookup nodes that have values for the key
@@ -478,7 +480,7 @@ class KhashmirWrite(KhashmirRead):
                     """Default callback that does nothing."""
                     pass
                 response = _storedValueHandler
-            action = StoreValue(self, key, value, self.config['STORE_REDUNDANCY'], response, self.config)
+            action = StoreValue(self, key, value, self.config['STORE_REDUNDANCY'], response, self.config, self.stats)
             reactor.callLater(0, action.goWithNodes, nodes)
             
         # First find the K closest nodes to operate on.

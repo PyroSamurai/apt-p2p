@@ -196,14 +196,23 @@ class StatsLogger:
                 
         return stats
     
+    #{ Called by the action
+    def startedAction(self, action):
+        """Record that an action was started.
+        
+        @param action: the name of the action
+        """
+        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0])
+        act[0] += 1
+    
     #{ Called by the transport
     def sentAction(self, action):
         """Record that an action was attempted.
         
         @param action: the name of the action
         """
-        act = self.actions.setdefault(action, [0, 0, 0, 0, 0])
-        act[0] += 1
+        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0])
+        act[1] += 1
         
     def responseAction(self, response, action):
         """Record that a response to an action was received.
@@ -212,8 +221,8 @@ class StatsLogger:
         @param action: the name of the action
         @return: the response (for use in deferreds)
         """
-        act = self.actions.setdefault(action, [0, 0, 0, 0, 0])
-        act[1] += 1
+        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0])
+        act[2] += 1
         return response
         
     def failedAction(self, response, action):
@@ -223,8 +232,8 @@ class StatsLogger:
         @param action: the name of the action
         @return: the response (for use in deferreds)
         """
-        act = self.actions.setdefault(action, [0, 0, 0, 0, 0])
-        act[2] += 1
+        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0])
+        act[3] += 1
         return response
         
     def receivedAction(self, action):
@@ -233,16 +242,16 @@ class StatsLogger:
         @param action: the name of the action
         """
         self.reachable = True
-        act = self.actions.setdefault(action, [0, 0, 0, 0, 0])
-        act[3] += 1
+        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0])
+        act[4] += 1
     
     def errorAction(self, action):
         """Record that a received action resulted in an error.
         
         @param action: the name of the action
         """
-        act = self.actions.setdefault(action, [0, 0, 0, 0, 0])
-        act[4] += 1
+        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0])
+        act[5] += 1
     
     def sentBytes(self, bytes):
         """Record that a single packet of some bytes was sent.
