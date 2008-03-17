@@ -92,6 +92,18 @@ class StatsLogger:
                        'tip': 'The number of bytes sent by the DHT',
                        'value': None,
                        },
+                      {'name': 'downSpeed',
+                       'group': 'Transport',
+                       'desc': 'Downloaded bytes/second',
+                       'tip': 'The number of bytes received by the DHT per second',
+                       'value': None,
+                       },
+                      {'name': 'upSpeed',
+                       'group': 'Transport',
+                       'desc': 'Uploaded bytes/second',
+                       'tip': 'The number of bytes sent by the DHT per second',
+                       'value': None,
+                       },
                       {'name': 'actions',
                        'group': 'Actions',
                        'desc': 'Actions',
@@ -168,12 +180,17 @@ class StatsLogger:
         self.tableStats()
         self.dbStats()
         stats = self._StatsTemplate[:]
+        elapsed = datetime.now() - self.startTime
         for stat in stats:
             val = getattr(self, stat['name'], None)
             if stat['name'] == 'uptime':
-                stat['value'] = datetime.now() - self.startTime
+                stat['value'] = elapsed
             elif stat['name'] == 'actions':
                 stat['value'] = deepcopy(self.actions)
+            elif stat['name'] == 'downSpeed':
+                stat['value'] = self.downBytes / (elapsed.days*86400.0 + elapsed.seconds + elapsed.microseconds/1000000.0)
+            elif stat['name'] == 'upSpeed':
+                stat['value'] = self.upBytes / (elapsed.days*86400.0 + elapsed.seconds + elapsed.microseconds/1000000.0)
             elif val is not None:
                 stat['value'] = val
                 
