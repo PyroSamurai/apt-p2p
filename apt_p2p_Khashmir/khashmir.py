@@ -208,11 +208,13 @@ class KhashmirBase(protocol.Factory):
             (datetime.now() - old.lastSeen) > 
              timedelta(seconds=self.config['MIN_PING_INTERVAL'])):
             
-            def _staleNodeHandler(failure, oldnode = old, newnode = node):
+            def _staleNodeHandler(err, oldnode = old, newnode = node, self = self):
                 """The pinged node never responded, so replace it."""
+                log.msg("ping failed (%s) %s/%s" % (self.config['PORT'], oldnode.host, oldnode.port))
+                log.err(err)
                 self.table.replaceStaleNode(oldnode, newnode)
             
-            def _notStaleNodeHandler(dict, old=old):
+            def _notStaleNodeHandler(dict, old=old, self=self):
                 """Got a pong from the old node, so update it."""
                 dict = dict['rsp']
                 if dict['id'] == old.id:
@@ -244,9 +246,11 @@ class KhashmirBase(protocol.Factory):
             if callback:
                 callback((dict['rsp']['ip_addr'], dict['rsp']['port']))
 
-        def _defaultPong(err, node=node, table=self.table, callback=callback, errback=errback):
+        def _defaultPong(err, node=node, self=self, callback=callback, errback=errback):
             """Error occurred, fail node and errback or callback with error."""
-            table.nodeFailed(node)
+            log.msg("join failed (%s) %s/%s" % (self.config['PORT'], node.host, node.port))
+            log.err(err)
+            self.table.nodeFailed(node)
             if errback:
                 errback()
             elif callback:
