@@ -208,7 +208,7 @@ class KhashmirBase(protocol.Factory):
             (datetime.now() - old.lastSeen) > 
              timedelta(seconds=self.config['MIN_PING_INTERVAL'])):
             
-            def _staleNodeHandler(oldnode = old, newnode = node):
+            def _staleNodeHandler(failure, oldnode = old, newnode = node):
                 """The pinged node never responded, so replace it."""
                 self.table.replaceStaleNode(oldnode, newnode)
             

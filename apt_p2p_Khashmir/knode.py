@@ -21,6 +21,7 @@ class KNodeBase(Node):
             if self.id != NULL_ID and senderid != self.id:
                 log.msg("Got response from different node than expected.")
                 self.table.invalidateNode(self)
+                raise Exception, "Node ID has changed"
                 
         return dict
 

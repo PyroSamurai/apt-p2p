@@ -128,11 +128,13 @@ class KTable:
         try:
             it = self.buckets[i].l.index(stale.num)
         except ValueError:
-            return
-    
-        # Remove the stale node and insert the new one
-        del(self.buckets[i].l[it])
-        if new:
+            pass
+        else:
+            # Remove the stale node
+            del(self.buckets[i].l[it])
+        
+        # Insert the new node
+        if new and self._bucketIndexForInt(new.num) == i and len(self.buckets[i].l) < self.config['K']:
             self.buckets[i].l.append(new)
     
     def insertNode(self, node, contacted = True):
