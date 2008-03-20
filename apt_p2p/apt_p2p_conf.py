@@ -73,8 +73,7 @@ DEFAULTS = {
 
 DHT_DEFAULTS = {
     # bootstrap nodes to contact to join the DHT
-    'BOOTSTRAP': """www.camrdale.org:9977
-        steveholt.hopto.org:9976""",
+    'BOOTSTRAP': """www.camrdale.org:9977""",
     
     # whether this node is a bootstrap node
     'BOOTSTRAP_NODE': "no",
