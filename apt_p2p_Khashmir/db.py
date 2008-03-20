@@ -154,11 +154,16 @@ class DB:
         @return: the number of distinct keys and total values in the database
         """
         c = self.conn.cursor()
-        c.execute("SELECT COUNT(DISTINCT key) as num_keys, COUNT(value) as num_values FROM kv")
-        keys, values = 0, 0
+        c.execute("SELECT COUNT(value) as num_values FROM kv")
+        values = 0
         row = c.fetchone()
         if row:
-            keys, values = row[0], row[1]
+            values = row[0]
+        c.execute("SELECT COUNT(key) as num_keys FROM (SELECT DISTINCT key FROM kv)")
+        keys = 0
+        row = c.fetchone()
+        if row:
+            keys = row[0]
         return keys, values
 
 class TestDB(unittest.TestCase):
