@@ -13,6 +13,7 @@ import os
 
 from twisted.internet.defer import Deferred
 from twisted.internet import protocol, reactor
+from twisted.python import log
 from twisted.trial import unittest
 
 from db import DB
