@@ -311,7 +311,7 @@ class KhashmirBase(protocol.Factory):
         return self.stats.formatHTML()
 
     #{ Remote interface
-    def krpc_ping(self, id, _krpc_sender):
+    def krpc_ping(self, id, _krpc_sender = None):
         """Pong with our ID.
         
         @type id: C{string}
@@ -319,12 +319,13 @@ class KhashmirBase(protocol.Factory):
         @type _krpc_sender: (C{string}, C{int})
         @param _krpc_sender: the sender node's IP address and port
         """
-        n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
-        self.insertNode(n, contacted = False)
+        if _krpc_sender is not None:
+            n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
+            self.insertNode(n, contacted = False)
 
         return {"id" : self.node.id}
         
-    def krpc_join(self, id, _krpc_sender):
+    def krpc_join(self, id, _krpc_sender = None):
         """Add the node by responding with its address and port.
         
         @type id: C{string}
@@ -332,12 +333,15 @@ class KhashmirBase(protocol.Factory):
         @type _krpc_sender: (C{string}, C{int})
         @param _krpc_sender: the sender node's IP address and port
         """
-        n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
-        self.insertNode(n, contacted = False)
+        if _krpc_sender is not None:
+            n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
+            self.insertNode(n, contacted = False)
+        else:
+            _krpc_sender = ('127.0.0.1', self.port)
 
         return {"ip_addr" : _krpc_sender[0], "port" : _krpc_sender[1], "id" : self.node.id}
         
-    def krpc_find_node(self, target, id, _krpc_sender):
+    def krpc_find_node(self, id, target, _krpc_sender = None):
         """Find the K closest nodes to the target in the local routing table.
         
         @type target: C{string}
@@ -347,8 +351,11 @@ class KhashmirBase(protocol.Factory):
         @type _krpc_sender: (C{string}, C{int})
         @param _krpc_sender: the sender node's IP address and port
         """
-        n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
-        self.insertNode(n, contacted = False)
+        if _krpc_sender is not None:
+            n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
+            self.insertNode(n, contacted = False)
+        else:
+            _krpc_sender = ('127.0.0.1', self.port)
 
         nodes = self.table.findNodes(target)
         nodes = map(lambda node: node.contactInfo(), nodes)
@@ -418,7 +425,7 @@ class KhashmirRead(KhashmirBase):
         self.findValue(key, _getValueForKey)
 
     #{ Remote interface
-    def krpc_find_value(self, key, id, _krpc_sender):
+    def krpc_find_value(self, id, key, _krpc_sender = None):
         """Find the number of values stored locally for the key, and the K closest nodes.
         
         @type key: C{string}
@@ -428,15 +435,16 @@ class KhashmirRead(KhashmirBase):
         @type _krpc_sender: (C{string}, C{int})
         @param _krpc_sender: the sender node's IP address and port
         """
-        n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
-        self.insertNode(n, contacted = False)
+        if _krpc_sender is not None:
+            n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
+            self.insertNode(n, contacted = False)
     
         nodes = self.table.findNodes(key)
         nodes = map(lambda node: node.contactInfo(), nodes)
         num_values = self.store.countValues(key)
         return {'nodes' : nodes, 'num' : num_values, "id": self.node.id}
 
-    def krpc_get_value(self, key, num, id, _krpc_sender):
+    def krpc_get_value(self, id, key, num, _krpc_sender = None):
         """Retrieve the values stored locally for the key.
         
         @type key: C{string}
@@ -449,8 +457,9 @@ class KhashmirRead(KhashmirBase):
         @type _krpc_sender: (C{string}, C{int})
         @param _krpc_sender: the sender node's IP address and port
         """
-        n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
-        self.insertNode(n, contacted = False)
+        if _krpc_sender is not None:
+            n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
+            self.insertNode(n, contacted = False)
     
         l = self.store.retrieveValues(key)
         if num == 0 or num >= len(l):
@@ -495,7 +504,7 @@ class KhashmirWrite(KhashmirRead):
         self.findNode(key, _storeValueForKey)
                     
     #{ Remote interface
-    def krpc_store_value(self, key, value, token, id, _krpc_sender):
+    def krpc_store_value(self, id, key, value, token, _krpc_sender = None):
         """Store the value locally with the key.
         
         @type key: C{string}
@@ -508,8 +517,12 @@ class KhashmirWrite(KhashmirRead):
         @type _krpc_sender: (C{string}, C{int})
         @param _krpc_sender: the sender node's IP address and port
         """
-        n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
-        self.insertNode(n, contacted = False)
+        if _krpc_sender is not None:
+            n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
+            self.insertNode(n, contacted = False)
+        else:
+            _krpc_sender = ('127.0.0.1', self.port)
+
         for secret in self.token_secrets:
             this_token = sha(secret + _krpc_sender[0]).digest()
             if token == this_token:
