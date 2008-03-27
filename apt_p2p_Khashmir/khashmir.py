@@ -219,7 +219,6 @@ class KhashmirBase(protocol.Factory):
             
             def _notStaleNodeHandler(dict, old=old, self=self):
                 """Got a pong from the old node, so update it."""
-                dict = dict['rsp']
                 if dict['id'] == old.id:
                     self.table.justSeenNode(old.id)
             
@@ -244,10 +243,10 @@ class KhashmirBase(protocol.Factory):
 
         def _pongHandler(dict, node=node, self=self, callback=callback):
             """Node responded properly, callback with response."""
-            n = self.Node(dict['rsp']['id'], dict['_krpc_sender'][0], dict['_krpc_sender'][1])
+            n = self.Node(dict['id'], dict['_krpc_sender'][0], dict['_krpc_sender'][1])
             self.insertNode(n)
             if callback:
-                callback((dict['rsp']['ip_addr'], dict['rsp']['port']))
+                callback((dict['ip_addr'], dict['port']))
 
         def _defaultPong(err, node=node, self=self, callback=callback, errback=errback):
             """Error occurred, fail node and errback or callback with error."""

@@ -13,7 +13,7 @@ class KNodeBase(Node):
     def checkSender(self, dict):
         """Check the sender's info to make sure it meets expectations."""
         try:
-            senderid = dict['rsp']['id']
+            senderid = dict['id']
         except KeyError:
             log.msg("No peer id in response")
             raise Exception, "No peer id in response."

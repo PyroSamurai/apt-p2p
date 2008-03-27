@@ -172,7 +172,7 @@ class ActionBase:
         self.outstanding -= 1
         self.outstanding_results -= expected_results
         self.answered[node.id] = 1
-        self.processResponse(dict['rsp'])
+        self.processResponse(dict)
         self.schedule()
 
     def actionFailed(self, err, node, expected_results):

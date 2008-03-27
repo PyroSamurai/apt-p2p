@@ -321,7 +321,8 @@ class KRPC:
                 df = self.tids[msg[TID]]
                 # 	callback
                 del(self.tids[msg[TID]])
-                df.callback({'rsp' : msg[RSP], '_krpc_sender': addr})
+                msg[RSP]['_krpc_sender'] = addr
+                df.callback(msg[RSP])
             else:
                 # no tid, this transaction timed out already...
                 if self.noisy:
@@ -493,8 +494,9 @@ class Receiver(protocol.Factory):
         return {'values': ['1'*length]*num}
 
 def make(port):
+    from stats import StatsLogger
     af = Receiver()
-    a = hostbroker(af, {'SPEW': False})
+    a = hostbroker(af, StatsLogger(None, None, {}), {'SPEW': False})
     a.protocol = KRPC
     p = reactor.listenUDP(port, a)
     return af, a, p
@@ -531,8 +533,7 @@ class KRPCTests(unittest.TestCase):
 
     def gotMsg(self, dict, should_be):
         _krpc_sender = dict['_krpc_sender']
-        msg = dict['rsp']
-        self.failUnlessEqual(msg['msg'], should_be)
+        self.failUnlessEqual(dict['msg'], should_be)
 
     def testManyEcho(self):
         for i in xrange(100):
