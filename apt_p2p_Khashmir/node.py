@@ -105,6 +105,17 @@ class Node:
     def __repr__(self):
         return `(self.id, self.host, self.port)`
     
+    def __copy__(self):
+        """Create a shallow copy of the node, resetting some values."""
+        cp = self.__class__(self.id, self.host, self.port)
+        cp.fails = self.fails
+        cp.lastSeen = self.lastSeen
+        if getattr(self, 'table', None) is not None:
+            cp.table = self.table
+        if getattr(self, 'conn', None) is not None:
+            cp.conn = self.conn
+        return cp
+    
     #{ Comparators to bisect/index a list of nodes with either a node or a long
     def __lt__(self, a):
         if type(a) == InstanceType:

@@ -9,6 +9,7 @@ warnings.simplefilter("ignore", DeprecationWarning)
 from datetime import datetime, timedelta
 from random import randrange, shuffle
 from sha import sha
+from copy import copy
 import os
 
 from twisted.internet.defer import Deferred
@@ -175,6 +176,7 @@ class KhashmirBase(protocol.Factory):
         """
         # Get K nodes out of local table/cache
         nodes = self.table.findNodes(id)
+        nodes = [copy(node) for node in nodes]
         d = Deferred()
         if errback:
             d.addCallbacks(callback, errback)
@@ -374,6 +376,7 @@ class KhashmirRead(KhashmirBase):
         """
         # Get K nodes out of local table/cache
         nodes = self.table.findNodes(key)
+        nodes = [copy(node) for node in nodes]
         d = Deferred()
         if errback:
             d.addCallbacks(callback, errback)
