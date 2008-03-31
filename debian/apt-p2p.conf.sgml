@@ -94,6 +94,14 @@
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
+	    <term><option>UPLOAD_LIMIT = <replaceable>speed</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>speed</replaceable> to limit sending data to peers to, in KBytes/sec.
+	        Set this to 0 to not limit the upload bandwidth.
+	        (Default is 0)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
 	    <term><option>CACHE_DIR = <replaceable>directory</replaceable></option></term>
 	     <listitem>
 	      <para>The <replaceable>directory</replaceable> to store the downloaded files in.

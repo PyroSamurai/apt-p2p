@@ -167,7 +167,7 @@ class TopLevel(resource.Resource):
     
     addSlash = True
     
-    def __init__(self, directory, db, manager):
+    def __init__(self, directory, db, manager, uploadLimit):
         """Initialize the instance.
         
         @type directory: L{twisted.python.filepath.FilePath}
@@ -180,6 +180,9 @@ class TopLevel(resource.Resource):
         self.directory = directory
         self.db = db
         self.manager = manager
+        self.uploadLimit = None
+        if uploadLimit > 0:
+            self.uploadLimit = int(uploadLimit*1024)
         self.factory = None
 
     def getHTTPFactory(self):
@@ -188,7 +191,7 @@ class TopLevel(resource.Resource):
             self.factory = channel.HTTPFactory(server.Site(self),
                                                **{'maxPipeline': 10, 
                                                   'betweenRequestsTimeOut': 60})
-            self.factory = ThrottlingFactory(self.factory, writeLimit = 30*1024)
+            self.factory = ThrottlingFactory(self.factory, writeLimit = self.uploadLimit)
             self.factory.protocol = UploadThrottlingProtocol
         return self.factory
 

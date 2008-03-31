@@ -318,6 +318,10 @@ apt_p2p_conf_template = """
 # Port to listen on for all requests (TCP and UDP)
 PORT = %(PORT)s
     
+# The rate to limit sending data to peers to, in KBytes/sec.
+# Set this to 0 to not limit the upload bandwidth.
+UPLOAD_LIMIT = 100
+
 # Directory to store the downloaded files in
 CACHE_DIR = %(CACHE_DIR)s
     

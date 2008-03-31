@@ -39,6 +39,10 @@ DEFAULTS = {
     # Port to listen on for all requests (TCP and UDP)
     'PORT': '9977',
     
+    # The rate to limit sending data to peers to, in KBytes/sec.
+    # Set this to 0 to not limit the upload bandwidth.
+    'UPLOAD_LIMIT': '0',
+
     # Directory to store the downloaded files in
     'CACHE_DIR': home + '/.apt-p2p/cache',
     
@@ -50,7 +54,7 @@ DEFAULTS = {
     # User name to try and run as
     'USERNAME': '',
     
-    # Whether it's OK to use an IP addres from a known local/private range
+    # Whether it's OK to use an IP address from a known local/private range
     'LOCAL_OK': 'no',
 
     # Unload the packages cache after an interval of inactivity this long.
@@ -63,7 +67,7 @@ DEFAULTS = {
     'KEY_REFRESH': '57m',
 
     # Which DHT implementation to use.
-    # It must be possile to do "from <DHT>.DHT import DHT" to get a class that
+    # It must be possible to do "from <DHT>.DHT import DHT" to get a class that
     # implements the IDHT interface.
     'DHT': 'apt_p2p_Khashmir',
 

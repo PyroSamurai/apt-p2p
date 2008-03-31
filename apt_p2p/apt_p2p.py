@@ -70,14 +70,15 @@ class AptP2P:
         """
         log.msg('Initializing the main apt_p2p application')
         self.dhtClass = dhtClass
-        self.cache_dir = FilePath(config.get('DEFAULT', 'cache_dir'))
+        self.cache_dir = FilePath(config.get('DEFAULT', 'CACHE_DIR'))
         if not self.cache_dir.child(download_dir).exists():
             self.cache_dir.child(download_dir).makedirs()
         self.db = DB(self.cache_dir.child('apt-p2p.db'))
         self.dht = dhtClass()
         self.dht.loadConfig(config, config.get('DEFAULT', 'DHT'))
         self.dht.join().addCallbacks(self.joinComplete, self.joinError)
-        self.http_server = TopLevel(self.cache_dir.child(download_dir), self.db, self)
+        self.http_server = TopLevel(self.cache_dir.child(download_dir), self.db, self,
+                                    config.getint('DEFAULT', 'UPLOAD_LIMIT'))
         self.getHTTPFactory = self.http_server.getHTTPFactory
         self.peers = PeerManager()
         self.mirrors = MirrorManager(self.cache_dir, config.gettime('DEFAULT', 'UNLOAD_PACKAGES_CACHE'))
