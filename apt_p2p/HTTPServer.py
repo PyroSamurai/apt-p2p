@@ -232,7 +232,11 @@ class TopLevel(resource.Resource):
         if request.remoteAddr.host != "127.0.0.1":
             log.msg('Blocked illegal access to %s from %s' % (request.uri, request.remoteAddr))
             return None, ()
-            
+        
+        # Block access to index .diff files (for now)
+        if 'Packages.diff' in segments or 'Sources.diff' in segments:
+            return None, ()
+         
         if len(name) > 1:
             # It's a request from apt
             return FileDownloader(self.directory.path, self.manager), segments[0:]
@@ -258,7 +262,7 @@ if __name__ == '__builtin__':
                 return [{'pieces': 'abcdefghij0123456789\xca\xec\xb8\x0c\x00\xe7\x07\xf8~])\x8f\x9d\xe5_B\xff\x1a\xc4!'}]
             return [{'path': FilePath(os.path.expanduser('~/school/optout'))}]
     
-    t = TopLevel(FilePath(os.path.expanduser('~')), DB(), None)
+    t = TopLevel(FilePath(os.path.expanduser('~')), DB(), None, 0)
     factory = t.getHTTPFactory()
     
     # Standard twisted application Boilerplate
