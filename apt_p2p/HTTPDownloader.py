@@ -31,6 +31,7 @@ class Peer(ClientFactory):
     def __init__(self, host, port=80):
         self.host = host
         self.port = port
+        self.rank = 0.5
         self.busy = False
         self.pipeline = False
         self.closed = True
@@ -74,6 +75,7 @@ class Peer(ClientFactory):
         request.submissionTime = datetime.now()
         request.deferRequest = defer.Deferred()
         self.request_queue.append(request)
+        self.rerank()
         self.processQueue()
         return request.deferRequest
 
@@ -93,6 +95,7 @@ class Peer(ClientFactory):
 
         req = self.request_queue.pop(0)
         self.response_queue.append(req)
+        self.rerank()
         req.deferResponse = self.proto.submitRequest(req, False)
         req.deferResponse.addCallbacks(self.requestComplete, self.requestError)
 
@@ -107,6 +110,7 @@ class Peer(ClientFactory):
         now = datetime.now()
         self._responseTimes.append((now, now - req.submissionTime))
         self._lastResponse = (now, resp.stream.length)
+        self.rerank()
         req.deferRequest.callback(resp)
 
     def requestError(self, error):
@@ -116,12 +120,14 @@ class Peer(ClientFactory):
         log.msg('Download of %s generated error %r' % (req.uri, error))
         self._completed += 1
         self._errors += 1
+        self.rerank()
         req.deferRequest.errback(error)
         
     def hashError(self, error):
         """Log that a hash error occurred from the peer."""
         log.msg('Hash error from peer (%s, %d): %r' % (self.host, self.port, error))
         self._errors += 1
+        self.rerank()
 
     #{ IHTTPClientManager interface
     def clientBusy(self, proto):
@@ -133,6 +139,7 @@ class Peer(ClientFactory):
         self._processLastResponse()
         self.busy = False
         self.processQueue()
+        self.rerank()
 
     def clientPipelining(self, proto):
         """Try to send a new request."""
@@ -150,6 +157,7 @@ class Peer(ClientFactory):
         self.connecting = False
         self.response_queue = []
         self.proto = None
+        self.rerank()
         if self.request_queue:
             self.processQueue()
             
@@ -253,7 +261,7 @@ class Peer(ClientFactory):
 
         return total_response / len(self._responseTimes)
     
-    def rank(self):
+    def rerank(self):
         """Determine the ranking value for the peer.
         
         The ranking value is composed of 5 numbers, each exponentially
@@ -274,7 +282,7 @@ class Peer(ClientFactory):
         if self._completed:
             rank *= exp(-float(self._errors) / self._completed)
         rank *= exp(-self.responseTime() / 5.0)
-        return rank
+        self.rank = rank
         
 class TestClientManager(unittest.TestCase):
     """Unit tests for the Peer."""
@@ -372,7 +380,7 @@ class TestClientManager(unittest.TestCase):
         return lastDefer
         
     def checkInfo(self):
-        log.msg('Rank is: %r' % self.client.rank(250.0*1024))
+        log.msg('Rank is: %r' % self.client.rank)
         log.msg('Download speed is: %r' % self.client.downloadSpeed())
         log.msg('Response Time is: %r' % self.client.responseTime())
         
