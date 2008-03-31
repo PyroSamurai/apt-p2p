@@ -1,10 +1,3 @@
-Consider what happens when we are the closest node.
-
-In some of the actions it is unclear what happens when we are one of the
-closest nodes to the target key. Do we store values that we publish
-ourself?
-
-
 Add all cache files to the database.
 
 All files in the cache should be added to the database, so that they can
@@ -47,6 +40,21 @@ originally provided the piece is probably at fault, since he is now
 providing a later piece. This doesn't work if the differing piece is the 
 first piece, in which case it is downloaded from a 3rd peer, with 
 consensus revealing the misbehaving peer.
+
+
+Consider storing deltas of packages.
+
+Instead of downloading full package files when a previous version of
+the same package is available, peers could request a delta of the
+package to the previous version. This would only be done if the delta
+is significantly (>50%) smaller than the full package, and is not too
+large (absolutely). A peer that has a new package and an old one would
+add a list of deltas for the package to the value stored in the DHT.
+The delta information would specify the old version (by hash), the
+size of the delta, and the hash of the delta. A peer that has the same
+old package could then download the delta from the peer by requesting
+the hash of the delta. Alternatively, very small deltas could be
+stored directly in the DHT.
 
 
 Consider tracking security issues with packages.
