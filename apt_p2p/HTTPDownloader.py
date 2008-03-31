@@ -253,24 +253,26 @@ class Peer(ClientFactory):
 
         return total_response / len(self._responseTimes)
     
-    def rank(self, fastest):
+    def rank(self):
         """Determine the ranking value for the peer.
         
-        The ranking value is composed of 5 numbers:
-         - 1 if a connection to the peer is open, 0.9 otherwise
-         - 1 if there are no pending requests, to 0 if there are a maximum
-         - 1 if the peer is the fastest of all peers, to 0 if the speed is 0
-         - 1 if all requests are good, 0 if all produced errors
-         - an exponentially decreasing number based on the response time
+        The ranking value is composed of 5 numbers, each exponentially
+        decreasing from 1 to 0 based on:
+         - if a connection to the peer is open
+         - the number of pending requests
+         - the time to download a single piece
+         - the number of errors
+         - the response time
         """
         rank = 1.0
         if self.closed:
             rank *= 0.9
-        rank *= (max(0.0, 10.0 - len(self.request_queue) - len(self.response_queue))) / 10.0
-        if fastest > 0.0:
-            rank *= min(1.0, self.downloadSpeed() / fastest)
+        rank *= exp(-(len(self.request_queue) - len(self.response_queue)))
+        speed = self.downloadSpeed()
+        if speed > 0.0:
+            rank *= exp(-512.0*1024 / speed)
         if self._completed:
-            rank *= max(0.0, 1.0 - float(self._errors) / self._completed)
+            rank *= exp(-float(self._errors) / self._completed)
         rank *= exp(-self.responseTime() / 5.0)
         return rank
         
