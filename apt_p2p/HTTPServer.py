@@ -214,7 +214,8 @@ class TopLevel(resource.Resource):
                 return None, ()
             
             # Find the file in the database
-            hash = unquote_plus(segments[1])
+            # Have to unquote_plus the uri, because the segments are unquoted by twisted
+            hash = unquote_plus(request.uri[3:])
             files = self.db.lookupHash(hash)
             if files:
                 # If it is a file, return it
