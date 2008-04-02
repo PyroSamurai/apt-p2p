@@ -14,6 +14,72 @@ from twisted.web2.http import splitHostPort
 from HTTPDownloader import Peer
 from util import uncompact
 
+class FileDownload(defer.Deferred):
+    """Manage a download from a list of peers or a mirror.
+    
+    
+    """
+    
+    def __init__(self, manager, hash, mirror, compact_peers):
+        """Initialize the instance.
+        
+        @type hash: L{Hash.HashObject}
+        @param hash: the hash object containing the expected hash for the file
+        @param mirror: the URI of the file on the mirror
+        @type compact_peers: C{list} of C{string}
+        @param compact_peers: a list of the peer info where the file can be found
+        """
+        defer.Deferred.__init__(self)
+        self.manager = manager
+        self.hash = hash
+        self.mirror = mirror
+
+        self.peers = {}
+        no_pieces = 0
+        pieces_string = {}
+        pieces_hash = {}
+        pieces_dl_hash = {}
+
+        for compact_peer in compact_peers:
+            # Build a list of all the peers for this download
+            site = uncompact(compact_peer['c'])
+            peer = manager.getPeer(site)
+            self.peers[site] = peer
+
+            # Extract any piece information from the peers list
+            if 't' in compact_peer:
+                pieces_string.setdefault(compact_peer['t']['t'], 0)
+                pieces_string[compact_peer['t']['t']] += 1
+            elif 'h' in compact_peer:
+                pieces_hash.setdefault(compact_peer['h'], 0)
+                pieces_hash[compact_peer['h']] += 1
+            elif 'l' in compact_peer:
+                pieces_dl_hash.setdefault(compact_peer['l'], 0)
+                pieces_dl_hash[compact_peer['l']] += 1
+            else:
+                no_pieces += 1
+        
+        max_found = max(no_pieces, max(pieces_string.values()),
+                        max(pieces_hash.values()), max(pieces_dl_hash.values()))
+
+        if max_found == no_pieces:
+            self.sort()
+            pieces = []
+            if max_found < len(self.peers):
+                pass
+        elif max_found == max(pieces_string.values()):
+            pass
+        
+    def sort(self):
+        def sort(a, b):
+            """Sort peers by their rank."""
+            if a.rank > b.rank:
+                return 1
+            elif a.rank < b.rank:
+                return -1
+            return 0
+        self.peers.sort(sort)
+
 class PeerManager:
     """Manage a set of peers and the requests to them.
     
@@ -42,40 +108,33 @@ class PeerManager:
             header, as seconds since the epoch
             (optional, defaults to not sending that header)
         """
-        if peers:
-            # Choose one of the peers at random
-            compact_peer = choice(peers)
-            peer = uncompact(compact_peer['c'])
-            log.msg('Downloading from peer %r' % (peer, ))
-            site = peer
-            path = '/~/' + quote_plus(hash.expected())
-        else:
+        if not peers or method != "GET" or modtime is not None:
             log.msg('Downloading (%s) from mirror %s' % (method, mirror))
             parsed = urlparse(mirror)
             assert parsed[0] == "http", "Only HTTP is supported, not '%s'" % parsed[0]
             site = splitHostPort(parsed[0], parsed[1])
             path = urlunparse(('', '') + parsed[2:])
-
-        return self.getPeer(site, path, method, modtime)
+            peer = self.getPeer(site)
+            return peer.get(path, method, modtime)
+        elif len(peers) == 1:
+            site = uncompact(peers[0]['c'])
+            log.msg('Downloading from peer %r' % (site, ))
+            path = '/~/' + quote_plus(hash.expected())
+            peer = self.getPeer(site)
+            return peer.get(path)
+        else:
+            FileDownload(self, hash, mirror, peers)
+            
         
-    def getPeer(self, site, path, method="GET", modtime=None):
-        """Create a new peer if necessary and forward the request to it.
+    def getPeer(self, site):
+        """Create a new peer if necessary and return it.
         
         @type site: (C{string}, C{int})
         @param site: the IP address and port of the peer
-        @type path: C{string}
-        @param path: the path to the file on the peer
-        @type method: C{string}
-        @param method: the HTTP method to use, 'GET' or 'HEAD'
-            (optional, defaults to 'GET')
-        @type modtime: C{int}
-        @param modtime: the modification time to use for an 'If-Modified-Since'
-            header, as seconds since the epoch
-            (optional, defaults to not sending that header)
         """
         if site not in self.clients:
             self.clients[site] = Peer(site[0], site[1])
-        return self.clients[site].get(path, method, modtime)
+        return self.clients[site]
     
     def close(self):
         """Close all the connections to peers."""
