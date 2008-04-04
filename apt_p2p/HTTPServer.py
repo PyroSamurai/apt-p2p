@@ -56,7 +56,7 @@ class FileDownloader(static.File):
 class FileUploaderStream(stream.FileStream):
     """Modified to make it suitable for streaming to peers.
     
-    Streams the file is small chunks to make it easier to throttle the
+    Streams the file in small chunks to make it easier to throttle the
     streaming to peers.
     
     @ivar CHUNK_SIZE: the size of chunks of data to send at a time

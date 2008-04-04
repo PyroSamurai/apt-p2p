@@ -15,6 +15,20 @@ distributions. They need to be dealt with properly by
 adding them to the tracking done by the AptPackages module.
 
 
+Retransmit DHT requests before timeout occurs.
+
+Currently, only a single transmission to a peer is ever attempted. If
+that request is lost, a timeout will occur after 20 seconds, the peer
+will be declared unreachable and the action will move on to the next
+peer. Instead, try to resend the request periodically using exponential
+backoff to make sure that lost packets don't delay the action so much.
+For example, send the request, wait 2 seconds and send again, wait 4
+seconds and send again, wait 8 seconds (14 seconds have now passed) and
+then declare the host unreachable. The same TID should be used in each
+retransmission, so receiving multiple responses should not be a problem
+as the extra ones will be ignored. 
+
+
 PeerManager needs to download large files from multiple peers.
 
 The PeerManager currently chooses a peer at random from the list of 
