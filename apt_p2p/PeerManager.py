@@ -149,10 +149,11 @@ class StreamToFile(defer.Deferred):
         @param hash: the hash object to use for the file
         """
         self.stream = inputStream
-        self.outFile = outFile.open('w')
+        self.outFile = outFile
         self.hash = hash
         self.hash.new()
         self.length = self.stream.length
+        self.doneDefer = None
         
     def run(self):
         """Start the streaming."""
@@ -168,44 +169,16 @@ class StreamToFile(defer.Deferred):
             self.doneDefer.callback(self.hash)
     
     def _gotData(self, data):
-        self.peers[site]['pieces'] += data
-
-    def read(self):
-        """Read some data from the stream."""
         if self.outFile.closed:
-            return None
+            return
         
-        # Read data from the stream, deal with the possible deferred
-        data = self.stream.read()
-        if isinstance(data, defer.Deferred):
-            data.addCallbacks(self._write, self._done)
-            return data
-        
-        self._write(data)
-        return data
-    
-    def _write(self, data):
-        """Write the stream data to the file and return it for others to use.
-        
-        Also optionally decompresses it.
-        """
         if data is None:
             self._done()
-            return data
         
         # Write and hash the streamed data
         self.outFile.write(data)
         self.hash.update(data)
         
-        return data
-    
-    def close(self):
-        """Clean everything up and return None to future reads."""
-        self.length = 0
-        self._done()
-        self.stream.close()
-
-
 class FileDownload:
     """Manage a download from a list of peers or a mirror.
     
