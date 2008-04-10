@@ -150,7 +150,7 @@ class DB:
         
     def keyStats(self):
         """Count the total number of keys and values in the database.
-        @rtype: (C{int), C{int})
+        @rtype: (C{int}, C{int})
         @return: the number of distinct keys and total values in the database
         """
         c = self.conn.cursor()

@@ -15,7 +15,7 @@ from twisted.web2.http import Response, splitHostPort
 
 from HTTPDownloader import Peer
 from util import uncompact
-from hash import PIECE_SIZE
+from Hash import PIECE_SIZE
 from apt_p2p_Khashmir.bencode import bdecode
 
 class GrowingFileStream(stream.FileStream):

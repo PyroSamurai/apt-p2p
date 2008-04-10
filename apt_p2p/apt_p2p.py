@@ -65,8 +65,8 @@ class AptP2P:
     def __init__(self, dhtClass):
         """Initialize all the sub-components.
         
-        @type dht: L{interfaces.IDHT}
-        @param dht: the DHT class to use
+        @type dhtClass: L{interfaces.IDHT}
+        @param dhtClass: the DHT class to use
         """
         log.msg('Initializing the main apt_p2p application')
         self.dhtClass = dhtClass
