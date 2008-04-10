@@ -105,8 +105,6 @@ class Peer(ClientFactory):
         req = self.response_queue.pop(0)
         log.msg('%s of %s completed with code %d' % (req.method, req.uri, resp.code))
         self._completed += 1
-        if resp.code >= 400:
-            self._errors += 1
         now = datetime.now()
         self._responseTimes.append((now, now - req.submissionTime))
         self._lastResponse = (now, resp.stream.length)
