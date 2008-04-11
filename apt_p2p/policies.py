@@ -146,15 +146,17 @@ class ThrottlingProtocol(ProtocolWrapper):
             self._throttleWrites()
 
     def writeSequence(self, seq):
+        i = 0
         if not self.throttled:
             # Write each sequence separately
-            while seq and not self.factory.registerWritten(len(seq[0])):
-                ProtocolWrapper.write(self, seq.pop(0))
+            while i < len(seq) and not self.factory.registerWritten(len(seq[i])):
+                ProtocolWrapper.write(self, seq[i])
+                i += 1
 
         # If there's some left, we must have been paused
-        if seq:
-            self._tempDataBuffer.extend(seq)
-            self._tempDataLength += reduce(operator.add, map(len, seq))
+        if i < len(seq):
+            self._tempDataBuffer.extend(seq[i:])
+            self._tempDataLength += reduce(operator.add, map(len, seq[i:]))
             self._throttleWrites()
 
     def dataReceived(self, data):
