@@ -114,6 +114,7 @@ class HashObject:
                 self.fileHasher.update(data[:(PIECE_SIZE - self.size)])
                 data = data[(PIECE_SIZE - self.size):]
                 self.size = PIECE_SIZE
+                self.pieceSize = 0
 
                 # Save the first piece digest and initialize a new piece hasher
                 self.pieceHash.append(self.fileHasher.digest())
@@ -121,21 +122,21 @@ class HashObject:
 
             if self.pieceHasher:
                 # Loop in case the data contains multiple pieces
-                piece_size = self.size % PIECE_SIZE
-                while piece_size + len(data) > PIECE_SIZE:
+                while self.pieceSize + len(data) > PIECE_SIZE:
                     # Save the piece hash and start a new one
-                    self.pieceHasher.update(data[:(PIECE_SIZE - piece_size)])
+                    self.pieceHasher.update(data[:(PIECE_SIZE - self.pieceSize)])
                     self.pieceHash.append(self.pieceHasher.digest())
                     self.pieceHasher = self._new()
                     
                     # Don't forget to hash the data normally
-                    self.fileHasher.update(data[:(PIECE_SIZE - piece_size)])
-                    data = data[(PIECE_SIZE - piece_size):]
-                    self.size += PIECE_SIZE - piece_size
-                    piece_size = self.size % PIECE_SIZE
+                    self.fileHasher.update(data[:(PIECE_SIZE - self.pieceSize)])
+                    data = data[(PIECE_SIZE - self.pieceSize):]
+                    self.size += PIECE_SIZE - self.pieceSize
+                    self.pieceSize = 0
 
                 # Hash any remaining data
                 self.pieceHasher.update(data)
+                self.pieceSize += len(data)
             
             self.fileHasher.update(data)
             self.size += len(data)
