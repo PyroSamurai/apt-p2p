@@ -333,7 +333,7 @@ class FileDownload:
                     break
         elif max_found == max(pieces_dl_hash.values()):
             # Large number of pieces stored in peers
-            for pieces, num in pieces_hash.items():
+            for pieces, num in pieces_dl_hash.items():
                 # Find the most popular piece hash to download
                 if num == max_found:
                     log.msg('Found a hash for pieces to lookup in peers: %r' % pieces)
@@ -407,7 +407,7 @@ class FileDownload:
                         break
         
         log.msg('Done sending piece hash requests for now, %d outstanding' % self.outstanding)
-        if self.pieces is None and self.outstanding == 0:
+        if self.pieces is None and self.outstanding <= 0:
             # Continue without the piece hashes
             log.msg('Could not retrieve the piece hashes from the peers')
             self.pieces = []
