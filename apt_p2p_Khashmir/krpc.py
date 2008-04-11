@@ -570,16 +570,20 @@ class KRPCTests(unittest.TestCase):
 
     def testUnknownMeth(self):
         df = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('blahblah', {'msg' : "This is a test."})
+        df = self.failUnlessFailure(df, KrpcError)
         df.addBoth(self.gotErr, KRPC_ERROR_METHOD_UNKNOWN)
         return df
 
     def testMalformedRequest(self):
         df = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('echo', {'msg' : "This is a test.", 'foo': 'bar'})
-        df.addBoth(self.gotErr, KRPC_ERROR_MALFORMED_REQUEST)
+        df = self.failUnlessFailure(df, KrpcError)
+        df.addBoth(self.gotErr, KRPC_ERROR_MALFORMED_REQUEST, TypeError)
         return df
 
-    def gotErr(self, err, should_be):
-        self.failUnlessEqual(err.value[0], should_be)
+    def gotErr(self, value, should_be, *errorTypes):
+        self.failUnlessEqual(value[0], should_be)
+        if errorTypes:
+            self.flushLoggedErrors(*errorTypes)
         
     def testLongPackets(self):
         df = self.a.connectionForAddr(('127.0.0.1', 1181)).sendRequest('values', {'length' : 1, 'num': 2000})

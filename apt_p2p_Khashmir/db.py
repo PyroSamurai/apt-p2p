@@ -182,6 +182,7 @@ class TestDB(unittest.TestCase):
         
     def test_Value(self):
         self.store.storeValue(self.key, self.key)
+        self.failUnlessEqual(self.store.countValues(self.key), 1)
         val = self.store.retrieveValues(self.key)
         self.failUnlessEqual(len(val), 1)
         self.failUnlessEqual(val[0], self.key)

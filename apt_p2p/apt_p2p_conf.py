@@ -14,6 +14,7 @@ import os, sys
 from ConfigParser import SafeConfigParser
 
 from twisted.python import log, versions
+from twisted.trial import unittest
 
 class ConfigError(Exception):
     """Errors that occur in the loading of configuration variables."""
@@ -166,3 +167,46 @@ config = AptP2PConfigParser(DEFAULTS)
 config.add_section(config.get('DEFAULT', 'DHT'))
 for k in DHT_DEFAULTS:
     config.set(config.get('DEFAULT', 'DHT'), k, DHT_DEFAULTS[k])
+
+class TestConfigParser(unittest.TestCase):
+    """Unit tests for the config parser."""
+
+    def test_uppercase(self):
+        config.set('DEFAULT', 'case_tester', 'foo')
+        self.failUnless(config.get('DEFAULT', 'CASE_TESTER') == 'foo')
+        self.failUnless(config.get('DEFAULT', 'case_tester') == 'foo')
+        config.set('DEFAULT', 'TEST_CASE', 'bar')
+        self.failUnless(config.get('DEFAULT', 'TEST_CASE') == 'bar')
+        self.failUnless(config.get('DEFAULT', 'test_case') == 'bar')
+        config.set('DEFAULT', 'FINAL_test_CASE', 'foobar')
+        self.failUnless(config.get('DEFAULT', 'FINAL_TEST_CASE') == 'foobar')
+        self.failUnless(config.get('DEFAULT', 'final_test_case') == 'foobar')
+        self.failUnless(config.get('DEFAULT', 'FINAL_test_CASE') == 'foobar')
+        self.failUnless(config.get('DEFAULT', 'final_TEST_case') == 'foobar')
+    
+    def test_time(self):
+        config.set('DEFAULT', 'time_tester_1', '2d')
+        self.failUnless(config.gettime('DEFAULT', 'time_tester_1') == 2*86400)
+        config.set('DEFAULT', 'time_tester_2', '3h')
+        self.failUnless(config.gettime('DEFAULT', 'time_tester_2') == 3*3600)
+        config.set('DEFAULT', 'time_tester_3', '4m')
+        self.failUnless(config.gettime('DEFAULT', 'time_tester_3') == 4*60)
+        config.set('DEFAULT', 'time_tester_4', '37s')
+        self.failUnless(config.gettime('DEFAULT', 'time_tester_4') == 37)
+        
+    def test_string(self):
+        config.set('DEFAULT', 'string_test', 'foobar')
+        self.failUnless(type(config.getstring('DEFAULT', 'string_test')) == str)
+        self.failUnless(config.getstring('DEFAULT', 'string_test') == 'foobar')
+
+    def test_stringlist(self):
+        config.set('DEFAULT', 'stringlist_test', """foo
+        bar   
+        foobar  """)
+        l = config.getstringlist('DEFAULT', 'stringlist_test')
+        self.failUnless(type(l) == list)
+        self.failUnless(len(l) == 3)
+        self.failUnless(l[0] == 'foo')
+        self.failUnless(l[1] == 'bar')
+        self.failUnless(l[2] == 'foobar')
+        
