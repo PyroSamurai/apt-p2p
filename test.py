@@ -14,12 +14,12 @@ the apt-p2p program.
     and the apt-get commands to run (C{list}).
     
     The bootstrap nodes keys are integers, which must be in the range 1-9.
-    The values are the dictionary of string formatting values for creating
-    the apt-p2p configuration file (see L{apt_p2p_conf_template} below).
+    The values are the dictionary of keyword options to pass to the function
+    that starts the bootstrap node (see L{start_bootstrap} below).
     
     The downloaders keys are also integers in the range 1-99. The values are
-    the dictionary of string formatting values for creating the apt-p2p
-    configuration file (see L{apt_p2p_conf_template} below).
+    the dictionary of keyword options to pass to the function
+    that starts the downloader node (see L{start_downloader} below).
     
     The apt-get commands' list elements are tuples with 2 elements: the
     downloader to run the command on, and the list of command-line
@@ -86,16 +86,16 @@ tests = {'1': ('Start a single bootstrap and downloader, test updating and downl
                 5: {},
                 6: {}},
                [(1, ['update']),
+                (2, ['update']),
+                (3, ['update']),
                 (1, ['install', 'aboot-base']),
                 (1, ['install', 'ada-reference-manual']),
                 (1, ['install', 'fop-doc']),
                 (1, ['install', 'doc-iana']),
-                (2, ['update']),
                 (2, ['install', 'aboot-base']),
                 (2, ['install', 'ada-reference-manual']),
                 (2, ['install', 'fop-doc']),
                 (2, ['install', 'doc-iana']),
-                (3, ['update']),
                 (3, ['install', 'aboot-base']),
                 (3, ['install', 'ada-reference-manual']),
                 (3, ['install', 'fop-doc']),
@@ -242,6 +242,29 @@ tests = {'1': ('Start a single bootstrap and downloader, test updating and downl
                    ]),
               ]),
 
+         '9': ('Start a single bootstrap and 6 downloaders and test downloading' +
+               ' a very large file.',
+               {1: {}},
+               {1: {'clean': False},
+                2: {'clean': False},
+                3: {},
+                4: {},
+                5: {},
+                6: {}},
+               [(1, ['update']),
+                (1, ['install', 'kde-icons-oxygen']),
+                (2, ['update']),
+                (2, ['install', 'kde-icons-oxygen']),
+                (3, ['update']),
+                (3, ['install', 'kde-icons-oxygen']),
+                (4, ['update']),
+                (4, ['install', 'kde-icons-oxygen']),
+                (5, ['update']),
+                (5, ['install', 'kde-icons-oxygen']),
+                (6, ['update']),
+                (6, ['install', 'kde-icons-oxygen']),
+                ]),
+
          }
 
 assert 'all' not in tests
@@ -305,7 +328,6 @@ Debug
   NoLocking "false";
   Acquire::Ftp "false";    // Show ftp command traffic
   Acquire::Http "false";   // Show http command traffic
-  Acquire::Debtorrent "false";   // Show http command traffic
   Acquire::gpgv "false";   // Show the gpgv traffic
   aptcdrom "false";        // Show found package files
   IdentCdrom "false";
@@ -623,7 +645,7 @@ def start_downloader(bootstrap_addresses, num_down, options = {},
 
         # Create apt's config files
         f = open(join([downloader_dir, 'etc', 'apt', 'sources.list']), 'w')
-        f.write('deb http://localhost:1%02d77/%s/ stable %s\n' % (num_down, mirror, suites))
+        f.write('deb http://localhost:1%02d77/%s/ unstable %s\n' % (num_down, mirror, suites))
         f.close()
 
         f = open(join([downloader_dir, 'etc', 'apt', 'apt.conf']), 'w')
@@ -731,12 +753,12 @@ def run_test(bootstraps, downloaders, apt_get_queue):
             bootstrap_addresses += '\n      ' + bootstrap_address(boot_keys[i])
             
         for k, v in bootstraps.items():
-            running_bootstraps[k] = start_bootstrap(bootstrap_addresses, k, v)
+            running_bootstraps[k] = start_bootstrap(bootstrap_addresses, k, **v)
         
         sleep(5)
         
         for k, v in downloaders.items():
-            running_downloaders[k] = start_downloader(bootstrap_addresses, k, v)
+            running_downloaders[k] = start_downloader(bootstrap_addresses, k, **v)
     
         sleep(5)
         

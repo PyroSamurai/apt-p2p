@@ -45,6 +45,9 @@ class Peer(ClientFactory):
         self._downloadSpeeds = []
         self._lastResponse = None
         self._responseTimes = []
+    
+    def __repr__(self):
+        return "(%s, %d, %0.5f)" % (self.host, self.port, self.rank)
         
     #{ Manage the request queue
     def connect(self):

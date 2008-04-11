@@ -227,7 +227,7 @@ class TopLevel(resource.Resource):
                     log.msg('Sending torrent string %s to %s' % (b2a_hex(hash), request.remoteAddr))
                     return static.Data(bencode({'t': files[0]['pieces']}), 'application/x-bencoded'), ()
             else:
-                log.msg('Hash could not be found in database: %s' % hash)
+                log.msg('Hash could not be found in database: %r' % hash)
 
         # Only local requests (apt) get past this point
         if request.remoteAddr.host != "127.0.0.1":
