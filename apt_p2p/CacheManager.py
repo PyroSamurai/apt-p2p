@@ -307,7 +307,8 @@ class CacheManager:
                 url = 'http:/' + file.path[len(self.cache_dir.path):]
                 
             # Store the hashed file in the database
-            new_hash = self.db.storeFile(file, result.digest())
+            new_hash = self.db.storeFile(file, result.digest(),
+                                         ''.join(result.pieceDigests()))
             
             # Tell the main program to handle the new cache file
             df = self.manager.new_cached_file(file, result, new_hash, url, True)
@@ -402,7 +403,8 @@ class CacheManager:
             else:
                 log.msg('Hashed file to %s: %s' % (hash.hexdigest(), url))
                 
-            new_hash = self.db.storeFile(destFile, hash.digest())
+            new_hash = self.db.storeFile(destFile, hash.digest(),
+                                         ''.join(hash.pieceDigests()))
             log.msg('now avaliable: %s' % (url))
 
             if self.manager:

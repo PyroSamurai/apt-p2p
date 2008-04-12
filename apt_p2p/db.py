@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from pysqlite2 import dbapi2 as sqlite
 from binascii import a2b_base64, b2a_base64
 from time import sleep
-import os
+import os, sha
 
 from twisted.python.filepath import FilePath
 from twisted.trial import unittest
