@@ -403,7 +403,7 @@ class FileDownload:
                                       **{'callbackArgs': (key, site),
                                          'errbackArgs': (key, site)})
                     self.outstanding += 1
-                    if self.outstanding >= 3:
+                    if self.outstanding >= 4:
                         break
         
         log.msg('Done sending piece hash requests for now, %d outstanding' % self.outstanding)

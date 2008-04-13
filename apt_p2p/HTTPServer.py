@@ -272,7 +272,7 @@ class TestTopLevel(unittest.TestCase):
         if hash == self.torrent_hash:
             return [{'pieces': self.torrent}]
         elif hash == self.file_hash:
-            return [{'path': FilePath('/boot/initrd')}]
+            return [{'path': FilePath('/boot/grub/stage2')}]
         else:
             return []
         

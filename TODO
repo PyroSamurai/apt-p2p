@@ -1,3 +1,16 @@
+Retry when joining the DHT.
+
+If a join node can not be reached when the program is started, it will
+currently give up and quit. Instead, it should try and join
+periodically every few minutes until it is successful.
+
+
+Add statistics gathering to the peer downloading.
+
+Statistics are needed of how much has been uploaded, downloaded from
+peers, and downloaded from mirrors.
+
+
 Add all cache files to the database.
 
 All files in the cache should be added to the database, so that they can
