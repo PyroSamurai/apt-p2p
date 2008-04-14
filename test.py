@@ -343,6 +343,12 @@ PORT = %(PORT)s
 # Set this to 0 to not limit the upload bandwidth.
 UPLOAD_LIMIT = 100
 
+# The minimum number of peers before the mirror is not used.
+# If there are fewer peers than this for a file, the mirror will also be
+# used to speed up the download. Set to 0 to never use the mirror if
+# there are peers.
+MIN_DOWNLOAD_PEERS = 3
+
 # Directory to store the downloaded files in
 CACHE_DIR = %(CACHE_DIR)s
     

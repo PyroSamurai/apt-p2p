@@ -17,6 +17,7 @@ from HTTPDownloader import Peer
 from util import uncompact
 from Hash import PIECE_SIZE
 from apt_p2p_Khashmir.bencode import bdecode
+from apt_p2p_conf import config
 
 class GrowingFileStream(stream.FileStream):
     """Modified to stream data from a file as it becomes available.
@@ -261,6 +262,7 @@ class FileDownload:
         self.compact_peers = compact_peers
         
         self.path = '/~/' + quote_plus(hash.expected())
+        self.mirror_path = None
         self.pieces = None
         self.started = False
         
@@ -486,6 +488,16 @@ class FileDownload:
         assert self.pieces, "You must initialize the piece hashes first"
         self.peerlist = [self.peers[site]['peer'] for site in self.peers]
         
+        # Use the mirror if there are few peers
+        if len(self.peerlist) < config.getint('DEFAULT', 'MIN_DOWNLOAD_PEERS'):
+            parsed = urlparse(self.mirror)
+            if parsed[0] == "http":
+                site = splitHostPort(parsed[0], parsed[1])
+                self.mirror_path = urlunparse(('', '') + parsed[2:])
+                peer = self.manager.getPeer(site)
+                peer.mirror = True
+                self.peerlist.append(peer)
+        
         # Special case if there's only one good peer left
 #        if len(self.peerlist) == 1:
 #            log.msg('Downloading from peer %r' % (self.peerlist[0], ))
@@ -518,7 +530,10 @@ class FileDownload:
                 log.msg('Sending a request for piece %d to peer %r' % (piece, peer))
                 
                 self.outstanding += 1
-                df = peer.getRange(self.path, piece*PIECE_SIZE, (piece+1)*PIECE_SIZE - 1)
+                if peer.mirror:
+                    df = peer.getRange(self.mirror_path, piece*PIECE_SIZE, (piece+1)*PIECE_SIZE - 1)
+                else:
+                    df = peer.getRange(self.path, piece*PIECE_SIZE, (piece+1)*PIECE_SIZE - 1)
                 reactor.callLater(0, df.addCallbacks,
                                   *(self._getPiece, self._getError),
                                   **{'callbackArgs': (piece, peer),
@@ -635,6 +650,7 @@ class PeerManager:
             site = splitHostPort(parsed[0], parsed[1])
             path = urlunparse(('', '') + parsed[2:])
             peer = self.getPeer(site)
+            peer.mirror = True
             return peer.get(path, method, modtime)
 #        elif len(peers) == 1:
 #            site = uncompact(peers[0]['c'])

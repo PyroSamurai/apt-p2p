@@ -102,6 +102,16 @@
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
+	    <term><option>MIN_DOWNLOAD_PEERS = <replaceable>number</replaceable></option></term>
+	     <listitem>
+	      <para>The minimum <replaceable>number</replaceable> of peers before the mirror is not used.
+	        If there are fewer peers than this for a file, the mirror will also be
+	        used to speed up the download. Set to 0 to never use the mirror if
+	        there are peers.	        
+	        (Default is 3)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
 	    <term><option>CACHE_DIR = <replaceable>directory</replaceable></option></term>
 	     <listitem>
 	      <para>The <replaceable>directory</replaceable> to store the downloaded files in.

@@ -31,6 +31,7 @@ class Peer(ClientFactory):
     def __init__(self, host, port=80):
         self.host = host
         self.port = port
+        self.mirror = False
         self.rank = 0.5
         self.busy = False
         self.pipeline = False
@@ -47,7 +48,7 @@ class Peer(ClientFactory):
         self._responseTimes = []
     
     def __repr__(self):
-        return "(%s, %d, %0.5f)" % (self.host, self.port, self.rank)
+        return "(%r, %r, %r)" % (self.host, self.port, self.rank)
         
     #{ Manage the request queue
     def connect(self):
