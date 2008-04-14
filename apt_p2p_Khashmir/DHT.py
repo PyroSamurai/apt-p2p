@@ -146,22 +146,34 @@ class DHT:
         if not self.khashmir:
             self.khashmir = Khashmir(self.config, self.cache_dir)
 
+        self.outstandingJoins = 0
         for node in self.bootstrap:
             host, port = node.rsplit(':', 1)
             port = int(port)
+            self.outstandingJoins += 1
             
             # Translate host names into IP addresses
             if isIPAddress(host):
                 self._join_gotIP(host, port)
             else:
-                reactor.resolve(host).addCallback(self._join_gotIP, port)
+                reactor.resolve(host).addCallbacks(self._join_gotIP,
+                                                   self._join_resolveFailed,
+                                                   callbackArgs = (port, ),
+                                                   errbackArgs = (host, port))
         
         return self.joining
 
     def _join_gotIP(self, ip, port):
         """Join the DHT using a single bootstrap nodes IP address."""
-        self.outstandingJoins += 1
         self.khashmir.addContact(ip, port, self._join_single, self._join_error)
+    
+    def _join_resolveFailed(self, err, host, port):
+        """Failed to lookup the IP address of the bootstrap node."""
+        log.msg('Failed to find an IP address for host: (%r, %r)' % (host, port))
+        log.err(err)
+        self.outstandingJoins -= 1
+        if self.outstandingJoins <= 0:
+            self.khashmir.findCloseNodes(self._join_complete)
     
     def _join_single(self, addr):
         """Process the response from the bootstrap node.
@@ -172,7 +184,7 @@ class DHT:
         if addr:
             self.foundAddrs.append(addr)
         if addr or self.outstandingJoins <= 0:
-            self.khashmir.findCloseNodes(self._join_complete, self._join_complete)
+            self.khashmir.findCloseNodes(self._join_complete)
         log.msg('Got back from bootstrap node: %r' % (addr,))
     
     def _join_error(self, failure = None):
@@ -184,11 +196,11 @@ class DHT:
         self.outstandingJoins -= 1
         log.msg("bootstrap node could not be reached")
         if self.outstandingJoins <= 0:
-            self.khashmir.findCloseNodes(self._join_complete, self._join_complete)
+            self.khashmir.findCloseNodes(self._join_complete)
 
     def _join_complete(self, result):
         """End the joining process and return the addresses found for this node."""
-        if not self.joined and len(result) > 1:
+        if not self.joined and isinstance(result, list) and len(result) > 1:
             self.joined = True
         if self.joining and self.outstandingJoins <= 0:
             df = self.joining

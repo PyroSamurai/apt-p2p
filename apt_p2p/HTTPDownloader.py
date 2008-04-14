@@ -56,7 +56,7 @@ class Peer(ClientFactory):
         assert self.closed and not self.connecting
         self.connecting = True
         d = protocol.ClientCreator(reactor, HTTPClientProtocol, self).connectTCP(self.host, self.port)
-        d.addCallback(self.connected)
+        d.addCallbacks(self.connected, self.connectionError)
 
     def connected(self, proto):
         """Begin processing the queued requests."""
@@ -64,6 +64,23 @@ class Peer(ClientFactory):
         self.connecting = False
         self.proto = proto
         self.processQueue()
+        
+    def connectionError(self, err):
+        """Cancel the requests."""
+        log.msg('Failed to connect to the peer by HTTP.')
+        log.err(err)
+
+        # Remove one request so that we don't loop indefinitely
+        if self.request_queue:
+            req = self.request_queue.pop(0)
+            req.deferRequest.errback(err)
+            
+        self._completed += 1
+        self._errors += 1
+        self.rerank()
+        if self.connecting:
+            self.connecting = False
+            self.clientGone(None)
         
     def close(self):
         """Close the connection to the peer."""

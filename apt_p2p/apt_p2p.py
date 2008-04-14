@@ -157,7 +157,8 @@ class AptP2P:
         """
         log.msg('Checking if %s is still fresh' % url)
         d = self.peers.get('', url, method = "HEAD", modtime = modtime)
-        d.addCallback(self.check_freshness_done, req, url, resp)
+        d.addCallbacks(self.check_freshness_done, self.check_freshness_error,
+                       callbackArgs = (req, url, resp), errbackArgs = (req, url))
         return d
     
     def check_freshness_done(self, resp, req, url, orig_resp):
@@ -177,6 +178,17 @@ class AptP2P:
         else:
             log.msg('Stale, need to redownload: %s' % url)
             return self.get_resp(req, url)
+    
+    def check_freshness_error(self, err, req, url):
+        """Mirror request failed, continue with download.
+        
+        @param err: the response from the mirror to the HEAD request
+        @type req: L{twisted.web2.http.Request}
+        @param req: the initial request sent to the HTTP server by apt
+        @param url: the URI of the actual mirror request
+        """
+        log.err(err)
+        return self.get_resp(req, url)
     
     def get_resp(self, req, url):
         """Lookup a hash for the file in the local mirror info.
