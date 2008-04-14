@@ -312,7 +312,7 @@ class FileDownload:
         if max_found == no_pieces:
             # The file is not split into pieces
             log.msg('No pieces were found for the file')
-            self.pieces = []
+            self.pieces = [self.hash.expected()]
             self.startDownload()
         elif max_found == max(pieces_string.values()):
             # Small number of pieces in a string
@@ -370,7 +370,7 @@ class FileDownload:
             
         # Continue without the piece hashes
         log.msg('Could not retrieve the piece hashes from the DHT')
-        self.pieces = []
+        self.pieces = [None for x in xrange(0, self.hash.expSize, PIECE_SIZE)]
         self.startDownload()
 
     def getPeerPieces(self, key, failedSite = None):
@@ -410,7 +410,7 @@ class FileDownload:
         if self.pieces is None and self.outstanding <= 0:
             # Continue without the piece hashes
             log.msg('Could not retrieve the piece hashes from the peers')
-            self.pieces = []
+            self.pieces = [None for x in xrange(0, self.hash.expSize, PIECE_SIZE)]
             self.startDownload()
         
     def _getPeerPieces(self, response, key, site):
@@ -483,14 +483,14 @@ class FileDownload:
         
         log.msg('Starting to download %s' % self.path)
         self.started = True
-        assert self.pieces is not None, "You must initialize the piece hashes first"
+        assert self.pieces, "You must initialize the piece hashes first"
         self.peerlist = [self.peers[site]['peer'] for site in self.peers]
         
         # Special case if there's only one good peer left
-        if len(self.peerlist) == 1:
-            log.msg('Downloading from peer %r' % (self.peerlist[0], ))
-            self.defer.callback(self.peerlist[0].get(self.path))
-            return
+#        if len(self.peerlist) == 1:
+#            log.msg('Downloading from peer %r' % (self.peerlist[0], ))
+#            self.defer.callback(self.peerlist[0].get(self.path))
+#            return
         
         # Start sending the return file
         self.stream = GrowingFileStream(self.file, self.hash.expSize)
@@ -500,10 +500,7 @@ class FileDownload:
         # Begin to download the pieces
         self.outstanding = 0
         self.nextFinish = 0
-        if self.pieces:
-            self.completePieces = [False for piece in self.pieces]
-        else:
-            self.completePieces = [False]
+        self.completePieces = [False for piece in self.pieces]
         self.getPieces()
         
     #{ Downloading the pieces
@@ -521,10 +518,7 @@ class FileDownload:
                 log.msg('Sending a request for piece %d to peer %r' % (piece, peer))
                 
                 self.outstanding += 1
-                if self.pieces:
-                    df = peer.getRange(self.path, piece*PIECE_SIZE, (piece+1)*PIECE_SIZE - 1)
-                else:
-                    df = peer.get(self.path)
+                df = peer.getRange(self.path, piece*PIECE_SIZE, (piece+1)*PIECE_SIZE - 1)
                 reactor.callLater(0, df.addCallbacks,
                                   *(self._getPiece, self._getError),
                                   **{'callbackArgs': (piece, peer),
@@ -574,13 +568,12 @@ class FileDownload:
     def _gotPiece(self, response, piece, peer):
         """Process the retrieved piece from the peer."""
         log.msg('Finished streaming piece %d from peer %r: %r' % (piece, peer, response))
-        if ((self.pieces and response != self.pieces[piece]) or
-            (len(self.pieces) == 0 and response != self.hash.expected())):
+        if self.pieces[piece] and response != self.pieces[piece]:
             # Hash doesn't match
             log.msg('Hash error for piece %d from peer %r' % (piece, peer))
             peer.hashError('Piece received from peer does not match expected')
             self.completePieces[piece] = False
-        elif self.pieces:
+        else:
             # Successfully completed one of several pieces
             log.msg('Finished with piece %d from peer %r' % (piece, peer))
             self.completePieces[piece] = True
@@ -588,12 +581,6 @@ class FileDownload:
                    self.completePieces[self.nextFinish] == True):
                 self.nextFinish += 1
                 self.stream.updateAvailable(PIECE_SIZE)
-        else:
-            # Whole download (only one piece) is complete
-            log.msg('Piece %d from peer %r is the last piece' % (piece, peer))
-            self.completePieces[piece] = True
-            self.nextFinish = 1
-            self.stream.updateAvailable(2**30)
 
         self.getPieces()
 
@@ -649,12 +636,12 @@ class PeerManager:
             path = urlunparse(('', '') + parsed[2:])
             peer = self.getPeer(site)
             return peer.get(path, method, modtime)
-        elif len(peers) == 1:
-            site = uncompact(peers[0]['c'])
-            log.msg('Downloading from peer %r' % (site, ))
-            path = '/~/' + quote_plus(hash.expected())
-            peer = self.getPeer(site)
-            return peer.get(path)
+#        elif len(peers) == 1:
+#            site = uncompact(peers[0]['c'])
+#            log.msg('Downloading from peer %r' % (site, ))
+#            path = '/~/' + quote_plus(hash.expected())
+#            peer = self.getPeer(site)
+#            return peer.get(path)
         else:
             tmpfile = self.cache_dir.child(hash.hexexpected())
             return FileDownload(self, hash, mirror, peers, tmpfile).run()
