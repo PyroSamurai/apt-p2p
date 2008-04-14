@@ -11,6 +11,7 @@
 
 from binascii import b2a_hex
 from urlparse import urlunparse
+from urllib import unquote
 import os, re, sha
 
 from twisted.internet import defer, reactor
@@ -193,7 +194,7 @@ class AptP2P:
         d = defer.Deferred()
         
         log.msg('Trying to find hash for %s' % url)
-        findDefer = self.mirrors.findHash(url)
+        findDefer = self.mirrors.findHash(unquote(url))
         
         findDefer.addCallbacks(self.findHash_done, self.findHash_error, 
                                callbackArgs=(req, url, d), errbackArgs=(req, url, d))
