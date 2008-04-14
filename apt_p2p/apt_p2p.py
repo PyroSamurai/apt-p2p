@@ -269,7 +269,7 @@ class AptP2P:
         log.msg('Looking up hash in DHT for file: %s' % url)
         key = hash.expected()
         lookupDefer = self.dht.getValue(key)
-        lookupDefer.addCallback(self.lookupHash_done, hash, url, d)
+        lookupDefer.addBoth(self.lookupHash_done, hash, url, d)
 
     def lookupHash_done(self, values, hash, url, d):
         """Start the download of the file.
@@ -281,8 +281,11 @@ class AptP2P:
         @param values: the returned values from the DHT containing peer
             download information
         """
-        if not values:
-            log.msg('Peers for %s were not found' % url)
+        if not isinstance(values, list) or not values:
+            if not isinstance(values, list):
+                log.msg('DHT lookup for %s failed with error %r' % (url, values))
+            else:
+                log.msg('Peers for %s were not found' % url)
             getDefer = self.peers.get(hash, url)
             getDefer.addCallback(self.cache.save_file, hash, url)
             getDefer.addErrback(self.cache.save_error, url)
@@ -358,7 +361,8 @@ class AptP2P:
             value['l'] = sha.new(''.join(pieces)).digest()
 
         storeDefer = self.dht.storeValue(key, value)
-        storeDefer.addCallback(self.store_done, hash)
+        storeDefer.addCallbacks(self.store_done, self.store_error,
+                                callbackArgs = (hash, ), errbackArgs = (hash.digest(), ))
         return storeDefer
 
     def store_done(self, result, hash):
@@ -371,7 +375,8 @@ class AptP2P:
             value = {'t': ''.join(pieces)}
 
             storeDefer = self.dht.storeValue(key, value)
-            storeDefer.addCallback(self.store_torrent_done, key)
+            storeDefer.addCallbacks(self.store_torrent_done, self.store_error,
+                                    callbackArgs = (key, ), errbackArgs = (key, ))
             return storeDefer
         return result
 
@@ -379,4 +384,9 @@ class AptP2P:
         """Adding the file to the DHT is complete, and so is the workflow."""
         log.msg('Added torrent string %s to the DHT: %r' % (b2a_hex(key), result))
         return result
+
+    def store_error(self, err, key):
+        """Adding to the DHT failed."""
+        log.msg('An error occurred adding %s to the DHT: %r' % (b2a_hex(key), err))
+        return err
     
