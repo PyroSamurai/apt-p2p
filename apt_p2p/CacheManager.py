@@ -347,7 +347,7 @@ class CacheManager:
         if destFile.exists():
             log.msg('File already exists, removing: %s' % destFile.path)
             destFile.remove()
-        elif not destFile.parent().exists():
+        if not destFile.parent().exists():
             destFile.parent().makedirs()
 
         # Determine whether it needs to be decompressed and how

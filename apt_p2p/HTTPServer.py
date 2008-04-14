@@ -3,6 +3,7 @@
 
 from urllib import quote_plus, unquote_plus
 from binascii import b2a_hex
+import operator
 
 from twisted.python import log
 from twisted.internet import defer
@@ -148,6 +149,8 @@ class UploadThrottlingProtocol(ThrottlingProtocol):
     Uploads use L{FileUploaderStream} or L{twisted.web2.stream.MemorySTream},
     apt uses L{CacheManager.ProxyFileStream} or L{twisted.web.stream.FileStream}.
     """
+    
+    stats = None
 
     def __init__(self, factory, wrappedProtocol):
         ThrottlingProtocol.__init__(self, factory, wrappedProtocol)
@@ -156,8 +159,18 @@ class UploadThrottlingProtocol(ThrottlingProtocol):
     def write(self, data):
         if self.throttle:
             ThrottlingProtocol.write(self, data)
+            if stats:
+                stats.sentBytes(len(data))
         else:
             ProtocolWrapper.write(self, data)
+
+    def writeSequence(self, seq):
+        if self.throttle:
+            ThrottlingProtocol.writeSequence(self, seq)
+            if stats:
+                stats.sentBytes(reduce(operator.add, map(len, seq)))
+        else:
+            ProtocolWrapper.writeSequence(self, seq)
 
     def registerProducer(self, producer, streaming):
         ThrottlingProtocol.registerProducer(self, producer, streaming)
@@ -207,6 +220,7 @@ class TopLevel(resource.Resource):
                                                   'betweenRequestsTimeOut': 60})
             self.factory = ThrottlingFactory(self.factory, writeLimit = self.uploadLimit)
             self.factory.protocol = UploadThrottlingProtocol
+            self.factory.protocol.stats = self.manager.stats
         return self.factory
 
     def render(self, ctx):

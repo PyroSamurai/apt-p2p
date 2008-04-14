@@ -62,6 +62,36 @@ def compact(id, host, port):
         raise ValueError
     return s
 
+def byte_format(s):
+    """Format a byte size for reading by the user.
+    
+    @type s: C{long}
+    @param s: the number of bytes
+    @rtype: C{string}
+    @return: the formatted size with appropriate units
+    
+    """
+    
+    if (s < 1024):
+        r = str(s) + 'B'
+    elif (s < 10485):
+        r = str(int((s/1024.0)*100.0)/100.0) + 'KiB'
+    elif (s < 104857):
+        r = str(int((s/1024.0)*10.0)/10.0) + 'KiB'
+    elif (s < 1048576):
+        r = str(int(s/1024)) + 'KiB'
+    elif (s < 10737418L):
+        r = str(int((s/1048576.0)*100.0)/100.0) + 'MiB'
+    elif (s < 107374182L):
+        r = str(int((s/1048576.0)*10.0)/10.0) + 'MiB'
+    elif (s < 1073741824L):
+        r = str(int(s/1048576)) + 'MiB'
+    elif (s < 1099511627776L):
+        r = str(int((s/1073741824.0)*100.0)/100.0) + 'GiB'
+    else:
+        r = str(int((s/1099511627776.0)*100.0)/100.0) + 'TiB'
+    return(r)
+
 class TestUtil(unittest.TestCase):
     """Tests for the utilities."""
     

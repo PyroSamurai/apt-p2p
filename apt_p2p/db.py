@@ -49,6 +49,7 @@ class DB:
         self.conn.text_factory = str
         self.conn.row_factory = sqlite.Row
         
+    #{ DB Functions
     def _loadDB(self):
         """Open a new connection to the existing database file"""
         try:
@@ -68,11 +69,18 @@ class DB:
         c.execute("CREATE TABLE hashes (hashID INTEGER PRIMARY KEY AUTOINCREMENT, " +
                                        "hash KHASH UNIQUE, pieces KHASH, " +
                                        "piecehash KHASH, refreshed TIMESTAMP)")
+        c.execute("CREATE TABLE stats (param TEXT PRIMARY KEY UNIQUE, value NUMERIC)")
+        c.execute("CREATE INDEX hashes_hash ON hashes(hash)")
         c.execute("CREATE INDEX hashes_refreshed ON hashes(refreshed)")
         c.execute("CREATE INDEX hashes_piecehash ON hashes(piecehash)")
         c.close()
         self.conn.commit()
 
+    def close(self):
+        """Close the database connection."""
+        self.conn.close()
+
+    #{ Files and Hashes
     def _removeChanged(self, file, row):
         """If the file has changed or is missing, remove it from the DB.
         
@@ -299,10 +307,50 @@ class DB:
 
         return removed
     
-    def close(self):
-        """Close the database connection."""
-        self.conn.close()
+    #{ Statistics
+    def dbStats(self):
+        """Count the total number of files and hashes in the database.
+        
+        @rtype: (C{int}, C{int})
+        @return: the number of distinct hashes and total files in the database
+        """
+        c = self.conn.cursor()
+        c.execute("SELECT COUNT(hash) as num_hashes FROM hashes")
+        hashes = 0
+        row = c.fetchone()
+        if row:
+            hashes = row[0]
+        c.execute("SELECT COUNT(path) as num_files FROM files")
+        files = 0
+        row = c.fetchone()
+        if row:
+            files = row[0]
+        return hashes, files
 
+    def getStats(self):
+        """Retrieve the saved statistics from the DB.
+        
+        @return: dictionary of statistics
+        """
+        c = self.conn.cursor()
+        c.execute("SELECT param, value FROM stats")
+        row = c.fetchone()
+        stats = {}
+        while row:
+            stats[row['param']] = row['value']
+            row = c.fetchone()
+        c.close()
+        return stats
+        
+    def saveStats(self, stats):
+        """Save the statistics to the DB."""
+        c = self.conn.cursor()
+        for param in stats:
+            c.execute("INSERT OR REPLACE INTO stats (param, value) VALUES (?, ?)",
+                      (param, stats[param]))
+            self.conn.commit()
+        c.close()
+        
 class TestDB(unittest.TestCase):
     """Tests for the khashmir database."""
     

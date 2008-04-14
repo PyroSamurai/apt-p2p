@@ -27,6 +27,7 @@ from MirrorManager import MirrorManager
 from CacheManager import CacheManager
 from Hash import HashObject
 from db import DB
+from stats import StatsLogger
 from util import findMyIPAddr, compact
 
 DHT_PIECES = 4
@@ -48,6 +49,8 @@ class AptP2P:
     @ivar db: the database to use for tracking files and hashes
     @type dht: L{interfaces.IDHT}
     @ivar dht: the DHT instance
+    @type stats: L{stats.StatsLogger}
+    @ivar stats: the statistics logger to record sent data to
     @type http_server: L{HTTPServer.TopLevel}
     @ivar http_server: the web server that will handle all requests from apt
         and from other peers
@@ -78,9 +81,10 @@ class AptP2P:
         self.dht = dhtClass()
         self.dht.loadConfig(config, config.get('DEFAULT', 'DHT'))
         self.dht.join().addCallbacks(self.joinComplete, self.joinError)
+        self.stats = StatsLogger(self.db)
         self.http_server = TopLevel(self.cache_dir.child(download_dir), self.db, self)
         self.getHTTPFactory = self.http_server.getHTTPFactory
-        self.peers = PeerManager(self.cache_dir, self.dht)
+        self.peers = PeerManager(self.cache_dir, self.dht, self.stats)
         self.mirrors = MirrorManager(self.cache_dir)
         self.cache = CacheManager(self.cache_dir.child(download_dir), self.db, self)
         self.my_contact = None
@@ -136,6 +140,8 @@ class AptP2P:
         @return: the formatted HTML page containing the statistics
         """
         out = '<html><body>\n\n'
+        out += self.stats.formatHTML(self.my_contact)
+        out += '\n\n'
         if IDHTStats.implementedBy(self.dhtClass):
             out += self.dht.getStats()
         out += '\n</body></html>\n'
