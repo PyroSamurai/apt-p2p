@@ -78,13 +78,11 @@ class AptP2P:
         self.dht = dhtClass()
         self.dht.loadConfig(config, config.get('DEFAULT', 'DHT'))
         self.dht.join().addCallbacks(self.joinComplete, self.joinError)
-        self.http_server = TopLevel(self.cache_dir.child(download_dir), self.db, self,
-                                    config.getint('DEFAULT', 'UPLOAD_LIMIT'))
+        self.http_server = TopLevel(self.cache_dir.child(download_dir), self.db, self)
         self.getHTTPFactory = self.http_server.getHTTPFactory
         self.peers = PeerManager(self.cache_dir, self.dht)
-        self.mirrors = MirrorManager(self.cache_dir, config.gettime('DEFAULT', 'UNLOAD_PACKAGES_CACHE'))
-        other_dirs = [FilePath(f) for f in config.getstringlist('DEFAULT', 'OTHER_DIRS')]
-        self.cache = CacheManager(self.cache_dir.child(download_dir), self.db, other_dirs, self)
+        self.mirrors = MirrorManager(self.cache_dir)
+        self.cache = CacheManager(self.cache_dir.child(download_dir), self.db, self)
         self.my_contact = None
 
     #{ DHT maintenance

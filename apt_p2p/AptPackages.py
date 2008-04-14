@@ -40,6 +40,7 @@ import apt_pkg, apt_inst
 from apt import OpProgress
 from debian_bundle import deb822
 
+from apt_p2p_conf import config
 from Hash import HashObject
 
 apt_pkg.init()
@@ -120,8 +121,6 @@ class AptPackages:
     @ivar essential_files: files that must be created for apt to work
     @type cache_dir: L{twisted.python.filepath.FilePath}
     @ivar cache_dir: the directory to use for storing all files
-    @type unload_delay: C{int}
-    @ivar unload_delay: the time to wait before unloading the apt cache
     @ivar apt_config: the configuration parameters to use for apt
     @type packages: L{PackageFileList}
     @ivar packages: the persistent storage of tracked apt index files
@@ -181,13 +180,12 @@ class AptPackages:
                       'apt/lists/partial')
     essential_files = ('apt/dpkg/status', 'apt/etc/sources.list',)
         
-    def __init__(self, cache_dir, unload_delay):
+    def __init__(self, cache_dir):
         """Construct a new packages manager.
 
         @param cache_dir: directory to use to store files for this mirror
         """
         self.cache_dir = cache_dir
-        self.unload_delay = unload_delay
         self.apt_config = deepcopy(self.DEFAULT_APT_CONFIG)
 
         # Create the necessary files and directories for apt
@@ -242,9 +240,9 @@ class AptPackages:
         """Make sure the package cache is initialized and loaded."""
         # Reset the pending unload call
         if self.unload_later and self.unload_later.active():
-            self.unload_later.reset(self.unload_delay)
+            self.unload_later.reset(config.gettime('DEFAULT', 'UNLOAD_PACKAGES_CACHE'))
         else:
-            self.unload_later = reactor.callLater(self.unload_delay, self.unload)
+            self.unload_later = reactor.callLater(config.gettime('DEFAULT', 'UNLOAD_PACKAGES_CACHE'), self.unload)
             
         # Make sure it's not already being loaded
         if self.loading is None:
@@ -434,7 +432,7 @@ class TestAptPackages(unittest.TestCase):
     
     def setUp(self):
         """Initializes the cache with files found in the traditional apt location."""
-        self.client = AptPackages(FilePath('/tmp/.apt-p2p'), 300)
+        self.client = AptPackages(FilePath('/tmp/.apt-p2p'))
     
         # Find the largest index files that are for 'main'
         self.packagesFile = os.popen('ls -Sr /var/lib/apt/lists/ | grep -E "_main_.*Packages$" | tail -n 1').read().rstrip('\n')

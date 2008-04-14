@@ -19,6 +19,7 @@ from twisted.web2 import stream
 from twisted.web2.http import splitHostPort
 
 from Hash import HashObject
+from apt_p2p_conf import config
 
 DECOMPRESS_EXTS = ['.gz', '.bz2']
 DECOMPRESS_FILES = ['release', 'sources', 'packages']
@@ -206,22 +207,19 @@ class CacheManager:
     @ivar scanning: all the directories that are currectly being scanned or waiting to be scanned
     """
     
-    def __init__(self, cache_dir, db, other_dirs = [], manager = None):
+    def __init__(self, cache_dir, db, manager = None):
         """Initialize the instance and remove any untracked files from the DB..
         
         @type cache_dir: L{twisted.python.filepath.FilePath}
         @param cache_dir: the directory to use for storing all files
         @type db: L{db.DB}
         @param db: the database to use for tracking files and hashes
-        @type other_dirs: C{list} of L{twisted.python.filepath.FilePath}
-        @param other_dirs: the other directories that have shared files in them
-            (optional, defaults to only using the cache directory)
         @type manager: L{apt_p2p.AptP2P}
         @param manager: the main program object to send requests to
             (optional, defaults to not calling back with cached files)
         """
         self.cache_dir = cache_dir
-        self.other_dirs = other_dirs
+        self.other_dirs = [FilePath(f) for f in config.getstringlist('DEFAULT', 'OTHER_DIRS')]
         self.all_dirs = self.other_dirs[:]
         self.all_dirs.insert(0, self.cache_dir)
         self.db = db

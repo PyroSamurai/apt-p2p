@@ -25,15 +25,12 @@ class MirrorManager:
     
     @type cache_dir: L{twisted.python.filepath.FilePath}
     @ivar cache_dir: the directory to use for storing all files
-    @type unload_delay: C{int}
-    @ivar unload_delay: the time to wait before unloading the apt cache
     @type apt_caches: C{dictionary}
     @ivar apt_caches: the avaliable mirrors
     """
     
-    def __init__(self, cache_dir, unload_delay):
+    def __init__(self, cache_dir):
         self.cache_dir = cache_dir
-        self.unload_delay = unload_delay
         self.apt_caches = {}
     
     def extractPath(self, url):
@@ -93,7 +90,7 @@ class MirrorManager:
         if baseDir not in self.apt_caches[site]:
             site_cache = self.cache_dir.child(aptpkg_dir).child('mirrors').child(site + baseDir.replace('/', '_'))
             site_cache.makedirs
-            self.apt_caches[site][baseDir] = AptPackages(site_cache, self.unload_delay)
+            self.apt_caches[site][baseDir] = AptPackages(site_cache)
     
     def updatedFile(self, url, file_path):
         """A file in the mirror has changed or been added.
@@ -133,7 +130,7 @@ class TestMirrorManager(unittest.TestCase):
     client = None
     
     def setUp(self):
-        self.client = MirrorManager(FilePath('/tmp/.apt-p2p'), 300)
+        self.client = MirrorManager(FilePath('/tmp/.apt-p2p'))
         
     def test_extractPath(self):
         """Test extracting the site and base directory from various mirrors."""

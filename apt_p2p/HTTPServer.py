@@ -12,6 +12,7 @@ from twisted.trial import unittest
 from twisted.python.filepath import FilePath
 
 from policies import ThrottlingFactory, ThrottlingProtocol, ProtocolWrapper
+from apt_p2p_conf import config
 from apt_p2p_Khashmir.bencode import bencode
 
 class FileDownloader(static.File):
@@ -169,7 +170,7 @@ class TopLevel(resource.Resource):
     
     addSlash = True
     
-    def __init__(self, directory, db, manager, uploadLimit):
+    def __init__(self, directory, db, manager):
         """Initialize the instance.
         
         @type directory: L{twisted.python.filepath.FilePath}
@@ -183,8 +184,8 @@ class TopLevel(resource.Resource):
         self.db = db
         self.manager = manager
         self.uploadLimit = None
-        if uploadLimit > 0:
-            self.uploadLimit = int(uploadLimit*1024)
+        if config.getint('DEFAULT', 'UPLOAD_LIMIT') > 0:
+            self.uploadLimit = int(config.getint('DEFAULT', 'UPLOAD_LIMIT')*1024)
         self.factory = None
 
     def getHTTPFactory(self):
@@ -266,7 +267,7 @@ class TestTopLevel(unittest.TestCase):
     file_hash = '\xf8~])+\x9d\xe5_B\xff\x1a\xc4!\xca \xb8\x0c\x00\xe7\x07'
     
     def setUp(self):
-        self.client = TopLevel(FilePath('/boot'), self, None, 0)
+        self.client = TopLevel(FilePath('/boot'), self, None)
         
     def lookupHash(self, hash):
         if hash == self.torrent_hash:
