@@ -216,13 +216,15 @@ class KrpcRequest(Deferred):
         self.later = None
         
     def send(self):
+        assert not self.later, 'There is already a pending request'
         self.later = reactor.callLater(self.delay, self.timeOut)
         self.delay *= 2
-        self.protocol._sendData(self.method, self.data)
+        self.protocol.sendData(self.method, self.data)
 
     def timeOut(self):
         """Call the deferred's errback if a timeout occurs."""
-        self.protocol._timeOut(self.tid, self.method)
+        self.later = None
+        self.protocol.timeOut(self.tid, self.method)
         
     def callback(self, resp):
         self.dropTimeOut()
@@ -236,6 +238,7 @@ class KrpcRequest(Deferred):
         """Cancel the timeout call when a response is received."""
         if self.later and self.later.active():
             self.later.cancel()
+            self.later = None
 
 class KRPC:
     """The KRPC protocol implementation.
@@ -486,20 +489,22 @@ class KRPC:
         req.send()
         return req
     
-    def _sendData(self, method, data):
+    def sendData(self, method, data):
         # Save some stats
         self.stats.sentAction(method)
         self.stats.sentBytes(len(data))
         
         self.transport.write(data, self.addr)
         
-    def _timeOut(self, badTID, method):
+    def timeOut(self, badTID, method):
         """Call the deferred's errback if a timeout occurs."""
         if badTID in self.tids:
             req = self.tids[badTID]
             del(self.tids[badTID])
-            self.errback(KrpcError(KRPC_ERROR_TIMEOUT, "timeout waiting for '%s' from %r" % 
-                                                        (method, self.addr)))
+            req.errback(KrpcError(KRPC_ERROR_TIMEOUT, "timeout waiting for '%s' from %r" % 
+                                                      (method, self.addr)))
+        else:
+            log.msg('Received a timeout for an unknown request for %s from %r' % (method, self.addr))
         
     def stop(self):
         """Timeout all pending requests."""
