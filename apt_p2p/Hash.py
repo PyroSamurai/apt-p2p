@@ -157,9 +157,7 @@ class HashObject:
         """Hashes a file in a separate thread, returning a deferred that will callback with the result."""
         file.restat(False)
         if not file.exists():
-            df = defer.Deferred()
-            df.errback(HashError("file not found"))
-            return df
+            return defer.fail(HashError("file not found"))
         
         df = threads.deferToThread(self._hashInThread, file)
         return df

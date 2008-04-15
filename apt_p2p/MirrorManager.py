@@ -111,9 +111,7 @@ class MirrorManager:
         site, baseDir, path = self.extractPath(url)
         if site in self.apt_caches and baseDir in self.apt_caches[site]:
             return self.apt_caches[site][baseDir].findHash(path)
-        d = defer.Deferred()
-        d.errback(MirrorError("Site Not Found"))
-        return d
+        return defer.fail(MirrorError("Site Not Found"))
     
     def cleanup(self):
         for site in self.apt_caches.keys():

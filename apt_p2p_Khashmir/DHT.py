@@ -249,15 +249,12 @@ class DHT:
 
     def getValue(self, key):
         """See L{apt_p2p.interfaces.IDHT}."""
-        d = defer.Deferred()
-
         if self.config is None:
-            d.errback(DHTError("configuration not loaded"))
-            return d
+            return defer.fail(DHTError("configuration not loaded"))
         if not self.joined:
-            d.errback(DHTError("have not joined a network yet"))
-            return d
+            return defer.fail(DHTError("have not joined a network yet"))
         
+        d = defer.Deferred()
         key = self._normKey(key)
 
         if key not in self.retrieving:
@@ -283,15 +280,12 @@ class DHT:
 
     def storeValue(self, key, value):
         """See L{apt_p2p.interfaces.IDHT}."""
-        d = defer.Deferred()
-
         if self.config is None:
-            d.errback(DHTError("configuration not loaded"))
-            return d
+            return defer.fail(DHTError("configuration not loaded"))
         if not self.joined:
-            d.errback(DHTError("have not joined a network yet"))
-            return d
+            return defer.fail(DHTError("have not joined a network yet"))
 
+        d = defer.Deferred()
         key = self._normKey(key)
         bvalue = bencode(value)
 
