@@ -367,14 +367,15 @@ class TestSimpleDHT(unittest.TestCase):
         d = self.a.join()
         return d
 
-    def test_failed_join(self):
+    def no_krpc_errors(self, result):
         from krpc import KrpcError
+        self.flushLoggedErrors(KrpcError)
+        return result
+
+    def test_failed_join(self):
         d = self.b.join()
         reactor.callLater(30, self.a.join)
-        def no_errors(result, self = self):
-            self.flushLoggedErrors(KrpcError)
-            return result
-        d.addCallback(no_errors)
+        d.addCallback(self.no_krpc_errors)
         return d
         
     def node_join(self, result):
@@ -382,11 +383,14 @@ class TestSimpleDHT(unittest.TestCase):
         return d
     
     def test_join(self):
-        self.lastDefer = defer.Deferred()
         d = self.a.join()
         d.addCallback(self.node_join)
-        d.addCallback(self.lastDefer.callback)
-        return self.lastDefer
+        return d
+
+    def test_timeout_retransmit(self):
+        d = self.b.join()
+        reactor.callLater(4, self.a.join)
+        return d
 
     def test_normKey(self):
         h = self.a._normKey('12345678901234567890')

@@ -15,47 +15,6 @@ distributions. They need to be dealt with properly by
 adding them to the tracking done by the AptPackages module.
 
 
-Retransmit DHT requests before timeout occurs.
-
-Currently, only a single transmission to a peer is ever attempted. If
-that request is lost, a timeout will occur after 20 seconds, the peer
-will be declared unreachable and the action will move on to the next
-peer. Instead, try to resend the request periodically using exponential
-backoff to make sure that lost packets don't delay the action so much.
-For example, send the request, wait 2 seconds and send again, wait 4
-seconds and send again, wait 8 seconds (14 seconds have now passed) and
-then declare the host unreachable. The same TID should be used in each
-retransmission, so receiving multiple responses should not be a problem
-as the extra ones will be ignored. 
-
-
-PeerManager needs to download large files from multiple peers.
-
-The PeerManager currently chooses a peer at random from the list of 
-possible peers, and downloads the entire file from there. This needs to 
-change if both a) the file is large (more than 512 KB), and b) there are
-multiple peers with the file. The PeerManager should then break up the 
-large file into multiple pieces of size < 512 KB, and then send requests 
-to multiple peers for these pieces.
-
-This can cause a problem with hash checking the returned data, as hashes 
-for the pieces are not known. Any file that fails a hash check should be 
-downloaded again, with each piece being downloaded from different peers 
-than it was previously. The peers are shifted by 1, so that if a peers 
-previously downloaded piece i, it now downloads piece i+1, and the first 
-piece is downloaded by the previous downloader of the last piece, or 
-preferably a previously unused peer. As each piece is downloaded the 
-running hash of the file should be checked to determine the place at 
-which the file differs from the previous download.
-
-If the hash check then passes, then the peer who originally provided the 
-bad piece can be assessed blame for the error. Otherwise, the peer who 
-originally provided the piece is probably at fault, since he is now 
-providing a later piece. This doesn't work if the differing piece is the 
-first piece, in which case it is downloaded from a 3rd peer, with 
-consensus revealing the misbehaving peer.
-
-
 Consider storing deltas of packages.
 
 Instead of downloading full package files when a previous version of
