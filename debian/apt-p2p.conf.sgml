@@ -134,6 +134,13 @@
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
+	    <term><option>REMOTE_STATS = <replaceable>boolean</replaceable></option></term>
+	     <listitem>
+	      <para>Whether a remote peer can access the statistics page.
+	        (Default is True)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
 	    <term><option>UNLOAD_PACKAGES_CACHE = <replaceable>time</replaceable></option></term>
 	     <listitem>
 	      <para>The <replaceable>time</replaceable> of inactivity to wait for before unloading the

@@ -360,6 +360,9 @@ CACHE_DIR = %(CACHE_DIR)s
 # Whether it's OK to use an IP addres from a known local/private range
 LOCAL_OK = yes
 
+# Whether a remote peer can access the statistics page
+REMOTE_STATS = yes
+
 # Unload the packages cache after an interval of inactivity this long.
 # The packages cache uses a lot of memory, and only takes a few seconds
 # to reload when a new request arrives.
