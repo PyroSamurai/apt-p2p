@@ -53,9 +53,9 @@ if __name__ == '__main__':
 log.msg("Loading config files: '%s'" % "', '".join(DEFAULT_CONFIG_FILES + [config_file]))
 config_read = config.read(DEFAULT_CONFIG_FILES + [config_file])
 log.msg("Successfully loaded config files: '%s'" % "', '".join(config_read))
-if config.has_option('DEFAULT', 'username') and config.get('DEFAULT', 'username'):
-    uid,gid = pwd.getpwnam(config.get('DEFAULT', 'username'))[2:4]
-else:
+try:
+    uid,gid = pwd.getpwnam(config.get('DEFAULT', 'USERNAME'))[2:4]
+except:
     uid,gid = None,None
 
 log.msg('Starting application')

@@ -24,7 +24,7 @@ pidfile=$rundir/apt-p2p.pid
 logfile=/var/log/apt-p2p.log
 application=/usr/sbin/apt-p2p
 twistd=/usr/bin/twistd
-user=aptp2p
+user=apt-p2p
 group=nogroup
 
 [ -r /etc/default/apt-p2p ] && . /etc/default/apt-p2p

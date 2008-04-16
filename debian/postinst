@@ -25,17 +25,17 @@ set -e
 
 case "$1" in
     configure)
-		if ! getent passwd aptp2p >/dev/null; then
+		if ! getent passwd apt-p2p >/dev/null; then
 			adduser --quiet --system --no-create-home \
 					--home /var/cache/apt-p2p --disabled-password \
 					--disabled-login --shell /bin/false --ingroup nogroup \
-					aptp2p
+					apt-p2p
 		fi
 		
 		touch /var/log/apt-p2p.log
-		chown aptp2p:adm /var/log/apt-p2p.log
+		chown apt-p2p:adm /var/log/apt-p2p.log
 		mkdir -p /var/cache/apt-p2p
-		chown -R aptp2p:adm /var/cache/apt-p2p
+		chown -R apt-p2p:adm /var/cache/apt-p2p
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

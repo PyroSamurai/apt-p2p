@@ -24,8 +24,8 @@ if test "$1" = "purge"; then
   echo Purging apt-p2p cache directory
   rm -rf /var/cache/apt-p2p
 
-  if id aptp2p >/dev/null; then
-    deluser aptp2p
+  if id apt-p2p >/dev/null; then
+    deluser apt-p2p
   fi
 fi
 

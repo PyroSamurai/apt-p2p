@@ -157,6 +157,14 @@
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
+	    <term><option>USERNAME = <replaceable>user</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>user</replaceable> name to try and run as.
+	          Leaving this blank will try to run as current user.
+	          (Default is 'apt-p2p'.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
 	    <term><option>DHT = <replaceable>string</replaceable></option></term>
 	     <listitem>
 	      <para>The DHT implementation to use. It must be possile to do (in python)

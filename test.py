@@ -372,6 +372,9 @@ UNLOAD_PACKAGES_CACHE = 5m
 # This should be a time slightly less than the DHT's KEY_EXPIRE value.
 KEY_REFRESH = 57m
 
+# The user name to try and run as (leave blank to run as current user)
+USERNAME = 
+
 # Which DHT implementation to use.
 # It must be possile to do "from <DHT>.DHT import DHT" to get a class that
 # implements the IDHT interface.
