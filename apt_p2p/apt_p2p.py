@@ -88,8 +88,13 @@ class AptP2P:
         self.mirrors = MirrorManager(self.cache_dir)
         self.cache = CacheManager(self.cache_dir.child(download_dir), self.db, self)
         self.my_contact = None
+        reactor.addSystemEventTrigger('before', 'shutdown', self.shutdown)
 
-    #{ DHT maintenance
+    #{ Maintenance
+    def shutdown(self):
+        self.stats.save()
+        self.db.close()
+        
     def joinComplete(self, result):
         """Complete the DHT join process and determine our download information.
         

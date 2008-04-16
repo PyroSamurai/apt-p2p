@@ -4,7 +4,7 @@
 from datetime import datetime, timedelta
 from StringIO import StringIO
 
-from util import byte_format
+from util import uncompact, byte_format
 
 class StatsLogger:
     """Store the statistics for the Khashmir DHT.
@@ -39,8 +39,7 @@ class StatsLogger:
         """
         # Database
         self.db = db
-        self.lastDBUpdate = datetime.now()
-        self.hashes, self.files = self.db.dbStats()
+        self.hashes, self.files = 0, 0
         
         # Transport
         self.mirrorDown = 0L
@@ -61,17 +60,6 @@ class StatsLogger:
                  }
         self.db.saveStats(stats)
     
-    def dbStats(self):
-        """Collect some statistics about the database.
-        
-        @rtype: (C{int}, C{int})
-        @return: the number of keys and values in the database
-        """
-        if datetime.now() - self.lastDBUpdate > timedelta(minutes = 1):
-            self.lastDBUpdate = datetime.now()
-            self.hashes, self.files = self.db.keyStats()
-        return (self.hashes, self.files)
-    
     def formatHTML(self, contactAddress):
         """Gather statistics for the DHT and format them for display in a browser.
         
@@ -79,7 +67,7 @@ class StatsLogger:
         @rtype: C{string}
         @return: the stats, formatted for display in the body of an HTML page
         """
-        self.dbStats()
+        self.hashes, self.files = self.db.dbStats()
 
         out = StringIO()
         out.write('<h2>Downloader Statistics</h2>\n')
@@ -89,7 +77,7 @@ class StatsLogger:
         # General
         out.write("<table border='1' cellpadding='4px'>\n")
         out.write("<tr><th><h3>General</h3></th><th>Value</th></tr>\n")
-        out.write("<tr title='Contact address for this peer'><td>Contact</td><td>" + str(contactAdress) + '</td></tr>\n')
+        out.write("<tr title='Contact address for this peer'><td>Contact</td><td>" + str(uncompact(contactAddress)) + '</td></tr>\n')
         out.write("</table>\n")
         out.write('</td><td>\n')
         
@@ -110,22 +98,22 @@ class StatsLogger:
         out.write("<td title='Amount uploaded to peers'>" + byte_format(self.peerUp) + '</td></tr>')
         out.write("<tr><td title='Since the program was last restarted'>Session Ratio</td>")
         out.write("<td title='Percent of download from mirrors'>%0.2f%%</td>" %
-                  (float(self.mirrorDown) / float(self.mirrorDown + self.peerDown), ))
+                  (100.0 * float(self.mirrorDown) / float(max(self.mirrorDown + self.peerDown, 1)), ))
         out.write("<td title='Percent of download from peers'>%0.2f%%</td>" %
-                  (float(self.peerDown) / float(self.mirrorDown + self.peerDown), ))
-        out.write("<td title='Percent uploaded to peers compared with downloaded from peers'>%0.2f%%</td></tr>" %
-                  (float(self.peerUp) / float(self.peerDown), ))
+                  (100.0 * float(self.peerDown) / float(max(self.mirrorDown + self.peerDown, 1)), ))
+        out.write("<td title='Percent uploaded to peers compared with all downloaded'>%0.2f%%</td></tr>" %
+                  (100.0 * float(self.peerUp) / float(max(self.mirrorDown + self.peerDown, 1)), ))
         out.write("<tr><td title='Since the program was installed'>All-Time</td>")
         out.write("<td title='Amount downloaded from mirrors'>" + byte_format(self.mirrorAllDown) + '</td>')
         out.write("<td title='Amount downloaded from peers'>" + byte_format(self.peerAllDown) + '</td>')
         out.write("<td title='Amount uploaded to peers'>" + byte_format(self.peerAllUp) + '</td></tr>')
         out.write("<tr><td title='Since the program was installed'>All-Time Ratio</td>")
         out.write("<td title='Percent of download from mirrors'>%0.2f%%</td>" %
-                  (float(self.mirrorAllDown) / float(self.mirrorAllDown + self.peerAllDown), ))
+                  (100.0 * float(self.mirrorAllDown) / float(max(self.mirrorAllDown + self.peerAllDown, 1)), ))
         out.write("<td title='Percent of download from peers'>%0.2f%%</td>" %
-                  (float(self.peerAllDown) / float(self.mirrorAllDown + self.peerAllDown), ))
-        out.write("<td title='Percent uploaded to peers compared with downloaded from peers'>%0.2f%%</td></tr>" %
-                  (float(self.peerAllUp) / float(self.peerAllDown), ))
+                  (100.0 * float(self.peerAllDown) / float(max(self.mirrorAllDown + self.peerAllDown, 1)), ))
+        out.write("<td title='Percent uploaded to peers compared with all downloaded'>%0.2f%%</td></tr>" %
+                  (100.0 * float(self.peerAllUp) / float(max(self.mirrorAllDown + self.peerAllDown, 1)), ))
         out.write("</table>\n")
         out.write("</td></tr>\n")
         out.write("</table>\n")

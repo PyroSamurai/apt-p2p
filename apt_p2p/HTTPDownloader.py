@@ -17,6 +17,24 @@ from zope.interface import implements
 
 from apt_p2p_conf import version
 
+class LoggingHTTPClientProtocol(HTTPClientProtocol):
+    """A modified client protocol that logs the number of bytes received."""
+    
+    def __init__(self, factory, stats = None, mirror = False):
+        HTTPClientProtocol.__init__(self, factory)
+        self.stats = stats
+        self.mirror = mirror
+    
+    def lineReceived(self, line):
+        if self.stats:
+            self.stats.receivedBytes(len(line) + 2, self.mirror)
+        HTTPClientProtocol.lineReceived(self, line)
+
+    def rawDataReceived(self, data):
+        if self.stats:
+            self.stats.receivedBytes(len(data), self.mirror)
+        HTTPClientProtocol.rawDataReceived(self, data)
+
 class Peer(ClientFactory):
     """A manager for all HTTP requests to a single peer.
     
@@ -28,9 +46,10 @@ class Peer(ClientFactory):
 
     implements(IHTTPClientManager)
     
-    def __init__(self, host, port=80):
+    def __init__(self, host, port = 80, stats = None):
         self.host = host
         self.port = port
+        self.stats = stats
         self.mirror = False
         self.rank = 0.5
         self.busy = False
@@ -55,7 +74,8 @@ class Peer(ClientFactory):
         """Connect to the peer."""
         assert self.closed and not self.connecting
         self.connecting = True
-        d = protocol.ClientCreator(reactor, HTTPClientProtocol, self).connectTCP(self.host, self.port)
+        d = protocol.ClientCreator(reactor, LoggingHTTPClientProtocol, self,
+                                   stats = self.stats, mirror = self.mirror).connectTCP(self.host, self.port)
         d.addCallbacks(self.connected, self.connectionError)
 
     def connected(self, proto):

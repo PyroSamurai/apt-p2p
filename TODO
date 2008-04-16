@@ -15,6 +15,21 @@ distributions. They need to be dealt with properly by
 adding them to the tracking done by the AptPackages module.
 
 
+Improve the downloaded and uploaded data measurements.
+
+There are 2 places that this data is measured: for statistics, and for
+limiting the upload bandwidth. They both have deficiencies as they
+sometimes miss the headers or the requests sent out. The upload
+bandwidth calculation only considers the stream in the upload and not
+the headers sent, and it also doesn't consider the upload bandwidth
+from requesting downloads from peers (though that may be a good thing).
+The statistics calculations for downloads include the headers of
+downloaded files, but not the requests received from peers for upload
+files. The statistics for uploaded data only includes the files sent
+and not the headers, and also misses the requests for downloads sent to
+other peers.
+
+
 Consider storing deltas of packages.
 
 Instead of downloading full package files when a previous version of

@@ -159,16 +159,16 @@ class UploadThrottlingProtocol(ThrottlingProtocol):
     def write(self, data):
         if self.throttle:
             ThrottlingProtocol.write(self, data)
-            if stats:
-                stats.sentBytes(len(data))
+            if self.stats:
+                self.stats.sentBytes(len(data))
         else:
             ProtocolWrapper.write(self, data)
 
     def writeSequence(self, seq):
         if self.throttle:
             ThrottlingProtocol.writeSequence(self, seq)
-            if stats:
-                stats.sentBytes(reduce(operator.add, map(len, seq)))
+            if self.stats:
+                self.stats.sentBytes(reduce(operator.add, map(len, seq)))
         else:
             ProtocolWrapper.writeSequence(self, seq)
 
@@ -220,7 +220,8 @@ class TopLevel(resource.Resource):
                                                   'betweenRequestsTimeOut': 60})
             self.factory = ThrottlingFactory(self.factory, writeLimit = self.uploadLimit)
             self.factory.protocol = UploadThrottlingProtocol
-            self.factory.protocol.stats = self.manager.stats
+            if self.manager:
+                self.factory.protocol.stats = self.manager.stats
         return self.factory
 
     def render(self, ctx):

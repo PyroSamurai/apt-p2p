@@ -160,11 +160,15 @@ def byte_format(s):
     @param s: the number of bytes
     @rtype: C{string}
     @return: the formatted size with appropriate units
-    
     """
-    
-    if (s < 1024):
-        r = str(s) + 'B'
+    if (s < 1):
+        r = str(int(s*1000.0)/1000.0) + 'B'
+    elif (s < 10):
+        r = str(int(s*100.0)/100.0) + 'B'
+    elif (s < 102):
+        r = str(int(s*10.0)/10.0) + 'B'
+    elif (s < 1024):
+        r = str(int(s)) + 'B'
     elif (s < 10485):
         r = str(int((s/1024.0)*100.0)/100.0) + 'KiB'
     elif (s < 104857):
