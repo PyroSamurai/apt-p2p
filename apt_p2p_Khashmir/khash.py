@@ -1,16 +1,21 @@
 ## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
-"""Functions to deal with hashes (node IDs and keys)."""
+"""Functions to deal with hashes (node IDs and keys).
+
+@var HASH_LENGTH: the length of the hash to use in bytes
+"""
 
 from sha import sha
 from os import urandom
 
 from twisted.trial import unittest
 
+HASH_LENGTH = 20
+
 def intify(hstr):
     """Convert a hash (big-endian) to a long python integer."""
-    assert len(hstr) == 20
+    assert len(hstr) == HASH_LENGTH
     return long(hstr.encode('hex'), 16)
 
 def stringify(num):
@@ -21,7 +26,7 @@ def stringify(num):
     if len(str) % 2 != 0:
         str = '0' + str
     str = str.decode('hex')
-    return (20 - len(str)) *'\x00' + str
+    return (HASH_LENGTH - len(str)) *'\x00' + str
     
 def distance(a, b):
     """Calculate the distance between two hashes expressed as strings."""
@@ -30,7 +35,7 @@ def distance(a, b):
 def newID():
     """Get a new pseudorandom globally unique hash string."""
     h = sha()
-    h.update(urandom(20))
+    h.update(urandom(HASH_LENGTH))
     return h.digest()
 
 def newIDInRange(min, max):
@@ -48,15 +53,15 @@ def newTID():
 class TestNewID(unittest.TestCase):
     """Test the newID function."""
     def testLength(self):
-        self.failUnlessEqual(len(newID()), 20)
+        self.failUnlessEqual(len(newID()), HASH_LENGTH)
     def testHundreds(self):
         for x in xrange(100):
             self.testLength
 
 class TestIntify(unittest.TestCase):
     """Test the intify function."""
-    known = [('\0' * 20, 0),
-            ('\xff' * 20, 2L**160 - 1),
+    known = [('\0' * HASH_LENGTH, 0),
+            ('\xff' * HASH_LENGTH, 2L**(HASH_LENGTH*8) - 1),
             ]
     def testKnown(self):
         for str, value in self.known: 
@@ -74,7 +79,7 @@ class TestIntify(unittest.TestCase):
 class TestDisantance(unittest.TestCase):
     """Test the distance function."""
     known = [
-            (("\0" * 20, "\xff" * 20), 2**160L -1),
+            (("\0" * HASH_LENGTH, "\xff" * HASH_LENGTH), 2L**(HASH_LENGTH*8) -1),
             ((sha("foo").digest(), sha("foo").digest()), 0),
             ((sha("bar").digest(), sha("bar").digest()), 0)
             ]

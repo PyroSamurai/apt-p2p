@@ -16,6 +16,7 @@ from zope.interface import implements
 from apt_p2p.interfaces import IDHT, IDHTStats, IDHTStatsFactory
 from khashmir import Khashmir
 from bencode import bencode, bdecode
+from khash import HASH_LENGTH
 
 try:
     from twisted.web2 import channel, server, resource, http, http_headers
@@ -105,7 +106,7 @@ class DHT:
         self.bootstrap_node = self.config_parser.getboolean(section, 'BOOTSTRAP_NODE')
         for k in self.config_parser.options(section):
             # The numbers in the config file
-            if k in ['K', 'HASH_LENGTH', 'CONCURRENT_REQS', 'STORE_REDUNDANCY', 
+            if k in ['CONCURRENT_REQS', 'STORE_REDUNDANCY', 
                      'RETRIEVE_VALUES', 'MAX_FAILURES', 'PORT']:
                 self.config[k] = self.config_parser.getint(section, k)
             # The times in the config file
@@ -230,21 +231,14 @@ class DHT:
             self.joined = False
             self.khashmir.shutdown()
         
-    def _normKey(self, key, bits=None, bytes=None):
+    def _normKey(self, key):
         """Normalize the length of keys used in the DHT."""
-        bits = self.config["HASH_LENGTH"]
-        if bits is not None:
-            bytes = (bits - 1) // 8 + 1
-        else:
-            if bytes is None:
-                raise DHTError, "you must specify one of bits or bytes for normalization"
-            
         # Extend short keys with null bytes
-        if len(key) < bytes:
-            key = key + '\000'*(bytes - len(key))
+        if len(key) < HASH_LENGTH:
+            key = key + '\000'*(HASH_LENGTH - len(key))
         # Truncate long keys
-        elif len(key) > bytes:
-            key = key[:bytes]
+        elif len(key) > HASH_LENGTH:
+            key = key[:HASH_LENGTH]
         return key
 
     def getValue(self, key):
@@ -337,7 +331,7 @@ class TestSimpleDHT(unittest.TestCase):
     """Simple 2-node unit tests for the DHT."""
     
     timeout = 50
-    DHT_DEFAULTS = {'PORT': 9977, 'K': 8, 'HASH_LENGTH': 160,
+    DHT_DEFAULTS = {'PORT': 9977,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 4,
                     'STORE_REDUNDANCY': 3, 'RETRIEVE_VALUES': -10000,
                     'MAX_FAILURES': 3,
@@ -457,7 +451,7 @@ class TestMultiDHT(unittest.TestCase):
     
     timeout = 80
     num = 20
-    DHT_DEFAULTS = {'PORT': 9977, 'K': 8, 'HASH_LENGTH': 160,
+    DHT_DEFAULTS = {'PORT': 9977,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 4,
                     'STORE_REDUNDANCY': 3, 'RETRIEVE_VALUES': -10000,
                     'MAX_FAILURES': 3,

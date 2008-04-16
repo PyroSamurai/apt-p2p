@@ -5,6 +5,8 @@
 
 from twisted.trial import unittest
 
+from khash import HASH_LENGTH
+
 def bucket_stats(l):
     """Given a list of khashmir instances, finds min, max, and average number of nodes in tables."""
     max = avg = 0
@@ -35,11 +37,11 @@ def uncompact(s):
     @return: the node ID, IP address and port to contact the node on
     @raise ValueError: if the compact representation doesn't exist
     """
-    if (len(s) != 26):
+    if (len(s) != HASH_LENGTH+6):
         raise ValueError
-    id = s[:20]
-    host = '.'.join([str(ord(i)) for i in s[20:24]])
-    port = (ord(s[24]) << 8) | ord(s[25])
+    id = s[:HASH_LENGTH]
+    host = '.'.join([str(ord(i)) for i in s[HASH_LENGTH:(HASH_LENGTH+4)]])
+    port = (ord(s[HASH_LENGTH+4]) << 8) | ord(s[HASH_LENGTH+5])
     return {'id': id, 'host': host, 'port': port}
 
 def compact(id, host, port):

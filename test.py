@@ -357,9 +357,6 @@ CACHE_DIR = %(CACHE_DIR)s
 #          for everybody to download
 # OTHER_DIRS = 
     
-# User name to try and run as
-# USERNAME = 
-
 # Whether it's OK to use an IP addres from a known local/private range
 LOCAL_OK = yes
 
@@ -386,12 +383,6 @@ BOOTSTRAP = %(BOOTSTRAP)s
 
 # whether this node is a bootstrap node
 BOOTSTRAP_NODE = %(BOOTSTRAP_NODE)s
-
-# Kademlia "K" constant, this should be an even number
-K = 8
-
-# SHA1 is 160 bits long
-HASH_LENGTH = 160
 
 # checkpoint every this many seconds
 CHECKPOINT_INTERVAL = 5m

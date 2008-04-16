@@ -1,7 +1,10 @@
 ## Copyright 2002-2003 Andrew Loewenstern, All Rights Reserved
 # see LICENSE.txt for license information
 
-"""The routing table and buckets for a kademlia-like DHT."""
+"""The routing table and buckets for a kademlia-like DHT.
+
+@var K: the Kademlia "K" constant, this should be an even number
+"""
 
 from datetime import datetime
 from bisect import bisect_left
@@ -12,6 +15,8 @@ from twisted.trial import unittest
 
 import khash
 from node import Node, NULL_ID
+
+K = 8
 
 class KTable:
     """Local routing table for a kademlia-like distributed hash table.
@@ -36,7 +41,7 @@ class KTable:
         assert node.id != NULL_ID
         self.node = node
         self.config = config
-        self.buckets = [KBucket([], 0L, 2L**self.config['HASH_LENGTH'])]
+        self.buckets = [KBucket([], 0L, 2L**(khash.HASH_LENGTH*8))]
         
     def _bucketIndexForInt(self, num):
         """Find the index of the bucket that should hold the node's ID number."""
@@ -75,11 +80,11 @@ class KTable:
         nodes = list(self.buckets[i].l)
         
         # Make sure we have enough
-        if len(nodes) < self.config['K']:
+        if len(nodes) < K:
             # Look in adjoining buckets for nodes
             min = i - 1
             max = i + 1
-            while len(nodes) < self.config['K'] and (min >= 0 or max < len(self.buckets)):
+            while len(nodes) < K and (min >= 0 or max < len(self.buckets)):
                 # Add the adjoining buckets' nodes to the list
                 if min >= 0:
                     nodes = nodes + self.buckets[min].l
@@ -90,7 +95,7 @@ class KTable:
     
         # Sort the found nodes by proximity to the id and return the closest K
         nodes.sort(lambda a, b, num=num: cmp(num ^ a.num, num ^ b.num))
-        return nodes[:self.config['K']]
+        return nodes[:K]
         
     def _splitBucket(self, a):
         """Split a bucket in two.
@@ -129,7 +134,7 @@ class KTable:
             otherBucket = i+1
             
         # Decide if we should do a merge
-        if otherBucket is not None and len(self.buckets[i].l) + len(self.buckets[otherBucket].l) <= self.config['K']:
+        if otherBucket is not None and len(self.buckets[i].l) + len(self.buckets[otherBucket].l) <= K:
             # Remove one bucket and set the other to cover its range as well
             b = self.buckets[i]
             a = self.buckets.pop(otherBucket)
@@ -172,7 +177,7 @@ class KTable:
             removed = True
         
         # Insert the new node
-        if new and self._bucketIndexForInt(new.num) == i and len(self.buckets[i].l) < self.config['K']:
+        if new and self._bucketIndexForInt(new.num) == i and len(self.buckets[i].l) < K:
             self.buckets[i].l.append(new)
         elif removed:
             self._mergeBucket(i)
@@ -219,7 +224,7 @@ class KTable:
             return
         
         # We don't have this node, check to see if the bucket is full
-        if len(self.buckets[i].l) < self.config['K']:
+        if len(self.buckets[i].l) < K:
             # Not full, append this node and return
             if contacted:
                 node.updateLastSeen()
@@ -233,7 +238,7 @@ class KTable:
             return self.buckets[i].l[0]
         
         # Make sure our table isn't FULL, this is really unlikely
-        if len(self.buckets) >= self.config['HASH_LENGTH']:
+        if len(self.buckets) >= (khash.HASH_LENGTH*8):
             log.err("Hash Table is FULL!  Increase K!")
             return
             
@@ -384,7 +389,7 @@ class TestKTable(unittest.TestCase):
     
     def setUp(self):
         self.a = Node(khash.newID(), '127.0.0.1', 2002)
-        self.t = KTable(self.a, {'HASH_LENGTH': 160, 'K': 8, 'MAX_FAILURES': 3})
+        self.t = KTable(self.a, {'MAX_FAILURES': 3})
 
     def testAddNode(self):
         self.b = Node(khash.newID(), '127.0.0.1', 2003)

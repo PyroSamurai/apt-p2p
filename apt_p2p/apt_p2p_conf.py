@@ -58,9 +58,6 @@ DEFAULTS = {
     #          for everybody to download
     'OTHER_DIRS': """""",
     
-    # User name to try and run as
-    'USERNAME': '',
-    
     # Whether it's OK to use an IP address from a known local/private range
     'LOCAL_OK': 'no',
 
@@ -88,12 +85,6 @@ DHT_DEFAULTS = {
     
     # whether this node is a bootstrap node
     'BOOTSTRAP_NODE': "no",
-    
-    # Kademlia "K" constant, this should be an even number
-    'K': '8',
-    
-    # SHA1 is 160 bits long
-    'HASH_LENGTH': '160',
     
     # checkpoint every this many seconds
     'CHECKPOINT_INTERVAL': '5m', # five minutes
@@ -127,7 +118,7 @@ DHT_DEFAULTS = {
     'KEY_EXPIRE': '1h', # 60 minutes
     
     # whether to spew info about the requests/responses in the protocol
-    'SPEW': 'yes',
+    'SPEW': 'no',
 }
 
 class AptP2PConfigParser(SafeConfigParser):

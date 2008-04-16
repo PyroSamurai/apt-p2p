@@ -16,7 +16,7 @@ import khash
 from util import compact
 
 # magic id to use before we know a peer's id
-NULL_ID = 20 * '\0'
+NULL_ID = khash.HASH_LENGTH * '\0'
 
 class Node:
     """Encapsulate a node's contact info.

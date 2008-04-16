@@ -4,13 +4,12 @@
 from datetime import datetime, timedelta
 from StringIO import StringIO
 
+from ktable import K
 from util import byte_format
 
 class StatsLogger:
     """Store the statistics for the Khashmir DHT.
     
-    @type config: C{dictionary}
-    @ivar config: the configuration parameters for the DHT
     @ivar startTime: the time the program was started
     @ivar reachable: whether we can be contacted by other nodes
     @type table: L{ktable.KTable}
@@ -33,18 +32,15 @@ class StatsLogger:
         generated an error
     """
     
-    def __init__(self, table, store, config):
+    def __init__(self, table, store):
         """Initialize the statistics.
         
         @type table: L{ktable.KTable}
         @param table: the routing table for the DHT
         @type store: L{db.DB}
         @param store: the database for the DHT
-        @type config: C{dictionary}
-        @param config: the configuration parameters for the DHT
         """
         # General
-        self.config = config
         self.startTime = datetime.now().replace(microsecond=0)
         self.reachable = False
         
@@ -77,7 +73,7 @@ class StatsLogger:
         if datetime.now() - self.lastTableUpdate > timedelta(seconds = 15):
             self.lastTableUpdate = datetime.now()
             self.nodes = reduce(lambda a, b: a + len(b.l), self.table.buckets, 0)
-            self.users = self.config['K'] * (2**(len(self.table.buckets) - 1))
+            self.users = K * (2**(len(self.table.buckets) - 1))
         return (self.nodes, self.users)
     
     def dbStats(self):

@@ -7,6 +7,7 @@ from twisted.internet import reactor, defer
 from twisted.python import log
 
 from khash import intify
+from ktable import K
 from util import uncompact
 
 class ActionBase:
@@ -218,7 +219,7 @@ class ActionBase:
         This implementation is suitable for a recurring search over all nodes.
         """
         self.sortNodes()
-        return self.sorted_nodes[:self.config['K']]
+        return self.sorted_nodes[:K]
     
     def generateArgs(self, node):
         """Generate the arguments to the node's action.
@@ -253,7 +254,7 @@ class FindNode(ActionBase):
     def generateResult(self):
         """Result is the K closest nodes to the target."""
         self.sortNodes()
-        return (self.sorted_nodes[:self.config['K']], )
+        return (self.sorted_nodes[:K], )
     
 
 class FindValue(ActionBase):

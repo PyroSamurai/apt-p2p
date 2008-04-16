@@ -582,7 +582,7 @@ class Receiver(protocol.Factory):
 def make(port):
     from stats import StatsLogger
     af = Receiver()
-    a = hostbroker(af, StatsLogger(None, None, {}), {'SPEW': False})
+    a = hostbroker(af, StatsLogger(None, None), {'SPEW': False})
     a.protocol = KRPC
     p = reactor.listenUDP(port, a)
     return af, a, p

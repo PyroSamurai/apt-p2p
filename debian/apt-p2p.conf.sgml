@@ -195,21 +195,6 @@
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
-	    <term><option>K = <replaceable>number</replaceable></option></term>
-	     <listitem>
-	      <para>The <replaceable>number</replaceable> of the Kademlia "K" constant.
-	      	  It should be an even number.
-	          (Default is 8.)</para>
-	    </listitem>
-	  </varlistentry>
-	  <varlistentry>
-	    <term><option>HASH_LENGTH = <replaceable>number</replaceable></option></term>
-	     <listitem>
-	      <para>The <replaceable>number</replaceable> of bits in the hash to use.
-	          (Default is 160.)</para>
-	    </listitem>
-	  </varlistentry>
-	  <varlistentry>
 	    <term><option>CHECKPOINT_INTERVAL = <replaceable>time</replaceable></option></term>
 	     <listitem>
 	      <para>The <replaceable>time</replaceable> to wait between saves of the running state.
