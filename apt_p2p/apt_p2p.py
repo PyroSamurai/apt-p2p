@@ -6,7 +6,7 @@
 @var TORRENT_PIECES: the maximum number of pieces to store as a separate entry
     in the DHT
 @var download_dir: the name of the directory to use for downloaded files
-
+@var peer_dir: the name of the directory to use for peer downloads
 """
 
 from binascii import b2a_hex
@@ -34,6 +34,7 @@ DHT_PIECES = 4
 TORRENT_PIECES = 70
 
 download_dir = 'cache'
+peer_dir = 'peers'
 
 class AptP2P:
     """The main code object that does all of the work.
@@ -77,6 +78,8 @@ class AptP2P:
         self.cache_dir = FilePath(config.get('DEFAULT', 'CACHE_DIR'))
         if not self.cache_dir.child(download_dir).exists():
             self.cache_dir.child(download_dir).makedirs()
+        if not self.cache_dir.child(peer_dir).exists():
+            self.cache_dir.child(peer_dir).makedirs()
         self.db = DB(self.cache_dir.child('apt-p2p.db'))
         self.dht = dhtClass()
         self.dht.loadConfig(config, config.get('DEFAULT', 'DHT'))
@@ -84,7 +87,7 @@ class AptP2P:
         self.stats = StatsLogger(self.db)
         self.http_server = TopLevel(self.cache_dir.child(download_dir), self.db, self)
         self.getHTTPFactory = self.http_server.getHTTPFactory
-        self.peers = PeerManager(self.cache_dir, self.dht, self.stats)
+        self.peers = PeerManager(self.cache_dir.child(peer_dir), self.dht, self.stats)
         self.mirrors = MirrorManager(self.cache_dir)
         self.cache = CacheManager(self.cache_dir.child(download_dir), self.db, self)
         self.my_contact = None
