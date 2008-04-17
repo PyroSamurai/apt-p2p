@@ -243,7 +243,11 @@ class AptPackages:
             self.unload_later.reset(config.gettime('DEFAULT', 'UNLOAD_PACKAGES_CACHE'))
         else:
             self.unload_later = reactor.callLater(config.gettime('DEFAULT', 'UNLOAD_PACKAGES_CACHE'), self.unload)
-            
+        
+        # Check if it's already loaded
+        if self.loaded:
+            return defer.succeed(True)
+        
         # Make sure it's not already being loaded
         if self.loading is None:
             log.msg('Loading the packages cache')
