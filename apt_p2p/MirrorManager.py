@@ -109,6 +109,7 @@ class MirrorManager:
         @return: a deferred that will fire with the returned L{Hash.HashObject}
         """
         site, baseDir, path = self.extractPath(url)
+        self.init(site, baseDir)
         if site in self.apt_caches and baseDir in self.apt_caches[site]:
             return self.apt_caches[site][baseDir].findHash(path)
         return defer.fail(MirrorError("Site Not Found"))
