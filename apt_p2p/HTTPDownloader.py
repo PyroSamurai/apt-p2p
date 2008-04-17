@@ -51,7 +51,7 @@ class Peer(ClientFactory):
         self.port = port
         self.stats = stats
         self.mirror = False
-        self.rank = 0.5
+        self.rank = 0.1
         self.busy = False
         self.pipeline = False
         self.closed = True
@@ -189,7 +189,8 @@ class Peer(ClientFactory):
         """Mark sent requests as errors."""
         self._processLastResponse()
         for req in self.response_queue:
-            req.deferRequest.errback(ProtocolError('lost connection'))
+            reactor.callLater(0, req.deferRequest.errback,
+                                 ProtocolError('lost connection'))
         self.busy = False
         self.pipeline = False
         self.closed = True
@@ -314,12 +315,12 @@ class Peer(ClientFactory):
         rank = 1.0
         if self.closed:
             rank *= 0.9
-        rank *= exp(-(len(self.request_queue) - len(self.response_queue)))
+        rank *= exp(-(len(self.request_queue) + len(self.response_queue)))
         speed = self.downloadSpeed()
         if speed > 0.0:
             rank *= exp(-512.0*1024 / speed)
         if self._completed:
-            rank *= exp(-float(self._errors) / self._completed)
+            rank *= exp(-10.0 * self._errors / self._completed)
         rank *= exp(-self.responseTime() / 5.0)
         self.rank = rank
         
