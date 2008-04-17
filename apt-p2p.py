@@ -58,32 +58,32 @@ try:
 except:
     uid,gid = None,None
 
-log.msg('Starting application')
+log.msg('Starting application with uid/gid %r/%r' % (uid, gid))
 application = service.Application("apt-p2p", uid, gid)
 #print service.IProcess(application).processName
 #service.IProcess(application).processName = 'apt-p2p'
 
-log.msg('Starting DHT')
 DHT = __import__(config.get('DEFAULT', 'DHT')+'.DHT', globals(), locals(), ['DHT'])
 assert IDHT.implementedBy(DHT.DHT), "You must provide a DHT implementation that implements the IDHT interface."
 
 if not config.getboolean('DEFAULT', 'DHT-only'):
     log.msg('Starting main application server')
     from apt_p2p.apt_p2p import AptP2P
-    myapp = AptP2P(DHT.DHT)
-    factory = myapp.getHTTPFactory()
+    factory = AptP2P(DHT.DHT)
     s = strports.service('tcp:'+config.get('DEFAULT', 'port'), factory)
     s.setServiceParent(application)
 else:
+    log.msg('Starting the DHT')
     myDHT = DHT.DHT()
+    
     if IDHTStatsFactory.implementedBy(DHT.DHT):
         log.msg("Starting the DHT's HTTP stats displayer")
         factory = myDHT.getStatsFactory()
         s = strports.service('tcp:'+config.get('DEFAULT', 'port'), factory)
         s.setServiceParent(application)
         
-    myDHT.loadConfig(config, config.get('DEFAULT', 'DHT'))
-    myDHT.join()
+    reactor.callLater(0, myDHT.loadConfig, config, config.get('DEFAULT', 'DHT'))
+    reactor.callLater(0, myDHT.join)
 
 if __name__ == '__main__':
     # Run on command line

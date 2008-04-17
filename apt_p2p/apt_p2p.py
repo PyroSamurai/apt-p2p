@@ -14,7 +14,7 @@ from urlparse import urlunparse
 from urllib import unquote
 import os, re, sha
 
-from twisted.internet import defer, reactor
+from twisted.internet import defer, reactor, protocol
 from twisted.web2 import server, http, http_headers, static
 from twisted.python import log, failure
 from twisted.python.filepath import FilePath
@@ -36,7 +36,7 @@ TORRENT_PIECES = 70
 download_dir = 'cache'
 peer_dir = 'peers'
 
-class AptP2P:
+class AptP2P(protocol.Factory):
     """The main code object that does all of the work.
     
     Contains all of the sub-components that do all the low-level work, and
@@ -75,29 +75,40 @@ class AptP2P:
         """
         log.msg('Initializing the main apt_p2p application')
         self.dhtClass = dhtClass
+
+    #{ Factory interface
+    def startFactory(self):
+        reactor.callLater(0, self._startFactory)
+        
+    def _startFactory(self):
+        log.msg('Starting the main apt_p2p application')
         self.cache_dir = FilePath(config.get('DEFAULT', 'CACHE_DIR'))
         if not self.cache_dir.child(download_dir).exists():
             self.cache_dir.child(download_dir).makedirs()
         if not self.cache_dir.child(peer_dir).exists():
             self.cache_dir.child(peer_dir).makedirs()
         self.db = DB(self.cache_dir.child('apt-p2p.db'))
-        self.dht = dhtClass()
+        self.dht = self.dhtClass()
         self.dht.loadConfig(config, config.get('DEFAULT', 'DHT'))
         self.dht.join().addCallbacks(self.joinComplete, self.joinError)
         self.stats = StatsLogger(self.db)
         self.http_server = TopLevel(self.cache_dir.child(download_dir), self.db, self)
-        self.getHTTPFactory = self.http_server.getHTTPFactory
+        self.http_server.getHTTPFactory().startFactory()
         self.peers = PeerManager(self.cache_dir.child(peer_dir), self.dht, self.stats)
         self.mirrors = MirrorManager(self.cache_dir)
         self.cache = CacheManager(self.cache_dir.child(download_dir), self.db, self)
         self.my_contact = None
-        reactor.addSystemEventTrigger('before', 'shutdown', self.shutdown)
-
-    #{ Maintenance
-    def shutdown(self):
+        
+    def stopFactory(self):
+        log.msg('Stoppping the main apt_p2p application')
+        self.http_server.getHTTPFactory().stopFactory()
         self.stats.save()
         self.db.close()
+    
+    def buildProtocol(self, addr):
+        return self.http_server.getHTTPFactory().buildProtocol(addr)
         
+    #{ DHT Maintenance
     def joinComplete(self, result):
         """Complete the DHT join process and determine our download information.
         
