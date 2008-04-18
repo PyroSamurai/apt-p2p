@@ -68,7 +68,10 @@ class FileDownloader(static.File):
         return self.__class__(path, self.manager, self.defaultType, self.ignoredExts,
                               self.processors, self.indexNames[:])
         
-class FileUploaderStream(stream.FileStream):
+class UploadStream:
+    """Identifier for streams that are uploaded to peers."""
+    
+class FileUploaderStream(stream.FileStream, UploadStream):
     """Modified to make it suitable for streaming to peers.
     
     Streams the file in small chunks to make it easier to throttle the
@@ -102,7 +105,20 @@ class FileUploaderStream(stream.FileStream):
             self.start += bytesRead
             return b
 
+class PiecesUploaderStream(stream.MemoryStream, UploadStream):
+    """Modified to identify it for streaming to peers."""
 
+class PiecesUploader(static.Data):
+    """Modified to identify it for peer requests.
+    
+    Uses the modified L{PieceUploaderStream} to stream the pieces for throttling.
+    """
+
+    def render(self, req):
+        return http.Response(responsecode.OK,
+                             http_headers.Headers({'content-type': self.contentType()}),
+                             stream=PiecesUploaderStream(self.data))
+        
 class FileUploader(static.File):
     """Modified to make it suitable for peer requests.
     
@@ -175,7 +191,9 @@ class UploadThrottlingProtocol(ThrottlingProtocol):
     def registerProducer(self, producer, streaming):
         ThrottlingProtocol.registerProducer(self, producer, streaming)
         streamType = getattr(producer, 'stream', None)
-        if isinstance(streamType, FileUploaderStream) or isinstance(streamType, stream.MemoryStream):
+        log.msg('Registered a producer %r with type %r' % (producer, streamType))
+        if isinstance(streamType, UploadStream):
+            log.msg('Throttling')
             self.throttle = True
 
 
@@ -260,7 +278,7 @@ class TopLevel(resource.Resource):
                 else:
                     # It's not for a file, but for a piece string, so return that
                     log.msg('Sending torrent string %s to %s' % (b2a_hex(hash), request.remoteAddr))
-                    return static.Data(bencode({'t': files[0]['pieces']}), 'application/x-bencoded'), ()
+                    return PiecesUploader(bencode({'t': files[0]['pieces']}), 'application/x-bencoded'), ()
             else:
                 log.msg('Hash could not be found in database: %r' % hash)
 
