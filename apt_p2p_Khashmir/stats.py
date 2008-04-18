@@ -141,13 +141,24 @@ class StatsLogger:
         
         # Actions
         out.write("<table border='1' cellpadding='4px'>\n")
-        out.write("<tr><th><h3>Actions</h3></th><th>Started</th><th>Sent</th><th>OK</th><th>Failed</th><th>Received</th><th>Error</th></tr>\n")
+        out.write("<tr><th><h3>Actions</h3></th><th>Started</th><th>Sent</th>")
+        out.write("<th>Successful</th><th>Failed</th><th>Completed</th><th>Received</th><th>Error</th>")
+        out.write("<th>Successful Delay</th><th>Failed Delay</th><th>Total Delay</th></tr>\n")
         actions = self.actions.keys()
         actions.sort()
         for action in actions:
             out.write("<tr><td>" + action + "</td>")
-            for i in xrange(6):
+            for i in xrange(7):
                 out.write("<td>" + str(self.actions[action][i]) + "</td>")
+            for i in xrange(3):
+                count = self.actions[action][i+2]
+                if count > 0:
+                    total_delay = self.actions[action][i+7]
+                    avg_delay = total_delay / count
+                    avg_delay_sec = avg_delay.days*86400.0 + avg_delay.seconds + avg_delay.microseconds/1000000.0
+                else:
+                    avg_delay_sec = 0.0
+                out.write("<td>%0.2f</td>" % avg_delay_sec)
             out.write('</tr>\n')
         out.write("</table>\n")
         out.write("</td></tr>\n")
@@ -161,7 +172,7 @@ class StatsLogger:
         
         @param action: the name of the action
         """
-        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0])
+        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0, 0, timedelta(), timedelta(), timedelta()])
         act[0] += 1
     
     #{ Called by the transport
@@ -170,30 +181,44 @@ class StatsLogger:
         
         @param action: the name of the action
         """
-        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0])
+        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0, 0, timedelta(), timedelta(), timedelta()])
         act[1] += 1
         
-    def responseAction(self, response, action):
+    def responseAction(self, response, action, start):
         """Record that a response to an action was received.
         
         @param response: the response
         @param action: the name of the action
+        @param start: the time the action was started
         @return: the response (for use in deferreds)
         """
-        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0])
+        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0, 0, timedelta(), timedelta(), timedelta()])
         act[2] += 1
+        act[7] += datetime.now() - start
         return response
         
-    def failedAction(self, response, action):
+    def failedAction(self, response, action, start):
         """Record that a failed response to an action was received.
         
         @param response: the response
         @param action: the name of the action
+        @param start: the time the action was started
         @return: the response (for use in deferreds)
         """
-        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0])
+        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0, 0, timedelta(), timedelta(), timedelta()])
         act[3] += 1
+        act[8] += datetime.now() - start
         return response
+        
+    def completedAction(self, action, start):
+        """Record that an action was completed.
+        
+        @param action: the name of the action
+        @param start: the time the action was started
+        """
+        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0, 0, timedelta(), timedelta(), timedelta()])
+        act[4] += 1
+        act[9] += datetime.now() - start
         
     def receivedAction(self, action):
         """Record that an action was received.
@@ -201,16 +226,16 @@ class StatsLogger:
         @param action: the name of the action
         """
         self.reachable = True
-        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0])
-        act[4] += 1
+        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0, 0, timedelta(), timedelta(), timedelta()])
+        act[5] += 1
     
     def errorAction(self, action):
         """Record that a received action resulted in an error.
         
         @param action: the name of the action
         """
-        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0])
-        act[5] += 1
+        act = self.actions.setdefault(action, [0, 0, 0, 0, 0, 0, 0, timedelta(), timedelta(), timedelta()])
+        act[6] += 1
     
     def sentBytes(self, bytes):
         """Record that a single packet of some bytes was sent.

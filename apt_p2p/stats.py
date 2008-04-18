@@ -95,24 +95,24 @@ class StatsLogger:
         out.write("<tr><td title='Since the program was last restarted'>This Session</td>")
         out.write("<td title='Amount downloaded from mirrors'>" + byte_format(self.mirrorDown) + '</td>')
         out.write("<td title='Amount downloaded from peers'>" + byte_format(self.peerDown) + '</td>')
-        out.write("<td title='Amount uploaded to peers'>" + byte_format(self.peerUp) + '</td></tr>')
+        out.write("<td title='Amount uploaded to peers'>" + byte_format(self.peerUp) + '</td></tr>\n')
         out.write("<tr><td title='Since the program was last restarted'>Session Ratio</td>")
         out.write("<td title='Percent of download from mirrors'>%0.2f%%</td>" %
                   (100.0 * float(self.mirrorDown) / float(max(self.mirrorDown + self.peerDown, 1)), ))
         out.write("<td title='Percent of download from peers'>%0.2f%%</td>" %
                   (100.0 * float(self.peerDown) / float(max(self.mirrorDown + self.peerDown, 1)), ))
-        out.write("<td title='Percent uploaded to peers compared with all downloaded'>%0.2f%%</td></tr>" %
+        out.write("<td title='Percent uploaded to peers compared with all downloaded'>%0.2f%%</td></tr>\n" %
                   (100.0 * float(self.peerUp) / float(max(self.mirrorDown + self.peerDown, 1)), ))
         out.write("<tr><td title='Since the program was installed'>All-Time</td>")
         out.write("<td title='Amount downloaded from mirrors'>" + byte_format(self.mirrorAllDown) + '</td>')
         out.write("<td title='Amount downloaded from peers'>" + byte_format(self.peerAllDown) + '</td>')
-        out.write("<td title='Amount uploaded to peers'>" + byte_format(self.peerAllUp) + '</td></tr>')
+        out.write("<td title='Amount uploaded to peers'>" + byte_format(self.peerAllUp) + '</td></tr>\n')
         out.write("<tr><td title='Since the program was installed'>All-Time Ratio</td>")
         out.write("<td title='Percent of download from mirrors'>%0.2f%%</td>" %
                   (100.0 * float(self.mirrorAllDown) / float(max(self.mirrorAllDown + self.peerAllDown, 1)), ))
         out.write("<td title='Percent of download from peers'>%0.2f%%</td>" %
                   (100.0 * float(self.peerAllDown) / float(max(self.mirrorAllDown + self.peerAllDown, 1)), ))
-        out.write("<td title='Percent uploaded to peers compared with all downloaded'>%0.2f%%</td></tr>" %
+        out.write("<td title='Percent uploaded to peers compared with all downloaded'>%0.2f%%</td></tr\n>" %
                   (100.0 * float(self.peerAllUp) / float(max(self.mirrorAllDown + self.peerAllDown, 1)), ))
         out.write("</table>\n")
         out.write("</td></tr>\n")

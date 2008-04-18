@@ -523,7 +523,8 @@ class KRPC:
         
         # Save the conclusion of the action
         req.addCallbacks(self.stats.responseAction, self.stats.failedAction,
-                         callbackArgs = (method, ), errbackArgs = (method, ))
+                         callbackArgs = (method, datetime.now()),
+                         errbackArgs = (method, datetime.now()))
 
         return req
     

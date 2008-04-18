@@ -3,6 +3,8 @@
 
 """Details of how to perform actions on remote peers."""
 
+from datetime import datetime
+
 from twisted.internet import reactor, defer
 from twisted.python import log
 
@@ -21,6 +23,8 @@ class ActionBase:
     @ivar config: the configuration variables for the DHT
     @type action: C{string}
     @ivar action: the name of the action to call on remote nodes
+    @type stats: L{stats.StatsLogger}
+    @ivar stats: the statistics modules to report to
     @type num: C{long}
     @ivar num: the target key in integer form
     @type queried: C{dictionary}
@@ -46,6 +50,8 @@ class ActionBase:
         the requests that are currently outstanding
     @type finished: C{boolean}
     @ivar finished: whether the action is done
+    @type started: C{datetime.datetime}
+    @ivar started: the time the action was started at
     @type sort: C{method}
     @ivar sort: used to sort nodes by their proximity to the target
     """
@@ -75,7 +81,8 @@ class ActionBase:
         self.target = target
         self.config = config
         self.action = action
-        stats.startedAction(action)
+        self.stats = stats
+        self.stats.startedAction(action)
         self.num = intify(target)
         self.queried = {}
         self.answered = {}
@@ -87,6 +94,7 @@ class ActionBase:
         self.outstanding = 0
         self.outstanding_results = 0
         self.finished = False
+        self.started = datetime.now()
     
         def sort(a, b, num=self.num):
             """Sort nodes relative to the ID we are looking for."""
@@ -101,6 +109,7 @@ class ActionBase:
     #{ Main operation
     def goWithNodes(self, nodes):
         """Start the action's process with a list of nodes to contact."""
+        self.started = datetime.now()
         for node in nodes:
             self.found[node.id] = node
         self.sortNodes()
@@ -236,6 +245,7 @@ class ActionBase:
 
     def generateResult(self, nodes):
         """Create the final result to return to the L{callback} function."""
+        self.stats.completedAction(self.action, self.started)
         return []
         
 
@@ -254,6 +264,7 @@ class FindNode(ActionBase):
     def generateResult(self):
         """Result is the K closest nodes to the target."""
         self.sortNodes()
+        self.stats.completedAction(self.action, self.started)
         return (self.sorted_nodes[:K], )
     
 
@@ -272,6 +283,7 @@ class FindValue(ActionBase):
     def generateResult(self):
         """Result is the nodes that have values, sorted by proximity to the key."""
         self.sortNodes()
+        self.stats.completedAction(self.action, self.started)
         return ([node for node in self.sorted_nodes if node.num_values > 0], )
     
 
@@ -313,6 +325,7 @@ class GetValue(ActionBase):
 
     def generateResult(self):
         """Results have all been returned, now send the empty list to end the action."""
+        self.stats.completedAction(self.action, self.started)
         return (self.target, [])
         
 
@@ -345,4 +358,5 @@ class StoreValue(ActionBase):
     
     def generateResult(self):
         """Return all the response IDs received."""
+        self.stats.completedAction(self.action, self.started)
         return (self.target, self.value, self.results.values())
