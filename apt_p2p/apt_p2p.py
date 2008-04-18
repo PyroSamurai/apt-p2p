@@ -252,7 +252,7 @@ class AptP2P(protocol.Factory):
         """
         if hash.expected() is None:
             log.msg('Hash for %s was not found' % url)
-            self.lookupHash_done([], hash, url, d)
+            self.lookupHash_done([], req, hash, url, d)
         else:
             log.msg('Found hash %s for %s' % (hash.hexexpected(), url))
             
@@ -270,7 +270,7 @@ class AptP2P(protocol.Factory):
         """
         if not locations:
             log.msg('Failed to return file from cache: %s' % url)
-            self.lookupHash(hash, url, d)
+            self.lookupHash(req, hash, url, d)
             return
         
         # Get the first possible location from the list
@@ -301,14 +301,14 @@ class AptP2P(protocol.Factory):
             # Try the next possible location
             self.getCachedFile(hash, req, url, d, locations)
 
-    def lookupHash(self, hash, url, d):
+    def lookupHash(self, req, hash, url, d):
         """Lookup the hash in the DHT."""
         log.msg('Looking up hash in DHT for file: %s' % url)
         key = hash.expected()
         lookupDefer = self.dht.getValue(key)
-        lookupDefer.addBoth(self.lookupHash_done, hash, url, d)
+        lookupDefer.addBoth(self.lookupHash_done, req, hash, url, d)
 
-    def lookupHash_done(self, values, hash, url, d):
+    def lookupHash_done(self, values, req, hash, url, d):
         """Start the download of the file.
         
         The download will be from peers if the DHT lookup succeeded, or
@@ -318,6 +318,11 @@ class AptP2P(protocol.Factory):
         @param values: the returned values from the DHT containing peer
             download information
         """
+        # Remove some headers Apt sets in the request
+        req.headers.removeHeader('If-Modified-Since')
+        req.headers.removeHeader('Range')
+        req.headers.removeHeader('If-Range')
+        
         if not isinstance(values, list) or not values:
             if not isinstance(values, list):
                 log.msg('DHT lookup for %s failed with error %r' % (url, values))
