@@ -7,6 +7,9 @@ from twisted.python import log
 
 from node import Node, NULL_ID
 
+class KNodeError(Exception):
+    """An error occurred in contacting the node."""
+
 class KNodeBase(Node):
     """A basic node that can only be pinged and help find other nodes."""
     
@@ -16,12 +19,12 @@ class KNodeBase(Node):
             senderid = dict['id']
         except KeyError:
             log.msg("No peer id in response")
-            raise Exception, "No peer id in response."
+            raise KNodeError, "No peer id in response."
         else:
             if self.id != NULL_ID and senderid != self.id:
                 log.msg("Got response from different node than expected.")
                 self.table.invalidateNode(self)
-                raise Exception, "Node ID has changed"
+                raise KNodeError, "Node ID has changed"
                 
         return dict
 

@@ -191,9 +191,7 @@ class UploadThrottlingProtocol(ThrottlingProtocol):
     def registerProducer(self, producer, streaming):
         ThrottlingProtocol.registerProducer(self, producer, streaming)
         streamType = getattr(producer, 'stream', None)
-        log.msg('Registered a producer %r with type %r' % (producer, streamType))
         if isinstance(streamType, UploadStream):
-            log.msg('Throttling')
             self.throttle = True
 
 

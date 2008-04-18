@@ -19,6 +19,10 @@ from Hash import PIECE_SIZE
 from apt_p2p_Khashmir.bencode import bdecode
 from apt_p2p_conf import config
 
+
+class PeerError(Exception):
+    """An error occurred downloading from peers."""
+    
 class GrowingFileStream(stream.FileStream):
     """Modified to stream data from a file as it becomes available.
     
@@ -181,10 +185,10 @@ class StreamToFile:
     def _gotData(self, data):
         """Process the received data."""
         if self.outFile.closed:
-            raise Exception, "outFile was unexpectedly closed"
+            raise PeerError, "outFile was unexpectedly closed"
         
         if data is None:
-            raise Exception, "Data is None?"
+            raise PeerError, "Data is None?"
         
         # Make sure we don't go too far
         if self.length is not None and self.position + len(data) > self.length:
@@ -398,7 +402,6 @@ class FileDownload:
 
         if self.pieces is None:
             # Send a request to one or more peers
-            log.msg('Checking for a peer to request piece hashes from')
             for site in self.peers:
                 if self.peers[site].get('failed', False) != True:
                     log.msg('Sending a piece hash request to %r' % (site, ))
@@ -412,7 +415,6 @@ class FileDownload:
                     if self.outstanding >= 4:
                         break
         
-        log.msg('Done sending piece hash requests for now, %d outstanding' % self.outstanding)
         if self.pieces is None and self.outstanding <= 0:
             # Continue without the piece hashes
             log.msg('Could not retrieve the piece hashes from the peers')
@@ -424,7 +426,6 @@ class FileDownload:
         log.msg('Got a piece hash response %d from %r' % (response.code, site))
         if response.code != 200:
             # Request failed, try a different peer
-            log.msg('Did not like response %d from %r' % (response.code, site))
             self.getPeerPieces(key, site)
         else:
             # Read the response stream to a string
@@ -521,11 +522,9 @@ class FileDownload:
     #{ Downloading the pieces
     def getPieces(self):
         """Download the next pieces from the peers."""
-        log.msg('Checking for more piece requests to send')
         self.sort()
         piece = self.nextFinish
         while self.outstanding < 4 and self.peerlist and piece < len(self.completePieces):
-            log.msg('Checking piece %d' % piece)
             if self.completePieces[piece] == False:
                 # Send a request to the highest ranked peer
                 peer = self.peerlist.pop()
@@ -543,7 +542,6 @@ class FileDownload:
                                      'errbackArgs': (piece, peer)})
             piece += 1
                 
-        log.msg('Finished checking pieces, %d outstanding, next piece %d of %d' % (self.outstanding, self.nextFinish, len(self.completePieces)))
         # Check if we're done
         if self.outstanding <= 0 and self.nextFinish >= len(self.completePieces):
             log.msg('We seem to be done with all pieces')

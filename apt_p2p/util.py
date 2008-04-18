@@ -117,7 +117,7 @@ def ipAddrFromChicken():
          f.close()
          current_ip = ip_search.findall(data)
          return current_ip
-    except Exception:
+    except:
          return []
 
 def uncompact(s):
