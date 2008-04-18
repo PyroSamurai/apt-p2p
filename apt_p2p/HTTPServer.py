@@ -279,6 +279,7 @@ class TopLevel(resource.Resource):
                     return PiecesUploader(bencode({'t': files[0]['pieces']}), 'application/x-bencoded'), ()
             else:
                 log.msg('Hash could not be found in database: %r' % hash)
+                return None, ()
 
         if len(name) > 1:
             # It's a request from apt
