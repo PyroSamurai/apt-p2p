@@ -24,6 +24,9 @@ from apt_p2p_conf import config
 DECOMPRESS_EXTS = ['.gz', '.bz2']
 DECOMPRESS_FILES = ['release', 'sources', 'packages']
 
+class CacheError(Exception):
+    """Error occurred downloading a file to the cache."""
+
 class ProxyFileStream(stream.SimpleStream):
     """Saves a stream to a file while providing a new stream.
     
@@ -100,9 +103,14 @@ class ProxyFileStream(stream.SimpleStream):
             if self.bz2file:
                 self.bz2file.close()
                 self.bz2file = None
-                
-            self.doneDefer.callback(self.hash)
     
+    def _error(self, err):
+        """Close all the output files, return the error."""
+        if not self.outFile.closed:
+            self._done()
+            self.stream.close()
+            self.doneDefer.errback(err)
+
     def read(self):
         """Read some data from the stream."""
         if self.outFile.closed:
@@ -111,7 +119,7 @@ class ProxyFileStream(stream.SimpleStream):
         # Read data from the stream, deal with the possible deferred
         data = self.stream.read()
         if isinstance(data, defer.Deferred):
-            data.addCallbacks(self._write, self._done)
+            data.addCallbacks(self._write, self._error)
             return data
         
         self._write(data)
@@ -123,7 +131,9 @@ class ProxyFileStream(stream.SimpleStream):
         Also optionally decompresses it.
         """
         if data is None:
-            self._done()
+            if not self.outFile.closed:
+                self._done()
+                self.doneDefer.callback(self.hash)
             return data
         
         # Write and hash the streamed data
@@ -186,8 +196,13 @@ class ProxyFileStream(stream.SimpleStream):
 
     def close(self):
         """Clean everything up and return None to future reads."""
+        log.msg('ProxyFileStream was prematurely closed after only %d/%d bytes' % (self.hash.size, self.length))
+        if self.hash.size < self.length:
+            self._error(CacheError('Prematurely closed, all data was not written'))
+        elif not self.outFile.closed:
+            self._done()
+            self.doneDefer.callback(self.hash)
         self.length = 0
-        self._done()
         self.stream.close()
 
 class CacheManager:
@@ -369,7 +384,7 @@ class CacheManager:
         response.stream.doneDefer.addCallback(self._save_complete, url, destFile,
                                               response.headers.getHeader('Last-Modified'),
                                               decFile)
-        response.stream.doneDefer.addErrback(self.save_error, url)
+        response.stream.doneDefer.addErrback(self._save_error, url, destFile, decFile)
 
         # Return the modified response with the new stream
         return response
@@ -416,8 +431,22 @@ class CacheManager:
             if decFile:
                 decFile.remove()
 
+    def _save_error(self, failure, url, destFile, decFile = None):
+        """Remove the destination files."""
+        log.msg('Error occurred downloading %s' % url)
+        log.err(failure)
+        destFile.restat(False)
+        if destFile.exists():
+            log.msg('Removing the incomplete file: %s' % destFile.path)
+            destFile.remove()
+        if decFile:
+            decFile.restat(False)
+            if decFile.exists():
+                log.msg('Removing the incomplete file: %s' % decFile.path)
+                decFile.remove()
+
     def save_error(self, failure, url):
-        """An error has occurred in downloadign or saving the file."""
+        """An error has occurred in downloading or saving the file"""
         log.msg('Error occurred downloading %s' % url)
         log.err(failure)
         return failure
