@@ -4,30 +4,31 @@
 To run apt-p2p, you probably want to do something like::
 
   from apt_p2p.apt_p2p import AptP2P
-  myapp = AptP2P(myDHT)
+  factory = AptP2P(DHT)
 
-where myDHT is a DHT that implements interfaces.IDHT.
+where DHT is a class that implements interfaces.IDHT.
 
 Diagram of the interaction between the given modules::
   
   +---------------+    +-----------------------------------+    +-------------
-  |     AptP2P    |    |               DHT                 |    |  Internet
+  |     AptP2P    |    |               DHT                 |    |  
   |               |--->|join                            DHT|----|--\    
   |               |--->|loadConfig                         |    |  | Another
   |               |--->|getValue                           |    |  | Node
   |               |--->|storeValue                      DHT|<---|--/
   |               |--->|leave                              |    |
-  |               |    +-----------------------------------+    |
-  |               |    +-------------+    +----------------+    |
-  |               |    | PeerManager |    | HTTPDownloader*|    |
-  |               |--->|get          |--->|get         HTTP|----|---> Mirror
-  |               |    |             |--->|getRange        |    |
-  |               |--->|close        |--->|close       HTTP|----|--\       
-  |               |    +-------------+    +----------------+    |  | Another
-  |               |    +-----------------------------------+    |  | Peer
-  |               |    |           HTTPServer          HTTP|<---|--/   
-  |               |--->|getHTTPFactory                     |    +-------------
-  |check_freshness|<---|                                   |    +-------------
+  |         /-----|--->|getStats                           |    |
+  |         |     |    +-----------------------------------+    | Internet
+  |         |     |    +-------------+    +----------------+    |
+  |         |     |    | PeerManager |    | HTTPDownloader*|    |
+  |         |     |--->|get          |--->|get         HTTP|----|---> Mirror
+  |         |     |    |             |--->|getRange        |    |
+  |         |     |--->|close        |--->|close       HTTP|----|--\       
+  |         |     |    +-------------+    +----------------+    |  | Another
+  |         |     |    +-----------------------------------+    |  | Peer
+  |         |     |    |           HTTPServer          HTTP|<---|--/   
+  |         |     |    |                                   |    +-------------
+  |       getStats|<---|                                   |    +-------------
   |       get_resp|<---|                               HTTP|<---|HTTP Request
   |               |    +-----------------------------------+    | 
   |               |    +---------------+    +--------------+    | Local Net
