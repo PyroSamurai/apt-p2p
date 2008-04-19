@@ -264,6 +264,46 @@ tests = {'1': ('Start a single bootstrap and downloader, test updating and downl
                 (6, ['install', 'kde-icons-oxygen']),
                 ]),
 
+        'a': ('Test pipelining and caching, can also interrupt to test resuming.',
+             {1: {}},
+             {1: {},
+              2: {}},
+             [(1, ['update']), 
+              (1, ['install', 'aboot-base', 'aap-doc', 'ada-reference-manual',
+                   'aspectj-doc', 'fop-doc', 'asis-doc',
+                   'bison-doc', 'crash-whitepaper',
+                   'bash-doc', 'apt-howto-common', 'autotools-dev',
+                   'aptitude-doc-en', 'asr-manpages',
+                   'atomix-data', 'alcovebook-sgml-doc',
+                   'afbackup-common', 'airstrike-common',
+                   ]),
+              (1, ['install', 'aboot-base', 'aap-doc', 'ada-reference-manual',
+                   'aspectj-doc', 'fop-doc', 'asis-doc',
+                   'bison-doc', 'crash-whitepaper',
+                   'bash-doc', 'apt-howto-common', 'autotools-dev',
+                   'aptitude-doc-en', 'asr-manpages',
+                   'atomix-data', 'alcovebook-sgml-doc',
+                   'afbackup-common', 'airstrike-common',
+                   ]),
+              (2, ['update']), 
+              (2, ['install', 'aboot-base', 'aap-doc', 'ada-reference-manual',
+                   'aspectj-doc', 'fop-doc', 'asis-doc',
+                   'bison-doc', 'crash-whitepaper',
+                   'bash-doc', 'apt-howto-common', 'autotools-dev',
+                   'aptitude-doc-en', 'asr-manpages',
+                   'atomix-data', 'alcovebook-sgml-doc',
+                   'afbackup-common', 'airstrike-common',
+                   ]),
+              (2, ['install', 'aboot-base', 'aap-doc', 'ada-reference-manual',
+                   'aspectj-doc', 'fop-doc', 'asis-doc',
+                   'bison-doc', 'crash-whitepaper',
+                   'bash-doc', 'apt-howto-common', 'autotools-dev',
+                   'aptitude-doc-en', 'asr-manpages',
+                   'atomix-data', 'alcovebook-sgml-doc',
+                   'afbackup-common', 'airstrike-common',
+                   ]),
+              ]),
+
          }
 
 assert 'all' not in tests
@@ -550,6 +590,10 @@ def apt_get(num_down, cmd):
     
     """
     
+    downloader_dir = down_dir(num_down)
+    rmrf(join([downloader_dir, 'var', 'cache', 'apt', 'archives']))
+    makedirs([downloader_dir, 'var', 'cache', 'apt', 'archives', 'partial'])
+
     print '*************** apt-get (' + str(num_down) + ') ' + ' '.join(cmd) + ' ****************'
     apt_conf = join([down_dir(num_down), 'etc', 'apt', 'apt.conf'])
     dpkg_status = join([down_dir(num_down), 'var', 'lib', 'dpkg', 'status'])
@@ -635,21 +679,24 @@ def start_downloader(bootstrap_addresses, num_down, options = {},
         except:
             pass
     
-        # Create the directory structure needed by apt
-        makedirs([downloader_dir, 'etc', 'apt', 'apt.conf.d'])
-        makedirs([downloader_dir, 'var', 'lib', 'apt', 'lists', 'partial'])
-        makedirs([downloader_dir, 'var', 'lib', 'dpkg'])
-        makedirs([downloader_dir, 'var', 'cache', 'apt', 'archives', 'partial'])
-        touch([downloader_dir, 'var', 'lib', 'apt', 'lists', 'lock'])
-        touch([downloader_dir, 'var', 'lib', 'dpkg', 'lock'])
-        touch([downloader_dir, 'var', 'lib', 'dpkg', 'status'])
-        touch([downloader_dir, 'var', 'cache', 'apt', 'archives', 'lock'])
+    # Create the directory structure needed by apt
+    makedirs([downloader_dir, 'etc', 'apt', 'apt.conf.d'])
+    makedirs([downloader_dir, 'var', 'lib', 'apt', 'lists', 'partial'])
+    makedirs([downloader_dir, 'var', 'lib', 'dpkg'])
+    rmrf(join([downloader_dir, 'var', 'cache', 'apt', 'archives']))
+    makedirs([downloader_dir, 'var', 'cache', 'apt', 'archives', 'partial'])
+    touch([downloader_dir, 'var', 'lib', 'apt', 'lists', 'lock'])
+    touch([downloader_dir, 'var', 'lib', 'dpkg', 'lock'])
+    touch([downloader_dir, 'var', 'lib', 'dpkg', 'status'])
+    touch([downloader_dir, 'var', 'cache', 'apt', 'archives', 'lock'])
 
+    if not exists(join([downloader_dir, 'etc', 'apt', 'sources.list'])):
         # Create apt's config files
         f = open(join([downloader_dir, 'etc', 'apt', 'sources.list']), 'w')
         f.write('deb http://localhost:1%02d77/%s/ unstable %s\n' % (num_down, mirror, suites))
         f.close()
 
+    if not exists(join([downloader_dir, 'etc', 'apt', 'apt.conf'])):
         f = open(join([downloader_dir, 'etc', 'apt', 'apt.conf']), 'w')
         f.write('Dir "' + downloader_dir + '"')
         f.write(apt_conf_template)
