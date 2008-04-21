@@ -1,3 +1,24 @@
+Some last few things to do before release.
+
+- Handle/investigate the HTTP client pipeline errors
+- DB should not always restat files (especially for expired hashes)
+- remove missing files at startup (in DB's removeUntracked)
+- when files modtime but not size changes, rehash them to be sure
+- lengthen the expiry time for DHT entries
+- remove files from the peer's download cache
+- update the modtime of files downloaded from peers
+  - also set the Last-Modified header for the return to Apt
+- make the DHT timeouts configuration parameters
+- refresh expired DHT hashes concurrently instead of sequentially
+
+Consider what happens when multiple requests for a file are received.
+
+When another request comes in for a file already being downloaded,
+the new request should wait for the old one to finish. This should
+also be done for multiple requests for peer downloads of files with
+the same hash.
+
+
 Packages.diff files need to be considered.
 
 The Packages.diff/Index files contain hashes of Packages.diff/rred.gz 
