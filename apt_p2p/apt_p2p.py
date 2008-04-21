@@ -102,6 +102,7 @@ class AptP2P(protocol.Factory):
     def stopFactory(self):
         log.msg('Stoppping the main apt_p2p application')
         self.http_server.getHTTPFactory().stopFactory()
+        self.mirrors.cleanup()
         self.stats.save()
         self.db.close()
     

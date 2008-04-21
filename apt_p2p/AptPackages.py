@@ -92,6 +92,7 @@ class PackageFileList(DictMixin):
         if filename.lower() in TRACKED_FILES:
             log.msg("Registering package file: "+cache_path)
             self.packages[cache_path] = file_path
+            self.packages.sync()
             return True
         return False
 
@@ -103,6 +104,7 @@ class PackageFileList(DictMixin):
             if not self.packages[f].exists():
                 log.msg("File in packages database has been deleted: "+f)
                 del self.packages[f]
+        self.packages.sync()
 
     #{ Dictionary interface details
     def __getitem__(self, key): return self.packages[key]
