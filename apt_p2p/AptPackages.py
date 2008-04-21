@@ -131,6 +131,8 @@ class AptPackages:
     @type loading: L{twisted.internet.defer.Deferred}
     @ivar loading: if the cache is currently being loaded, this will be
         called when it is loaded, otherwise it is None
+    @type loading_unload: C{boolean}
+    @ivar loading_unload: whether there is an unload pending on the current load
     @type unload_later: L{twisted.internet.interfaces.IDelayedCall}
     @ivar unload_later: the delayed call to unload the apt cache
     @type indexrecords: C{dictionary}
@@ -205,6 +207,7 @@ class AptPackages:
         self.packages = PackageFileList(cache_dir)
         self.loaded = False
         self.loading = None
+        self.loading_unload = False
         self.unload_later = None
         
     def __del__(self):
@@ -253,6 +256,7 @@ class AptPackages:
         # Make sure it's not already being loaded
         if self.loading is None:
             log.msg('Loading the packages cache')
+            self.loading_unload = False
             self.loading = threads.deferToThread(self._load)
             self.loading.addCallback(self.doneLoading)
         return self.loading
@@ -260,6 +264,16 @@ class AptPackages:
     def doneLoading(self, loadResult):
         """Cache is loaded."""
         self.loading = None
+        
+        # Check for a pending unload
+        if self.loading_unload:
+            log.msg('Re-loading the packages cache')
+            self.unload()
+            self.loading_unload = False
+            self.loading = threads.deferToThread(self._load)
+            self.loading.addCallback(self.doneLoading)
+            return self.loading
+            
         # Must pass on the result for the next callback
         return loadResult
         
@@ -332,7 +346,9 @@ class AptPackages:
         if self.unload_later and self.unload_later.active():
             self.unload_later.cancel()
         self.unload_later = None
-        if self.loaded:
+        if self.loading:
+            self.loading_unload = True
+        elif self.loaded:
             log.msg('Unloading the packages cache')
             # This should save memory
             del self.cache
