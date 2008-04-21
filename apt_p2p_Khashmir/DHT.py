@@ -111,7 +111,8 @@ class DHT:
                 self.config[k] = self.config_parser.getint(section, k)
             # The times in the config file
             elif k in ['CHECKPOINT_INTERVAL', 'MIN_PING_INTERVAL', 
-                       'BUCKET_STALENESS', 'KEY_EXPIRE']:
+                       'BUCKET_STALENESS', 'KEY_EXPIRE',
+                       'KRPC_TIMEOUT', 'KRPC_INITIAL_DELAY']:
                 self.config[k] = self.config_parser.gettime(section, k)
             # The booleans in the config file
             elif k in ['SPEW']:
