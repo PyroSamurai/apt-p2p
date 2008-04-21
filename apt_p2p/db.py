@@ -65,7 +65,7 @@ class DB:
         self.conn = sqlite.connect(database=self.db.path, detect_types=sqlite.PARSE_DECLTYPES)
         c = self.conn.cursor()
         c.execute("CREATE TABLE files (path TEXT PRIMARY KEY UNIQUE, hashID INTEGER, " +
-                                      "size NUMBER, mtime NUMBER)")
+                                      "dht BOOL, size NUMBER, mtime NUMBER)")
         c.execute("CREATE TABLE hashes (hashID INTEGER PRIMARY KEY AUTOINCREMENT, " +
                                        "hash KHASH UNIQUE, pieces KHASH, " +
                                        "piecehash KHASH, refreshed TIMESTAMP)")
@@ -106,13 +106,15 @@ class DB:
                 c.close()
         return res
         
-    def storeFile(self, file, hash, pieces = ''):
+    def storeFile(self, file, hash, dht = True, pieces = ''):
         """Store or update a file in the database.
         
         @type file: L{twisted.python.filepath.FilePath}
         @param file: the file to check
         @type hash: C{string}
         @param hash: the hash of the file
+        @param dht: whether the file is added to the DHT
+            (optional, defaults to true)
         @type pieces: C{string}
         @param pieces: the concatenated list of the hashes of the pieces of
             the file (optional, defaults to the empty string)
@@ -143,8 +145,8 @@ class DB:
 
         # Add the file to the database
         file.restat()
-        c.execute("INSERT OR REPLACE INTO files (path, hashID, size, mtime) VALUES (?, ?, ?, ?)",
-                  (file.path, hashID, file.getsize(), file.getmtime()))
+        c.execute("INSERT OR REPLACE INTO files (path, hashID, dht, size, mtime) VALUES (?, ?, ?, ?, ?)",
+                  (file.path, hashID, dht, file.getsize(), file.getmtime()))
         self.conn.commit()
         c.close()
         
@@ -254,20 +256,30 @@ class DB:
             res['pieces'] = row['pieces']
             row = c.fetchone()
 
-        # Make sure there are still valid files for each hash
+        # Make sure there are still valid DHT files for each hash
         for hash in expired.values():
-            valid = False
-            c.execute("SELECT path, size, mtime FROM files WHERE hashID = ?", (hash['hashID'], ))
+            dht = False
+            non_dht = False
+            c.execute("SELECT path, dht, size, mtime FROM files WHERE hashID = ?", (hash['hashID'], ))
             row = c.fetchone()
             while row:
                 res = self._removeChanged(FilePath(row['path']), row)
                 if res:
-                    valid = True
+                    if row['dht']:
+                        dht = True
+                    else:
+                        non_dht = True
                 row = c.fetchone()
-            if not valid:
-                # Remove hashes for which no files are still available
+            if not dht:
+                # Remove hashes for which no DHT files are still available
                 del expired[hash['hash']]
-                c.execute("DELETE FROM hashes WHERE hashID = ?", (hash['hashID'], ))
+                if not non_dht:
+                    # Remove hashes for which no files are still available
+                    c.execute("DELETE FROM hashes WHERE hashID = ?", (hash['hashID'], ))
+                else:
+                    # There are still some non-DHT files available, so refresh them
+                    c.execute("UPDATE hashes SET refreshed = ? WHERE hashID = ?",
+                              (datetime.now(), hash['hashID']))
                 
         self.conn.commit()
         c.close()

@@ -30,9 +30,27 @@ class FileDownloader(static.File):
     def __init__(self, path, manager, defaultType="text/plain", ignoredExts=(), processors=None, indexNames=None):
         self.manager = manager
         super(FileDownloader, self).__init__(path, defaultType, ignoredExts, processors, indexNames)
-        
+    
+    def locateChild(self, req, segments):
+        child, segments = super(FileDownloader, self).locateChild(req, segments)
+        # Make sure we always call renderHTTP()
+        if isinstance(child, FileDownloader):
+            return child, segments
+        else:
+            return self, server.StopTraversal
+            
     def renderHTTP(self, req):
         log.msg('Got request for %s from %s' % (req.uri, req.remoteAddr))
+        
+        # Make sure the file is in the DB and unchanged
+        if self.manager and not self.manager.db.isUnchanged(self.fp):
+            if self.fp.exists() and self.fp.isfile():
+                self.fp.remove()
+            return self._renderHTTP_done(http.Response(404,
+                        {'content-type': http_headers.MimeType('text', 'html')},
+                        '<html><body><p>File found but it has changed.</body></html>'),
+                        req)
+            
         resp = super(FileDownloader, self).renderHTTP(req)
         if isinstance(resp, defer.Deferred):
             resp.addCallbacks(self._renderHTTP_done, self._renderHTTP_error,

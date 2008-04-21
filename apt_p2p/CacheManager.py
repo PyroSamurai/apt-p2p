@@ -320,7 +320,7 @@ class CacheManager:
                 url = 'http:/' + file.path[len(self.cache_dir.path):]
                 
             # Store the hashed file in the database
-            new_hash = self.db.storeFile(file, result.digest(),
+            new_hash = self.db.storeFile(file, result.digest(), True,
                                          ''.join(result.pieceDigests()))
             
             # Tell the main program to handle the new cache file
@@ -404,27 +404,31 @@ class CacheManager:
         @param decFile: the file where the decompressed download was written to
             (optional, defaults to the file not having been compressed)
         """
-        if modtime:
-            os.utime(destFile.path, (modtime, modtime))
-            if decFile:
-                os.utime(decFile.path, (modtime, modtime))
-        
         result = hash.verify()
         if result or result is None:
+            if modtime:
+                os.utime(destFile.path, (modtime, modtime))
+            
             if result:
                 log.msg('Hashes match: %s' % url)
+                dht = True
             else:
                 log.msg('Hashed file to %s: %s' % (hash.hexdigest(), url))
+                dht = False
                 
-            new_hash = self.db.storeFile(destFile, hash.digest(),
+            new_hash = self.db.storeFile(destFile, hash.digest(), dht,
                                          ''.join(hash.pieceDigests()))
-            log.msg('now avaliable: %s' % (url))
 
             if self.manager:
                 self.manager.new_cached_file(destFile, hash, new_hash, url)
-                if decFile:
-                    ext_len = len(destFile.path) - len(decFile.path)
-                    self.manager.new_cached_file(decFile, None, False, url[:-ext_len])
+
+            if decFile:
+                # Hash the decompressed file and add it to the DB
+                decHash = HashObject()
+                ext_len = len(destFile.path) - len(decFile.path)
+                df = decHash.hashInThread(decFile)
+                df.addCallback(self._save_complete, url[:-ext_len], decFile, modtime)
+                df.addErrback(self._save_error, url[:-ext_len], decFile)
         else:
             log.msg("Hashes don't match %s != %s: %s" % (hash.hexexpected(), hash.hexdigest(), url))
             destFile.remove()
