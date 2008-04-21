@@ -271,6 +271,24 @@
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
+	    <term><option>KRPC_TIMEOUT = <replaceable>time</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>time</replaceable> to wait before KRPC requests timeout.
+	          (Default is 14 seconds.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>KRPC_INITIAL_DELAY = <replaceable>time</replaceable></option></term>
+	     <listitem>
+	      <para>The <replaceable>time</replaceable> to start with when resending KRPC requests using exponential backoff.
+	          The request will first be resent after the delay set here.
+	          The request will be resent again after twice the delay set here, and so on.
+	          e.g. if TIMEOUT is 14 sec., and INITIAL_DELAY is 2 sec., then requests will
+	          be resent at times 0, 2 (2 sec. later), and 6 (4 sec. later), and then will
+	          timeout at 14. (Default is 2 seconds.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
 	    <term><option>SPEW = <replaceable>boolean</replaceable></option></term>
 	     <listitem>
 	      <para>Whether to log lots of info about the requests and responses in the protocol.
