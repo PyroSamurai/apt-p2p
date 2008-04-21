@@ -190,12 +190,12 @@ class AptP2P(protocol.Factory):
         findDefer.addCallbacks(self.findHash_done, self.findHash_error, 
                                callbackArgs=(req, url, orig_resp, d),
                                errbackArgs=(req, url, orig_resp, d))
-        findDefer.addErrback(log.err)
         return d
     
     def findHash_error(self, failure, req, url, orig_resp, d):
         """Process the error in hash lookup by returning an empty L{HashObject}."""
-        log.err(failure)
+        log.msg('Hash lookup for %s resulted in an error: %s' %
+                (url, failure.getErrorMessage()))
         self.findHash_done(HashObject(), req, url, orig_resp, d)
         
     def findHash_done(self, hash, req, url, orig_resp, d):
@@ -299,7 +299,7 @@ class AptP2P(protocol.Factory):
         """Check the returned response to be sure it is valid."""
         if isinstance(resp, failure.Failure):
             log.msg('Got error trying to get cached file')
-            log.err()
+            log.err(resp)
             # Try the next possible location
             self.getCachedFile(hash, req, url, d, locations)
             return

@@ -239,7 +239,7 @@ class KTable:
         
         # Make sure our table isn't FULL, this is really unlikely
         if len(self.buckets) >= (khash.HASH_LENGTH*8):
-            log.err("Hash Table is FULL!  Increase K!")
+            log.err(RuntimeError("Hash Table is FULL! Increase K!"))
             return
             
         # This bucket is full and contains our node, split the bucket

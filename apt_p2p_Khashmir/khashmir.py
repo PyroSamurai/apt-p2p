@@ -200,8 +200,7 @@ class KhashmirBase(protocol.Factory):
             
             def _staleNodeHandler(err, oldnode = old, newnode = node, self = self, start = datetime.now()):
                 """The pinged node never responded, so replace it."""
-                log.msg("ping failed (%s) %s/%s" % (self.config['PORT'], oldnode.host, oldnode.port))
-                log.err(err)
+                log.msg("action ping failed on %s/%s: %s" % (oldnode.host, oldnode.port, err.getErrorMessage()))
                 self.stats.completedAction('ping', start)
                 self.table.replaceStaleNode(oldnode, newnode)
             
@@ -240,8 +239,7 @@ class KhashmirBase(protocol.Factory):
 
         def _defaultPong(err, node=node, self=self, callback=callback, errback=errback, start = datetime.now()):
             """Error occurred, fail node and errback or callback with error."""
-            log.msg("join failed (%s) %s/%s" % (self.config['PORT'], node.host, node.port))
-            log.err(err)
+            log.msg("action join failed on %s/%s: %s" % (node.host, node.port, err.getErrorMessage()))
             self.stats.completedAction('join', start)
             self.table.nodeFailed(node)
             if errback:

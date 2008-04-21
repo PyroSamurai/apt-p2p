@@ -307,7 +307,6 @@ class CacheManager:
         hash = HashObject()
         df = hash.hashInThread(file)
         df.addBoth(self._doneHashing, file, walker)
-        df.addErrback(log.err)
     
     def _doneHashing(self, result, file, walker):
         """If successful, add the hashed file to the DB and inform the main program."""

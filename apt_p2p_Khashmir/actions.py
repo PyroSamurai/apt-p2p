@@ -198,8 +198,7 @@ class ActionBase:
 
     def actionFailed(self, err, node, expected_results, df):
         """Receive an error from a remote node."""
-        log.msg("action %s failed (%s) %s/%s" % (self.action, self.config['PORT'], node.host, node.port))
-        log.err(err)
+        log.msg("action %s failed on %s/%s: %s" % (self.action, node.host, node.port, err.getErrorMessage()))
         self.caller.table.nodeFailed(node)
         self.outstanding -= 1
         self.outstanding_results -= expected_results
