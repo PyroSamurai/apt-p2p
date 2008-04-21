@@ -71,7 +71,7 @@ DEFAULTS = {
 
     # Refresh the DHT keys after this much time has passed.
     # This should be a time slightly less than the DHT's KEY_EXPIRE value.
-    'KEY_REFRESH': '57m',
+    'KEY_REFRESH': '2.5h',
 
     # The user name to try and run as (leave blank to run as current user)
     'USERNAME': 'apt-p2p',
@@ -121,7 +121,7 @@ DHT_DEFAULTS = {
     'BUCKET_STALENESS': '1h', # one hour
     
     # expire entries older than this
-    'KEY_EXPIRE': '1h', # 60 minutes
+    'KEY_EXPIRE': '3h', # 3 hours
     
     # whether to spew info about the requests/responses in the protocol
     'SPEW': 'no',
@@ -151,7 +151,7 @@ class AptP2PConfigParser(SafeConfigParser):
         if suffix in self.time_multipliers.keys():
             mult = self.time_multipliers[suffix]
             value = value[:-1]
-        return int(value)*mult
+        return int(float(value)*mult)
     
     def getstring(self, section, option):
         """Read the config parameter as a string."""
@@ -196,6 +196,14 @@ class TestConfigParser(unittest.TestCase):
         self.failUnless(config.gettime('DEFAULT', 'time_tester_3') == 4*60)
         config.set('DEFAULT', 'time_tester_4', '37s')
         self.failUnless(config.gettime('DEFAULT', 'time_tester_4') == 37)
+        
+    def test_floating_time(self):
+        config.set('DEFAULT', 'time_float_tester_1', '2.5d')
+        self.failUnless(config.gettime('DEFAULT', 'time_float_tester_1') == int(2.5*86400))
+        config.set('DEFAULT', 'time_float_tester_2', '0.5h')
+        self.failUnless(config.gettime('DEFAULT', 'time_float_tester_2') == int(0.5*3600))
+        config.set('DEFAULT', 'time_float_tester_3', '4.3333m')
+        self.failUnless(config.gettime('DEFAULT', 'time_float_tester_3') == int(4.3333*60))
         
     def test_string(self):
         config.set('DEFAULT', 'string_test', 'foobar')
