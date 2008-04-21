@@ -117,6 +117,9 @@ class ActionBase:
     
     def schedule(self):
         """Schedule requests to be sent to remote nodes."""
+        if self.finished:
+            return
+        
         # Check if we are already done
         if self.desired_results and ((len(self.results) >= abs(self.desired_results)) or
                                      (self.desired_results < 0 and
@@ -124,9 +127,11 @@ class ActionBase:
             self.finished = True
             result = self.generateResult()
             reactor.callLater(0, self.callback, *result)
+            return
 
-        if self.finished or (self.desired_results and 
-                             len(self.results) + self.outstanding_results >= abs(self.desired_results)):
+        # Check if we have enough outstanding results coming
+        if (self.desired_results and 
+            len(self.results) + self.outstanding_results >= abs(self.desired_results)):
             return
         
         # Loop for each node that should be processed
