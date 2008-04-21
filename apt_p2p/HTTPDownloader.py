@@ -83,7 +83,7 @@ class Peer(ClientFactory):
         self.closed = False
         self.connecting = False
         self.proto = proto
-        self.processQueue()
+        reactor.callLater(0, self.processQueue)
         
     def connectionError(self, err):
         """Cancel the requests."""
@@ -117,7 +117,7 @@ class Peer(ClientFactory):
         request.deferRequest = defer.Deferred()
         self.request_queue.append(request)
         self.rerank()
-        self.processQueue()
+        reactor.callLater(0, self.processQueue)
         return request.deferRequest
 
     def processQueue(self):
@@ -177,13 +177,13 @@ class Peer(ClientFactory):
         """Try to send a new request."""
         self._processLastResponse()
         self.busy = False
-        self.processQueue()
+        reactor.callLater(0, self.processQueue)
         self.rerank()
 
     def clientPipelining(self, proto):
         """Try to send a new request."""
         self.pipeline = True
-        self.processQueue()
+        reactor.callLater(0, self.processQueue)
 
     def clientGone(self, proto):
         """Mark sent requests as errors."""
@@ -199,7 +199,7 @@ class Peer(ClientFactory):
         self.proto = None
         self.rerank()
         if self.request_queue:
-            self.processQueue()
+            reactor.callLater(0, self.processQueue)
             
     #{ Downloading request interface
     def setCommonHeaders(self):
@@ -329,16 +329,23 @@ class TestClientManager(unittest.TestCase):
     
     client = None
     pending_calls = []
+    length = []
     
     def gotResp(self, resp, num, expect):
         self.failUnless(resp.code >= 200 and resp.code < 300, "Got a non-200 response: %r" % resp.code)
         if expect is not None:
             self.failUnless(resp.stream.length == expect, "Length was incorrect, got %r, expected %r" % (resp.stream.length, expect))
-        def print_(n):
-            pass
-        def printdone(n):
-            pass
-        stream_mod.readStream(resp.stream, print_).addCallback(printdone)
+        while len(self.length) <= num:
+            self.length.append(0)
+        self.length[num] = 0
+        def addData(data, self = self, num = num):
+            self.length[num] += len(data)
+        def checkLength(resp, self = self, num = num, length = resp.stream.length):
+            self.failUnlessEqual(self.length[num], length)
+            return resp
+        df = stream_mod.readStream(resp.stream, addData)
+        df.addCallback(checkLength)
+        return df
     
     def test_download(self):
         """Tests a normal download."""
@@ -379,7 +386,7 @@ class TestClientManager(unittest.TestCase):
         newRequest("/rfc/rfc0801.txt", 3, 40824)
         
         # This one will probably be queued
-        self.pending_calls.append(reactor.callLater(1, newRequest, '/rfc/rfc0013.txt', 4, 1070))
+        self.pending_calls.append(reactor.callLater(6, newRequest, '/rfc/rfc0013.txt', 4, 1070))
         
         # Connection should still be open, but idle
         self.pending_calls.append(reactor.callLater(10, newRequest, '/rfc/rfc0022.txt', 5, 4606))
