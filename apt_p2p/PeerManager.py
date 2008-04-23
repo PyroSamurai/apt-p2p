@@ -8,7 +8,7 @@ from binascii import b2a_hex, a2b_hex
 import sha
 
 from twisted.internet import reactor, defer
-from twisted.python import log
+from twisted.python import log, filepath
 from twisted.trial import unittest
 from twisted.web2 import stream
 from twisted.web2.http import Response, splitHostPort
@@ -91,11 +91,13 @@ class GrowingFileStream(stream.FileStream):
                     deferred.callback(b)
                 else:
                     # We're done
+                    self._close()
                     deferred = self.deferred
                     self.deferred = None
                     deferred.callback(None)
             else:
                 # We're done
+                self._close()
                 deferred = self.deferred
                 self.deferred = None
                 deferred.callback(None)
@@ -112,6 +114,7 @@ class GrowingFileStream(stream.FileStream):
         # If we don't have any available, we're done or deferred
         if readSize <= 0:
             if self.finished:
+                self._close()
                 return None
             else:
                 self.deferred = defer.Deferred()
@@ -124,6 +127,7 @@ class GrowingFileStream(stream.FileStream):
         if not bytesRead:
             # End of file was reached, we're done or deferred
             if self.finished:
+                self._close()
                 return None
             else:
                 self.deferred = defer.Deferred()
@@ -132,6 +136,12 @@ class GrowingFileStream(stream.FileStream):
             self.position += bytesRead
             return b
 
+    def _close(self):
+        """Close the temporary file and remove it."""
+        self.f.close()
+        filepath.FilePath(self.f.name).remove()
+        self.f = None
+        
 class StreamToFile:
     """Save a stream to a partial file and hash it.
     
