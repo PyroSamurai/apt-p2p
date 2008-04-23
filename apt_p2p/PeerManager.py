@@ -276,6 +276,7 @@ class FileDownload:
         self.compact_peers = compact_peers
         
         self.path = '/~/' + quote_plus(hash.expected())
+        self.defer = None
         self.mirror_path = None
         self.pieces = None
         self.started = False
@@ -518,11 +519,6 @@ class FileDownload:
 #            self.defer.callback(self.peerlist[0].get(self.path))
 #            return
         
-        # Start sending the return file
-        self.stream = GrowingFileStream(self.file, self.hash.expSize)
-        resp = Response(200, {}, self.stream)
-        self.defer.callback(resp)
-
         # Begin to download the pieces
         self.outstanding = 0
         self.nextFinish = 0
@@ -569,6 +565,19 @@ class FileDownload:
             if response.stream and response.stream.length:
                 stream.readAndDiscard(response.stream)
         else:
+            if self.defer:
+                # Start sending the return file
+                df = self.defer
+                self.defer = None
+                self.stream = GrowingFileStream(self.file, self.hash.expSize)
+
+                # Get the headers from the peer's response
+                headers = {}
+                if response.headers.hasHeader('last-modified'):
+                    headers['last-modified'] = response.headers.getHeader('last-modified')
+                resp = Response(200, {}, self.stream)
+                df.callback(resp)
+
             # Read the response stream to the file
             log.msg('Streaming piece %d from peer %r' % (piece, peer))
             if response.code == 206:

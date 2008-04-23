@@ -1,8 +1,6 @@
 Some last few things to do before release.
 
 - Handle/investigate the HTTP client pipeline errors
-- update the modtime of files downloaded from peers
-  - also set the Last-Modified header for the return to Apt
 
 Consider what happens when multiple requests for a file are received.
 
