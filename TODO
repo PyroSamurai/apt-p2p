@@ -4,7 +4,6 @@ Some last few things to do before release.
 - remove files from the peer's download cache
 - update the modtime of files downloaded from peers
   - also set the Last-Modified header for the return to Apt
-- refresh expired DHT hashes concurrently instead of sequentially
 
 Consider what happens when multiple requests for a file are received.
 
