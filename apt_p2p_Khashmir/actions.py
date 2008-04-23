@@ -186,7 +186,7 @@ class ActionBase:
 
     def gotResponse(self, dict, node, expected_results, df):
         """Receive a response from a remote node."""
-        self.caller.insertNode(node)
+        reactor.callLater(0, self.caller.insertNode, node)
         if self.finished or self.answered.has_key(node.id):
             # a day late and a dollar short
             return

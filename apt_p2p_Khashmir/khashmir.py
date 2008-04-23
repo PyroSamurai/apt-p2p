@@ -233,7 +233,7 @@ class KhashmirBase(protocol.Factory):
             """Node responded properly, callback with response."""
             n = self.Node(dict['id'], dict['_krpc_sender'][0], dict['_krpc_sender'][1])
             self.stats.completedAction('join', start)
-            self.insertNode(n)
+            reactor.callLater(0, self.insertNode, n)
             if callback:
                 callback((dict['ip_addr'], dict['port']))
 
@@ -306,7 +306,7 @@ class KhashmirBase(protocol.Factory):
         """
         if _krpc_sender is not None:
             n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
-            self.insertNode(n, contacted = False)
+            reactor.callLater(0, self.insertNode, n, False)
 
         return {"id" : self.node.id}
         
@@ -320,7 +320,7 @@ class KhashmirBase(protocol.Factory):
         """
         if _krpc_sender is not None:
             n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
-            self.insertNode(n, contacted = False)
+            reactor.callLater(0, self.insertNode, n, False)
         else:
             _krpc_sender = ('127.0.0.1', self.port)
 
@@ -338,7 +338,7 @@ class KhashmirBase(protocol.Factory):
         """
         if _krpc_sender is not None:
             n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
-            self.insertNode(n, contacted = False)
+            reactor.callLater(0, self.insertNode, n, False)
         else:
             _krpc_sender = ('127.0.0.1', self.port)
 
@@ -414,7 +414,7 @@ class KhashmirRead(KhashmirBase):
         """
         if _krpc_sender is not None:
             n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
-            self.insertNode(n, contacted = False)
+            reactor.callLater(0, self.insertNode, n, False)
     
         nodes = self.table.findNodes(key)
         nodes = map(lambda node: node.contactInfo(), nodes)
@@ -436,7 +436,7 @@ class KhashmirRead(KhashmirBase):
         """
         if _krpc_sender is not None:
             n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
-            self.insertNode(n, contacted = False)
+            reactor.callLater(0, self.insertNode, n, False)
     
         l = self.store.retrieveValues(key)
         if num == 0 or num >= len(l):
@@ -496,7 +496,7 @@ class KhashmirWrite(KhashmirRead):
         """
         if _krpc_sender is not None:
             n = self.Node(id, _krpc_sender[0], _krpc_sender[1])
-            self.insertNode(n, contacted = False)
+            reactor.callLater(0, self.insertNode, n, False)
         else:
             _krpc_sender = ('127.0.0.1', self.port)
 
