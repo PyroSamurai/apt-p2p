@@ -240,13 +240,16 @@ class KrpcRequest(defer.Deferred):
         self.delay = self.config.get('KRPC_INITIAL_DELAY', 2)
         self.start = datetime.now()
         self.later = None
-        self.send()
+        reactor.callLater(0, self.send)
         
     def send(self):
         """Send the request to the remote node."""
         assert not self.later, 'There is already a pending request'
         self.later = reactor.callLater(self.delay, self.timeOut)
-        self.protocol.sendData(self.method, self.data)
+        try:
+            self.protocol.sendData(self.method, self.data)
+        except:
+            log.err()
 
     def timeOut(self):
         """Check for a unrecoverable timeout, otherwise resend."""
@@ -261,7 +264,7 @@ class KrpcRequest(defer.Deferred):
         else:
             self.delay *= 2
             log.msg('Trying to resend %r now with delay %d sec' % (self.tid, self.delay))
-            self.send()
+            reactor.callLater(0, self.send)
         
     def callback(self, resp):
         self.dropTimeOut()
@@ -535,10 +538,9 @@ class KRPC:
         @type data: C{string}
         @param data: the message to send to the remote node
         """
+        self.transport.write(data, self.addr)
         self.stats.sentAction(method)
         self.stats.sentBytes(len(data))
-        
-        self.transport.write(data, self.addr)
         
     def timeOut(self, badTID, method):
         """Call the deferred's errback if a timeout occurs.
