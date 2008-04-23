@@ -1,9 +1,6 @@
 Some last few things to do before release.
 
 - Handle/investigate the HTTP client pipeline errors
-- DB should not always restat files (especially for expired hashes)
-- remove missing files at startup (in DB's removeUntracked)
-- when files modtime but not size changes, rehash them to be sure
 - remove files from the peer's download cache
 - update the modtime of files downloaded from peers
   - also set the Last-Modified header for the return to Apt
@@ -39,6 +36,14 @@ downloaded files, but not the requests received from peers for upload
 files. The statistics for uploaded data only includes the files sent
 and not the headers, and also misses the requests for downloads sent to
 other peers.
+
+
+Rehash changed files instead of removing them.
+
+When the modification time of a file changes but the size does not,
+the file could be rehased to verify it is the same instead of
+automatically removing it. The DB would have to be modified to return
+deferred's for a lot of its functions.
 
 
 Consider storing deltas of packages.

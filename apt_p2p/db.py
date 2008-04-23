@@ -263,12 +263,10 @@ class DB:
             c.execute("SELECT path, dht, size, mtime FROM files WHERE hashID = ?", (hash['hashID'], ))
             row = c.fetchone()
             while row:
-                res = self._removeChanged(FilePath(row['path']), row)
-                if res:
-                    if row['dht']:
-                        dht = True
-                    else:
-                        non_dht = True
+                if row['dht']:
+                    dht = True
+                else:
+                    non_dht = True
                 row = c.fetchone()
             if not dht:
                 # Remove hashes for which no DHT files are still available
@@ -315,6 +313,15 @@ class DB:
         # Delete all the removed files from the database
         if removed:
             c.execute("DELETE FROM files " + sql, newdirs)
+            self.conn.commit()
+        
+        c.execute("SELECT path FROM files")
+        rows = c.fetchall()
+        for row in rows:
+            if not os.path.exists(row['path']):
+                # Leave hashes, they will be removed on next refresh
+                c.execute("DELETE FROM files WHERE path = ?", (row['path'], ))
+                removed.append(FilePath(row['path']))
         self.conn.commit()
 
         return removed
@@ -460,11 +467,19 @@ class TestDB(unittest.TestCase):
     def test_removeUntracked(self):
         """Tests removing untracked files from the database."""
         self.build_dirs()
+        file = self.dirs[0].child('test.khashmir')
+        file.setContent(file.path)
+        file.touch()
+        self.store.storeFile(file, self.hash)
         res = self.store.removeUntrackedFiles(self.dirs)
         self.failUnlessEqual(len(res), 1, 'Got removed paths: %r' % res)
         self.failUnlessEqual(res[0], self.file, 'Got removed paths: %r' % res)
         res = self.store.removeUntrackedFiles(self.dirs)
         self.failUnlessEqual(len(res), 0, 'Got removed paths: %r' % res)
+        file.remove()
+        res = self.store.removeUntrackedFiles(self.dirs)
+        self.failUnlessEqual(len(res), 1, 'Got removed paths: %r' % res)
+        self.failUnlessEqual(res[0], self.dirs[0].child('test.khashmir'), 'Got removed paths: %r' % res)
         res = self.store.removeUntrackedFiles(self.dirs[1:])
         self.failUnlessEqual(len(res), 1, 'Got removed paths: %r' % res)
         self.failUnlessEqual(res[0], self.dirs[0].preauthChild(self.testfile), 'Got removed paths: %r' % res)
