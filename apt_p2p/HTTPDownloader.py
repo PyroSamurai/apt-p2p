@@ -10,6 +10,7 @@ from twisted import version as twisted_version
 from twisted.python import log
 from twisted.web2.client.interfaces import IHTTPClientManager
 from twisted.web2.client.http import ProtocolError, ClientRequest, HTTPClientProtocol
+from twisted.web2.channel.http import PERSIST_NO_PIPELINE, PERSIST_PIPELINE
 from twisted.web2 import stream as stream_mod, http_headers
 from twisted.web2 import version as web2_version
 from twisted.trial import unittest
@@ -133,11 +134,26 @@ class Peer(ClientFactory):
             return
         if self.outstanding and not self.pipeline:
             return
+        if not ((self.proto.readPersistent is PERSIST_NO_PIPELINE
+                 and not self.proto.inRequests)
+                 or self.proto.readPersistent is PERSIST_PIPELINE):
+            log.msg('HTTP protocol is not ready though we were told to pipeline: %r, %r' %
+                    (self.proto.readPersistent, self.proto.inRequests))
+            return
 
         req, deferRequest, submissionTime = self.request_queue.pop(0)
+        try:
+            deferResponse = self.proto.submitRequest(req, False)
+        except:
+            # Try again later
+            log.msg('Got an error trying to submit a new HTTP request %s' % (request.uri, ))
+            log.err()
+            self.request_queue.insert(0, (request, deferRequest, submissionTime))
+            ractor.callLater(1, self.processQueue)
+            return
+            
         self.outstanding += 1
         self.rerank()
-        deferResponse = self.proto.submitRequest(req, False)
         deferResponse.addCallbacks(self.requestComplete, self.requestError,
                                    callbackArgs = (req, deferRequest, submissionTime),
                                    errbackArgs = (req, deferRequest))
@@ -147,7 +163,7 @@ class Peer(ClientFactory):
         self._processLastResponse()
         self.outstanding -= 1
         assert self.outstanding >= 0
-        log.msg('%s of %s completed with code %d' % (req.method, req.uri, resp.code))
+        log.msg('%s of %s completed with code %d (%r)' % (req.method, req.uri, resp.code, resp.headers))
         self._completed += 1
         now = datetime.now()
         self._responseTimes.append((now, now - submissionTime))

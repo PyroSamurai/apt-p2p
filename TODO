@@ -1,7 +1,3 @@
-Some last few things to do before release.
-
-- Handle/investigate the HTTP client pipeline errors
-
 Consider what happens when multiple requests for a file are received.
 
 When another request comes in for a file already being downloaded,
