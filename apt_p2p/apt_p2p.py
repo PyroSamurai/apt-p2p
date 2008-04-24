@@ -155,7 +155,7 @@ class AptP2P(protocol.Factory):
         if self.nextRefresh.active():
             self.nextRefresh.reset(delay)
         else:
-            self.nextRefresh = reactor.callLater(delay, self.plRefresh, None, hashes)
+            self.nextRefresh = reactor.callLater(delay, self.refreshFiles, None, hashes)
     
     def getStats(self):
         """Retrieve and format the statistics for the program.
