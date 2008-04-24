@@ -18,6 +18,9 @@ from zope.interface import implements
 
 from apt_p2p_conf import version
 
+class PipelineError(Exception):
+    """An error has occurred in pipelining requests."""
+    
 class LoggingHTTPClientProtocol(HTTPClientProtocol):
     """A modified client protocol that logs the number of bytes received."""
     
@@ -35,6 +38,15 @@ class LoggingHTTPClientProtocol(HTTPClientProtocol):
         if self.stats:
             self.stats.receivedBytes(len(data), self.mirror)
         HTTPClientProtocol.rawDataReceived(self, data)
+
+    def setReadPersistent(self, persist):
+        self.readPersistent = persist
+        if not persist:
+            # Tell all requests but first to abort.
+            lostRequests = self.inRequests[1:]
+            del self.inRequests[1:]
+            for request in lostRequests:
+                request.connectionLost(PipelineError('The pipelined connection was lost'))
 
 class Peer(ClientFactory):
     """A manager for all HTTP requests to a single peer.
