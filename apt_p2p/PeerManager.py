@@ -370,7 +370,7 @@ class FileDownload:
         #        del self.peers[site]
 
         # Start the DHT lookup
-        lookupDefer = self.manager.dht.getValue(key)
+        lookupDefer = self.manager.dht.get(key)
         lookupDefer.addBoth(self._getDHTPieces, key)
         
     def _getDHTPieces(self, results, key):
@@ -636,7 +636,7 @@ class PeerManager:
     
     @type cache_dir: L{twisted.python.filepath.FilePath}
     @ivar cache_dir: the directory to use for storing all files
-    @type dht: L{interfaces.IDHT}
+    @type dht: L{DHTManager.DHT}
     @ivar dht: the DHT instance
     @type stats: L{stats.StatsLogger}
     @ivar stats: the statistics logger to record sent data to

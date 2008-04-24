@@ -77,7 +77,7 @@ class StatsLogger:
         # General
         out.write("<table border='1' cellpadding='4px'>\n")
         out.write("<tr><th><h3>General</h3></th><th>Value</th></tr>\n")
-        out.write("<tr title='Contact address for this peer'><td>Contact</td><td>" + str(uncompact(contactAddress)) + '</td></tr>\n')
+        out.write("<tr title='Contact address for this peer'><td>Contact</td><td>" + str(contactAddress) + '</td></tr>\n')
         out.write("</table>\n")
         out.write('</td><td>\n')
         

@@ -245,7 +245,7 @@ class CacheManager:
         self.db.removeUntrackedFiles(self.all_dirs)
         
     #{ Scanning directories
-    def scanDirectories(self):
+    def scanDirectories(self, result = None):
         """Scan the cache directories, hashing new and rehashing changed files."""
         assert not self.scanning, "a directory scan is already under way"
         self.scanning = self.all_dirs[:]
@@ -281,14 +281,12 @@ class CacheManager:
 
         # If it's not a file ignore it
         if not file.isfile():
-            log.msg('entering directory: %s' % file.path)
             reactor.callLater(0, self._scanDirectories, None, walker)
             return
 
         # If it's already properly in the DB, ignore it
         db_status = self.db.isUnchanged(file)
         if db_status:
-            log.msg('file is unchanged: %s' % file.path)
             reactor.callLater(0, self._scanDirectories, None, walker)
             return
         

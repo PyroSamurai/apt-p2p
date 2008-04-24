@@ -10,15 +10,15 @@ where DHT is a class that implements interfaces.IDHT.
 
 Diagram of the interaction between the given modules::
   
-  +---------------+    +-----------------------------------+    +-------------
-  |     AptP2P    |    |               DHT                 |    |  
-  |               |--->|join                            DHT|----|--\    
-  |               |--->|loadConfig                         |    |  | Another
-  |               |--->|getValue                           |    |  | Node
-  |               |--->|storeValue                      DHT|<---|--/
-  |               |--->|leave                              |    |
-  |         /-----|--->|getStats                           |    |
-  |         |     |    +-----------------------------------+    | Internet
+  +---------------+    +-------------+    +----------------+    +-------------
+  |     AptP2P    |    | DHTManager  |    |      IDHT      |    |  
+  |               |--->|start        |--->|join         DHT|----|--\    
+  |               |    |             |--->|loadConfig      |    |  | Another
+  |               |--->|get          |--->|getValue        |    |  | Node
+  |               |--->|store        |--->|storeValue   DHT|<---|--/
+  |               |    |             |--->|leave           |    |
+  |         /-----|--->|getStats     |--->|getStats        |    |
+  |         |     |    +-------------+    +----------------+    | Internet
   |         |     |    +-------------+    +----------------+    |
   |         |     |    | PeerManager |    | HTTPDownloader*|    |
   |         |     |--->|get          |--->|get         HTTP|----|---> Mirror
