@@ -289,6 +289,7 @@ class AptP2P(protocol.Factory):
             else:
                 log.msg('Peers for %s were not found' % url)
             getDefer = self.peers.get(hash, url)
+            getDefer.addErrback(self.final_fallback, hash, url)
             getDefer.addCallback(self.cache.save_file, hash, url)
             getDefer.addErrback(self.cache.save_error, url)
             getDefer.addCallbacks(d.callback, d.errback)
@@ -306,8 +307,16 @@ class AptP2P(protocol.Factory):
         if response.code < 200 or response.code >= 300:
             log.msg('Download from peers failed, going to direct download: %s' % url)
             getDefer = self.peers.get(hash, url)
+            getDefer.addErrback(self.final_fallback, hash, url)
             return getDefer
         return response
+        
+    def final_fallback(self, err, hash, url):
+        """Final retry if the mirror still generated an error."""
+        log.msg('Download from mirror failed, retrying once only: %s' % url)
+        log.err(err)
+        getDefer = self.peers.get(hash, url)
+        return getDefer
         
     def new_cached_file(self, file_path, hash, new_hash, url = None, forceDHT = False):
         """Add a newly cached file to the mirror info and/or the DHT.
