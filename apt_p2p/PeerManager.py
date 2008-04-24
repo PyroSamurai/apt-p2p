@@ -577,7 +577,7 @@ class FileDownload:
                 headers = {}
                 if response.headers.hasHeader('last-modified'):
                     headers['last-modified'] = response.headers.getHeader('last-modified')
-                resp = Response(200, {}, self.stream)
+                resp = Response(200, headers, self.stream)
                 df.callback(resp)
 
             # Read the response stream to the file

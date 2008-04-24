@@ -401,7 +401,7 @@ Debug
   pkgInitialize "false";   // This one will dump the configuration space
   NoLocking "false";
   Acquire::Ftp "false";    // Show ftp command traffic
-  Acquire::Http "true";   // Show http command traffic
+  Acquire::Http "false";   // Show http command traffic
   Acquire::gpgv "false";   // Show the gpgv traffic
   aptcdrom "false";        // Show found package files
   IdentCdrom "false";
