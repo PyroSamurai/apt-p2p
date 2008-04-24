@@ -47,7 +47,6 @@ tests = {'1': ('Start a single bootstrap and downloader, test updating and downl
               (1, ['install', 'ada-reference-manual']),
               (1, ['install', 'aspectj-doc']),
               (1, ['install', 'fop-doc']),
-              (1, ['install', 'jswat-doc']),
               (1, ['install', 'asis-doc']),
               (1, ['install', 'bison-doc']),
               (1, ['install', 'crash-whitepaper']),
@@ -64,13 +63,11 @@ tests = {'1': ('Start a single bootstrap and downloader, test updating and downl
                 (1, ['install', 'aap-doc']),
                 (1, ['install', 'ada-reference-manual']),
                 (1, ['install', 'fop-doc']),
-                (1, ['install', 'jswat-doc']),
                 (1, ['install', 'bison-doc']),
                 (1, ['install', 'crash-whitepaper']),
                 (2, ['install', 'aap-doc']),
                 (2, ['install', 'ada-reference-manual']),
                 (2, ['install', 'fop-doc']),
-                (2, ['install', 'jswat-doc']),
                 (2, ['install', 'bison-doc']),
                 (2, ['install', 'crash-whitepaper']),
                 ]),
@@ -322,6 +319,26 @@ tests = {'1': ('Start a single bootstrap and downloader, test updating and downl
                    ]),
               ]),
 
+         'b': ('Start 2 downloaders and test source downloads.',
+               {1: {}},
+               {1: {'types': ['deb-src']},
+                2: {'types': ['deb-src']}},
+               [(1, ['update']),
+                (2, ['update']),
+                (1, ['source', 'aboot-base']),
+                (2, ['source', 'aboot-base']),
+                (1, ['source', 'aap-doc']),
+                (1, ['source', 'ada-reference-manual']),
+                (1, ['source', 'fop-doc']),
+                (1, ['source', 'bison-doc']),
+                (1, ['source', 'crash-whitepaper']),
+                (2, ['source', 'aap-doc']),
+                (2, ['source', 'ada-reference-manual']),
+                (2, ['source', 'fop-doc']),
+                (2, ['source', 'bison-doc']),
+                (2, ['source', 'crash-whitepaper']),
+                ]),
+                
          }
 
 assert 'all' not in tests
@@ -384,7 +401,7 @@ Debug
   pkgInitialize "false";   // This one will dump the configuration space
   NoLocking "false";
   Acquire::Ftp "false";    // Show ftp command traffic
-  Acquire::Http "false";   // Show http command traffic
+  Acquire::Http "true";   // Show http command traffic
   Acquire::gpgv "false";   // Show the gpgv traffic
   aptcdrom "false";        // Show found package files
   IdentCdrom "false";
@@ -558,6 +575,8 @@ def start(cmd, args, work_dir = None):
     """
     
     new_cmd = [cmd] + args
+    if work_dir:
+        os.chdir(work_dir)
     pid = os.spawnvp(os.P_NOWAIT, new_cmd[0], new_cmd)
     return pid
 
@@ -627,7 +646,7 @@ def apt_get(num_down, cmd):
     apt_conf = join([down_dir(num_down), 'etc', 'apt', 'apt.conf'])
     dpkg_status = join([down_dir(num_down), 'var', 'lib', 'dpkg', 'status'])
     args = ['-d', '-c', apt_conf, '-o', 'Dir::state::status='+dpkg_status] + cmd
-    pid = start('apt-get', args)
+    pid = start('apt-get', args, downloader_dir)
     return pid
 
 def bootstrap_address(num_boot):
@@ -667,7 +686,7 @@ def boot_dir(num_boot):
     return os.path.join(CWD,'bootstrap' + str(num_boot))
 
 def start_downloader(bootstrap_addresses, num_down, options = {},
-                     mirror = 'ftp.us.debian.org/debian', 
+                     types = ['deb'], mirror = 'ftp.us.debian.org/debian', 
                      suites = 'main contrib non-free', clean = True):
     """Initialize a new downloader process.
 
@@ -682,6 +701,9 @@ def start_downloader(bootstrap_addresses, num_down, options = {},
     @param options: the dictionary of string formatting values for creating
         the apt-p2p configuration file (see L{apt_p2p_conf_template} above).
         (optional, defaults to only using the default arguments)
+    @type types: C{list} of C{string}
+    @param types: the type of sources.list line to add
+        (optional, defaults to only 'deb')
     @type mirror: C{string}
     @param mirror: the Debian mirror to use
         (optional, defaults to 'ftp.us.debian.org/debian')
@@ -722,7 +744,8 @@ def start_downloader(bootstrap_addresses, num_down, options = {},
     if not exists(join([downloader_dir, 'etc', 'apt', 'sources.list'])):
         # Create apt's config files
         f = open(join([downloader_dir, 'etc', 'apt', 'sources.list']), 'w')
-        f.write('deb http://localhost:1%02d77/%s/ unstable %s\n' % (num_down, mirror, suites))
+        for type in types:
+            f.write('%s http://localhost:1%02d77/%s/ unstable %s\n' % (type, num_down, mirror, suites))
         f.close()
 
     if not exists(join([downloader_dir, 'etc', 'apt', 'apt.conf'])):

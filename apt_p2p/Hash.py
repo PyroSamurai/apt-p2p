@@ -82,11 +82,11 @@ class HashObject:
         if self.result is None or force:
             self.result = None
             self.done = False
-            self.fileHasher = self._new()
+            self.fileHasher = self.newHasher()
             if self.ORDER[self.hashTypeNum]['name'] == 'sha1':
                 self.pieceHasher = None
             else:
-                self.pieceHasher = self._newSHA1()
+                self.pieceHasher = self.newPieceHasher()
                 self.pieceSize = 0
             self.fileHash = None
             self.pieceHash = []
@@ -94,7 +94,7 @@ class HashObject:
             self.fileHex = None
             self.fileNormHash = None
 
-    def _new(self):
+    def newHasher(self):
         """Create a new hashing object according to the hash type."""
         if sys.version_info < (2, 5):
             mod = __import__(self.ORDER[self.hashTypeNum]['old_module'], globals(), locals(), [])
@@ -104,7 +104,7 @@ class HashObject:
             func = getattr(hashlib, self.ORDER[self.hashTypeNum]['hashlib_func'])
             return func()
 
-    def _newSHA1(self):
+    def newPieceHasher(self):
         """Create a new SHA1 hashing object."""
         if sys.version_info < (2, 5):
             import sha
@@ -130,7 +130,7 @@ class HashObject:
 
                 # Save the first piece digest and initialize a new piece hasher
                 self.pieceHash.append(self.fileHasher.digest())
-                self.pieceHasher = self._newSHA1()
+                self.pieceHasher = self.newPieceHasher()
 
             if self.pieceHasher:
                 # Loop in case the data contains multiple pieces
@@ -138,7 +138,7 @@ class HashObject:
                     # Save the piece hash and start a new one
                     self.pieceHasher.update(data[:(PIECE_SIZE - self.pieceSize)])
                     self.pieceHash.append(self.pieceHasher.digest())
-                    self.pieceHasher = self._newSHA1()
+                    self.pieceHasher = self.newPieceHasher()
                     
                     # Don't forget to hash the data normally
                     self.fileHasher.update(data[:(PIECE_SIZE - self.pieceSize)])

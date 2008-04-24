@@ -149,8 +149,8 @@ class StreamToFile:
     @ivar stream: the input stream being read
     @type outFile: L{twisted.python.filepath.FilePath}
     @ivar outFile: the file being written
-    @type hash: C{sha1}
-    @ivar hash: the hash object for the data
+    @type hasher: hashing object, e.g. C{sha1}
+    @ivar hasher: the hash object for the data
     @type position: C{int}
     @ivar position: the current file position to write the next data to
     @type length: C{int}
@@ -159,9 +159,11 @@ class StreamToFile:
     @ivar doneDefer: the deferred that will fire when done writing
     """
     
-    def __init__(self, inputStream, outFile, start = 0, length = None):
+    def __init__(self, hasher, inputStream, outFile, start = 0, length = None):
         """Initializes the file.
         
+        @type hasher: hashing object, e.g. C{sha1}
+        @param hasher: the hash object for the data
         @type inputStream: L{twisted.web2.stream.IByteStream}
         @param inputStream: the input stream to read from
         @type outFile: L{twisted.python.filepath.FilePath}
@@ -175,7 +177,7 @@ class StreamToFile:
         """
         self.stream = inputStream
         self.outFile = outFile
-        self.hash = sha.new()
+        self.hasher = hasher
         self.position = start
         self.length = None
         if length is not None:
@@ -187,7 +189,6 @@ class StreamToFile:
 
         @rtype: L{twisted.internet.defer.Deferred}
         """
-        log.msg('Started streaming %r bytes to file at position %d' % (self.length, self.position))
         self.doneDefer = stream.readStream(self.stream, self._gotData)
         self.doneDefer.addCallbacks(self._done, self._error)
         return self.doneDefer
@@ -207,13 +208,12 @@ class StreamToFile:
         # Write and hash the streamed data
         self.outFile.seek(self.position)
         self.outFile.write(data)
-        self.hash.update(data)
+        self.hasher.update(data)
         self.position += len(data)
         
     def _done(self, result):
         """Return the result."""
-        log.msg('Streaming is complete')
-        return self.hash.digest()
+        return self.hasher.digest()
     
     def _error(self, err):
         """Log the error."""
@@ -538,10 +538,13 @@ class FileDownload:
                 log.msg('Sending a request for piece %d to peer %r' % (piece, peer))
                 
                 self.outstanding += 1
+                path = self.path
                 if peer.mirror:
-                    df = peer.getRange(self.mirror_path, piece*PIECE_SIZE, (piece+1)*PIECE_SIZE - 1)
+                    path = self.mirror_path
+                if len(self.completePieces) > 1:
+                    df = peer.getRange(path, piece*PIECE_SIZE, (piece+1)*PIECE_SIZE - 1)
                 else:
-                    df = peer.getRange(self.path, piece*PIECE_SIZE, (piece+1)*PIECE_SIZE - 1)
+                    df = peer.get(path)
                 reactor.callLater(0, df.addCallbacks,
                                   *(self._getPiece, self._getError),
                                   **{'callbackArgs': (piece, peer),
@@ -550,12 +553,11 @@ class FileDownload:
                 
         # Check if we're done
         if self.outstanding <= 0 and self.nextFinish >= len(self.completePieces):
-            log.msg('We seem to be done with all pieces')
+            log.msg('Download is complete for %s' % self.path)
             self.stream.allAvailable()
     
     def _getPiece(self, response, piece, peer):
         """Process the retrieved headers from the peer."""
-        log.msg('Got response for piece %d from peer %r' % (piece, peer))
         if ((len(self.completePieces) > 1 and response.code != 206) or
             (response.code not in (200, 206))):
             # Request failed, try a different peer
@@ -581,10 +583,11 @@ class FileDownload:
             # Read the response stream to the file
             log.msg('Streaming piece %d from peer %r' % (piece, peer))
             if response.code == 206:
-                df = StreamToFile(response.stream, self.file, piece*PIECE_SIZE,
-                                  PIECE_SIZE).run()
+                df = StreamToFile(self.hash.newPieceHasher(), response.stream,
+                                  self.file, piece*PIECE_SIZE, PIECE_SIZE).run()
             else:
-                df = StreamToFile(response.stream, self.file).run()
+                df = StreamToFile(self.hash.newHasher(), response.stream,
+                                  self.file).run()
             reactor.callLater(0, df.addCallbacks,
                               *(self._gotPiece, self._gotError),
                               **{'callbackArgs': (piece, peer),
@@ -605,7 +608,6 @@ class FileDownload:
 
     def _gotPiece(self, response, piece, peer):
         """Process the retrieved piece from the peer."""
-        log.msg('Finished streaming piece %d from peer %r: %r' % (piece, peer, response))
         if self.pieces[piece] and response != self.pieces[piece]:
             # Hash doesn't match
             log.msg('Hash error for piece %d from peer %r' % (piece, peer))
