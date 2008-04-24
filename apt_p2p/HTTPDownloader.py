@@ -92,8 +92,8 @@ class Peer(ClientFactory):
 
         # Remove one request so that we don't loop indefinitely
         if self.request_queue:
-            req = self.request_queue.pop(0)
-            req.deferRequest.errback(err)
+            req, deferRequest, submissionTime = self.request_queue.pop(0)
+            deferRequest.errback(err)
             
         self._completed += 1
         self._errors += 1
@@ -113,12 +113,12 @@ class Peer(ClientFactory):
         @type request: L{twisted.web2.client.http.ClientRequest}
         @return: deferred that will fire with the completed request
         """
-        request.submissionTime = datetime.now()
-        request.deferRequest = defer.Deferred()
-        self.request_queue.append(request)
+        submissionTime = datetime.now()
+        deferRequest = defer.Deferred()
+        self.request_queue.append((request, deferRequest, submissionTime))
         self.rerank()
         reactor.callLater(0, self.processQueue)
-        return request.deferRequest
+        return deferRequest
 
     def processQueue(self):
         """Check the queue to see if new requests can be sent to the peer."""
@@ -134,14 +134,15 @@ class Peer(ClientFactory):
         if self.outstanding and not self.pipeline:
             return
 
-        req = self.request_queue.pop(0)
+        req, deferRequest, submissionTime = self.request_queue.pop(0)
         self.outstanding += 1
         self.rerank()
-        req.deferResponse = self.proto.submitRequest(req, False)
-        req.deferResponse.addCallbacks(self.requestComplete, self.requestError,
-                                       callbackArgs = (req, ), errbackArgs = (req, ))
+        deferResponse = self.proto.submitRequest(req, False)
+        deferResponse.addCallbacks(self.requestComplete, self.requestError,
+                                   callbackArgs = (req, deferRequest, submissionTime),
+                                   errbackArgs = (req, deferRequest))
 
-    def requestComplete(self, resp, req):
+    def requestComplete(self, resp, req, deferRequest, submissionTime):
         """Process a completed request."""
         self._processLastResponse()
         self.outstanding -= 1
@@ -149,12 +150,12 @@ class Peer(ClientFactory):
         log.msg('%s of %s completed with code %d' % (req.method, req.uri, resp.code))
         self._completed += 1
         now = datetime.now()
-        self._responseTimes.append((now, now - req.submissionTime))
+        self._responseTimes.append((now, now - submissionTime))
         self._lastResponse = (now, resp.stream.length)
         self.rerank()
-        req.deferRequest.callback(resp)
+        deferRequest.callback(resp)
 
-    def requestError(self, error, req):
+    def requestError(self, error, req, deferRequest):
         """Process a request that ended with an error."""
         self._processLastResponse()
         self.outstanding -= 1
@@ -163,7 +164,7 @@ class Peer(ClientFactory):
         self._completed += 1
         self._errors += 1
         self.rerank()
-        req.deferRequest.errback(error)
+        deferRequest.errback(error)
         
     def hashError(self, error):
         """Log that a hash error occurred from the peer."""
