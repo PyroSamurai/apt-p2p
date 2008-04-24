@@ -57,7 +57,7 @@ class Peer(ClientFactory):
         self.closed = True
         self.connecting = False
         self.request_queue = []
-        self.response_queue = []
+        self.outstanding = 0
         self.proto = None
         self.connector = None
         self._errors = 0
@@ -131,19 +131,21 @@ class Peer(ClientFactory):
             return
         if self.busy and not self.pipeline:
             return
-        if self.response_queue and not self.pipeline:
+        if self.outstanding and not self.pipeline:
             return
 
         req = self.request_queue.pop(0)
-        self.response_queue.append(req)
+        self.outstanding += 1
         self.rerank()
         req.deferResponse = self.proto.submitRequest(req, False)
-        req.deferResponse.addCallbacks(self.requestComplete, self.requestError)
+        req.deferResponse.addCallbacks(self.requestComplete, self.requestError,
+                                       callbackArgs = (req, ), errbackArgs = (req, ))
 
-    def requestComplete(self, resp):
+    def requestComplete(self, resp, req):
         """Process a completed request."""
         self._processLastResponse()
-        req = self.response_queue.pop(0)
+        self.outstanding -= 1
+        assert self.outstanding >= 0
         log.msg('%s of %s completed with code %d' % (req.method, req.uri, resp.code))
         self._completed += 1
         now = datetime.now()
@@ -152,10 +154,11 @@ class Peer(ClientFactory):
         self.rerank()
         req.deferRequest.callback(resp)
 
-    def requestError(self, error):
+    def requestError(self, error, req):
         """Process a request that ended with an error."""
         self._processLastResponse()
-        req = self.response_queue.pop(0)
+        self.outstanding -= 1
+        assert self.outstanding >= 0
         log.msg('Download of %s generated error %r' % (req.uri, error))
         self._completed += 1
         self._errors += 1
@@ -188,14 +191,10 @@ class Peer(ClientFactory):
     def clientGone(self, proto):
         """Mark sent requests as errors."""
         self._processLastResponse()
-        for req in self.response_queue:
-            reactor.callLater(0, req.deferRequest.errback,
-                                 ProtocolError('lost connection'))
         self.busy = False
         self.pipeline = False
         self.closed = True
         self.connecting = False
-        self.response_queue = []
         self.proto = None
         self.rerank()
         if self.request_queue:
@@ -248,7 +247,7 @@ class Peer(ClientFactory):
     #{ Peer information
     def isIdle(self):
         """Check whether the peer is idle or not."""
-        return not self.busy and not self.request_queue and not self.response_queue
+        return not self.busy and not self.request_queue and not self.outstanding
     
     def _processLastResponse(self):
         """Save the download time of the last request for speed calculations."""
@@ -315,7 +314,7 @@ class Peer(ClientFactory):
         rank = 1.0
         if self.closed:
             rank *= 0.9
-        rank *= exp(-(len(self.request_queue) + len(self.response_queue)))
+        rank *= exp(-(len(self.request_queue) + self.outstanding))
         speed = self.downloadSpeed()
         if speed > 0.0:
             rank *= exp(-512.0*1024 / speed)
