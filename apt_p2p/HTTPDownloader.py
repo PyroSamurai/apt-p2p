@@ -95,13 +95,18 @@ class LoggingHTTPClientProtocol(HTTPClientProtocol):
         return chanRequest.responseDefer
 
     def setReadPersistent(self, persist):
+        oldPersist = self.readPersistent
         self.readPersistent = persist
         if not persist:
             # Tell all requests but first to abort.
             lostRequests = self.inRequests[1:]
             del self.inRequests[1:]
             for request in lostRequests:
-                request.connectionLost(PipelineError('The pipelined connection was lost'))
+                request.connectionLost(PipelineError('Pipelined connection was closed.'))
+        elif (oldPersist is PERSIST_NO_PIPELINE and
+              persist is PERSIST_PIPELINE and
+              self.outRequest is None):
+            self.manager.clientPipelining(self)
 
     def connectionLost(self, reason):
         self.readPersistent = False
@@ -115,7 +120,7 @@ class LoggingHTTPClientProtocol(HTTPClientProtocol):
         del self.inRequests[1:]
         for request in lostRequests:
             if request is not None:
-                request.connectionLost(reason)
+                request.connectionLost(PipelineError('Pipelined connection was closed.'))
                 
 class Peer(ClientFactory):
     """A manager for all HTTP requests to a single peer.
