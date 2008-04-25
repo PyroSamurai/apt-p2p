@@ -13,6 +13,7 @@ from twisted.trial import unittest
 from twisted.python.filepath import FilePath
 
 from policies import ThrottlingFactory, ThrottlingProtocol, ProtocolWrapper
+from Streams import UploadStream, FileUploadStream, PiecesUploadStream
 from apt_p2p_conf import config
 from apt_p2p_Khashmir.bencode import bencode
 
@@ -86,61 +87,21 @@ class FileDownloader(static.File):
         return self.__class__(path, self.manager, self.defaultType, self.ignoredExts,
                               self.processors, self.indexNames[:])
         
-class UploadStream:
-    """Identifier for streams that are uploaded to peers."""
-    
-class FileUploaderStream(stream.FileStream, UploadStream):
-    """Modified to make it suitable for streaming to peers.
-    
-    Streams the file in small chunks to make it easier to throttle the
-    streaming to peers.
-    
-    @ivar CHUNK_SIZE: the size of chunks of data to send at a time
-    """
-
-    CHUNK_SIZE = 4*1024
-    
-    def read(self, sendfile=False):
-        if self.f is None:
-            return None
-
-        length = self.length
-        if length == 0:
-            self.f = None
-            return None
-        
-        # Remove the SendFileBuffer and mmap use, just use string reads and writes
-
-        readSize = min(length, self.CHUNK_SIZE)
-
-        self.f.seek(self.start)
-        b = self.f.read(readSize)
-        bytesRead = len(b)
-        if not bytesRead:
-            raise RuntimeError("Ran out of data reading file %r, expected %d more bytes" % (self.f, length))
-        else:
-            self.length -= bytesRead
-            self.start += bytesRead
-            return b
-
-class PiecesUploaderStream(stream.MemoryStream, UploadStream):
-    """Modified to identify it for streaming to peers."""
-
 class PiecesUploader(static.Data):
     """Modified to identify it for peer requests.
     
-    Uses the modified L{PieceUploaderStream} to stream the pieces for throttling.
+    Uses the modified L{Streams.PieceUploadStream} to stream the pieces for throttling.
     """
 
     def render(self, req):
         return http.Response(responsecode.OK,
                              http_headers.Headers({'content-type': self.contentType()}),
-                             stream=PiecesUploaderStream(self.data))
+                             stream=PiecesUploadStream(self.data))
         
 class FileUploader(static.File):
     """Modified to make it suitable for peer requests.
     
-    Uses the modified L{FileUploaderStream} to stream the file for throttling,
+    Uses the modified L{Streams.FileUploadStream} to stream the file for throttling,
     and doesn't do any listing of directory contents.
     """
 
@@ -165,7 +126,7 @@ class FileUploader(static.File):
 
         response = http.Response()
         # Use the modified FileStream
-        response.stream = FileUploaderStream(f, 0, self.fp.getsize())
+        response.stream = FileUploadStream(f, 0, self.fp.getsize())
 
         for (header, value) in (
             ("content-type", self.contentType()),
@@ -180,8 +141,7 @@ class UploadThrottlingProtocol(ThrottlingProtocol):
     """Protocol for throttling uploads.
     
     Determines whether or not to throttle the upload based on the type of stream.
-    Uploads use L{FileUploaderStream} or L{twisted.web2.stream.MemorySTream},
-    apt uses L{CacheManager.ProxyFileStream} or L{twisted.web.stream.FileStream}.
+    Uploads use instances of L{Streams.UploadStream}.
     """
     
     stats = None

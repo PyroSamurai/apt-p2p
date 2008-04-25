@@ -339,6 +339,27 @@ tests = {'1': ('Start a single bootstrap and downloader, test updating and downl
                 (2, ['source', 'crash-whitepaper']),
                 ]),
                 
+        'c': ('Test downloading from peers and just a mirror.',
+             {1: {}},
+             {1: {},
+              2: {}},
+             [(1, ['update']), 
+              (1, ['install', 'aboot-base', 'ada-reference-manual',
+                   'fop-doc', 'bison-doc', 'crash-whitepaper',
+                   'apt-howto-common', 'aptitude-doc-en', 'asr-manpages',
+                   'alcovebook-sgml-doc', 'airstrike-common',
+                   ]),
+              (2, ['update']), 
+              (2, ['install', 'aboot-base', 'aap-doc', 'ada-reference-manual',
+                   'aspectj-doc', 'fop-doc', 'asis-doc',
+                   'bison-doc', 'crash-whitepaper',
+                   'bash-doc', 'apt-howto-common', 'autotools-dev',
+                   'aptitude-doc-en', 'asr-manpages',
+                   'atomix-data', 'alcovebook-sgml-doc',
+                   'afbackup-common', 'airstrike-common',
+                   ]),
+              ]),
+
          }
 
 assert 'all' not in tests
