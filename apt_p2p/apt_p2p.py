@@ -289,7 +289,7 @@ class AptP2P(protocol.Factory):
             else:
                 log.msg('Peers for %s were not found' % url)
             getDefer = self.peers.get(hash, url)
-            getDefer.addErrback(self.final_fallback, hash, url)
+#            getDefer.addErrback(self.final_fallback, hash, url)
             getDefer.addCallback(self.cache.save_file, hash, url)
             getDefer.addErrback(self.cache.save_error, url)
             getDefer.addCallbacks(d.callback, d.errback)
@@ -307,7 +307,7 @@ class AptP2P(protocol.Factory):
         if response.code < 200 or response.code >= 300:
             log.msg('Download from peers failed, going to direct download: %s' % url)
             getDefer = self.peers.get(hash, url)
-            getDefer.addErrback(self.final_fallback, hash, url)
+#            getDefer.addErrback(self.final_fallback, hash, url)
             return getDefer
         return response
         
