@@ -12,12 +12,12 @@ XS-Dm-Upload-Allowed: yes
 
 Package: apt-p2p
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, python-twisted-web2 (>= 0.2), adduser, python-debian (>= 0.1.4), python-apt (>= 0.6.20), python-pysqlite2 (>= 2.1)
+Depends: ${python:Depends}, ${misc:Depends}, python-twisted-web2 (>= 8.0), adduser, python-debian (>= 0.1.4), python-apt (>= 0.6.20), python-pysqlite2 (>= 2.1)
 Provides: python-apt-p2p, python-apt-p2p-khashmir
 Description: apt helper for peer-to-peer downloads of Debian packages
  Apt-P2P is a helper for downloading Debian packages files with APT.
  It will download any needed files from other Apt-P2P peers in a
- bittorrent-like manner, and so reduce the strain on the Debian mirrors.
+ peer-to-peer manner, and so reduce the strain on the Debian mirrors.
  .
  The Apt-P2P daemon runs automatically on startup and listens for
  requests from APT for files, as well as maintaining membership in a
@@ -25,7 +25,7 @@ Description: apt helper for peer-to-peer downloads of Debian packages
  available (most files), peers that have the file are looked for in the
  DHT. The file can then be downloaded from them, using the uploading
  bandwidth of other peers while reducing the demand on the Debian mirror
- network. However, if a package cannot be found on any peers, Apt-P2P
+ network. However, if a package can not be found on any peers, Apt-P2P
  will fall back to downloading from a mirror to ensure all packages are
  downloaded. Once downloaded, the file is hash checked and added to the
  DHT so that other peers can download it without the mirror.

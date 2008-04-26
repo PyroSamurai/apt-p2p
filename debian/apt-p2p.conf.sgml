@@ -4,14 +4,14 @@
   <!ENTITY dhfirstname "<firstname>Cameron</firstname>">
   <!ENTITY dhsurname   "<surname>Dale</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>February 17, 2008</date>">
+  <!ENTITY dhdate      "<date>April 25, 2008</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
   <!ENTITY dhemail     "<email>camrdale@gmail.com</email>">
   <!ENTITY dhusername  "Cameron Dale">
   <!ENTITY dhucpackage "<refentrytitle>apt-p2p.conf</refentrytitle>">
-  <!ENTITY dhpackage   "apt-p2p">
+  <!ENTITY dhpackage   "apt-p2p.conf">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -62,15 +62,15 @@
     <title>FORMAT</title>
 
     <para>&dhpackage; has a structure similar to Microsoft Windows INI files.
-	The configuration file consists of sections, led by a ``[section]'' header and followed
-	by ``name = value'' or ``name: value'' entries, with continuations in the style of RFC 822
+	The configuration file consists of sections, led by a '[section]' header and followed
+	by 'name = value' or 'name: value' entries, with continuations in the style of RFC 822
 	(values can span multiple lines by starting the subsequent lines with one or more spaces).
 	Some values indicate times, in which case a suffix of 'd' for
 	days, 'h' for hours, 'm' for minutes, and 's' for seconds can be used.
 	Boolean values can be '1', 'yes', 'true', and 'on' to evaluate to True,
 	or '0', 'no', 'false', and 'off' to evaluate to false.
 	Note that leading whitespace is removed from values, and case is not important.
-	Lines beginning with "#" or ";" are ignored and may be used to provide comments.</para>
+	Lines beginning with '#' or ';' are ignored and may be used to provide comments.</para>
     
   </refsect1>
   <refsect1>
@@ -153,7 +153,7 @@
 	     <listitem>
 	      <para>The <replaceable>time</replaceable> after which to refresh DHT keys.
 	          This should be a time slightly less than the DHT's KEY_EXPIRE value.
-	          (Default is 57 minutes.)</para>
+	          (Default is 2.5 hours.)</para>
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
@@ -167,10 +167,10 @@
 	  <varlistentry>
 	    <term><option>DHT = <replaceable>string</replaceable></option></term>
 	     <listitem>
-	      <para>The DHT implementation to use. It must be possile to do (in python)
-	        ``from &lt;DHT&gt;.DHT import DHT'' to get a class that implements the IDHT interface.
-	        There should also be a similarly named section below to specify the options for the DHT.
-	        (Default is `apt_p2p_Khashmir')</para>
+	      <para>The DHT implementation to use. It must be possile to do (in python) 'from
+	        &lt;DHT&gt;.DHT import DHT' to get a class that implements the IDHT interface.
+	        There should also be a similarly named section in the config file to specify
+	        the options for the DHT. (Default is 'apt_p2p_Khashmir')</para>
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
@@ -267,7 +267,7 @@
 	    <term><option>KEY_EXPIRE = <replaceable>time</replaceable></option></term>
 	     <listitem>
 	      <para>The <replaceable>time</replaceable> to wait before expiring unrefreshed keys.
-	          (Default is 1 hour.)</para>
+	          (Default is 3 hours.)</para>
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>

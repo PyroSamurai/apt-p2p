@@ -4,7 +4,7 @@
   <!ENTITY dhfirstname "<firstname>Cameron</firstname>">
   <!ENTITY dhsurname   "<surname>Dale</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>February 17, 2008</date>">
+  <!ENTITY dhdate      "<date>April 25, 2008</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>8</manvolnum>">
@@ -47,14 +47,14 @@
   <refsynopsisdiv>
     <para>Normally &dhpackage; is run from init.d using <command>twistd</command>, in which case no &dhpackage;
         options can be specified on the command-line, and all configuration variables are
-        read from the default config file locations of ${HOME}/.apt-p2p.conf and /etc/apt-p2p/apt-p2p.conf.
+        read from the default config file locations of ${HOME}/.apt-p2p/apt-p2p.conf and /etc/apt-p2p/apt-p2p.conf.
         The command is then:</para>
     <cmdsynopsis>
       <command>twistd</command> <arg choice="Req">-y /path/to/&dhpackage;</arg> <arg rep="Repeat"><option>twistd options</option></arg>
     </cmdsynopsis>
-    <para>For a detailed listing of the twistd options, see
+    <para>For a detailed listing of the <command>twistd</command> options, see
         <citerefentry><refentrytitle>twistd</refentrytitle><manvolnum>1</manvolnum></citerefentry></para>
-    <para>&dhpackage; can also be run without twistd by executing:</para>
+    <para>&dhpackage; can also be run without <command>twistd</command> by executing:</para>
     <cmdsynopsis>
       <command>&dhpackage;</command> <arg rep="Repeat"><option>options</option></arg>
     </cmdsynopsis>
@@ -63,31 +63,54 @@
   <refsect1>
     <title>DESCRIPTION</title>
 
-    <para>This manual page documents briefly the options available to the &dhpackage; command.</para>
 
     <para><command>&dhpackage;</command> is a helper for downloading Debian packages files with APT.
         It will download any needed files from other Apt-P2P peers in a
-        bittorrent-like manner, and so reduce the strain on the Debian mirrors.</para>
+        peer-to-peer manner, and so reduce the strain on the Debian mirrors.</para>
 
-    <para>In order for APT to send it's requests to &dhpackage;, the source.list entries must be modified to point to the
+      <refsect2>
+	<title>APT SETUP</title>
+
+    <para>In order for APT to send it's requests to &dhpackage;, the sources.list entries must be modified to point to the
         local &dhpackage; address. Unless you have changed the default port, then adding "localhost:9977/" to the beginning
         of each entry should be sufficient. For example, if your sources.list contains a line like this:</para>
-
-    <para>deb http://ftp.us.debian.org/debian etch main contrib non-free</para>
-
-    <para>then replace it with this:</para>
-
-    <para>deb http://localhost:9977/ftp.us.debian.org/debian etch main contrib non-free</para>
+        
+    <blockquote><para>deb http://ftp.us.debian.org/debian etch main contrib non-free</para></blockquote>
     
-    <para>The port can be changed in the &dhpackage; config file in /etc/&dhpackage;/&dhpackage;.conf,
-        but it defaults to 9977.</para>
-  </refsect1>
+    <para>then replace it with this:</para>
+        
+    <blockquote><para>deb http://localhost:9977/ftp.us.debian.org/debian etch main contrib non-free</para></blockquote>
+
+    <para>You can do the same with 'deb-src' lines as well, and &dhpackage;
+        will be used to download and share your source packages as well.</para>
+
+      </refsect2>
+      <refsect2>
+	<title>PORT FORWARDING</title>
+
+    <para>It is VERY important that Apt-P2P's ports be reachable by other peers.
+        This is needed both to share files with others, and to connect to
+        others through the DHT to find peers for files. If you aren't
+        accessible by others, you will not only not share anything, but your
+        performance during downloading will be affected.</para>
+
+    <para>Apt-P2P uses a default port of 9977, over both TCP and UDP, for it's
+        communication. You can change this port in the
+        /etc/apt-p2p/apt-p2p.conf file, and use different ports for TCP and
+        UDP, if desired. Whatever port you use, make sure to forward it
+        through your NAT or firewall to improve your performance and share
+        with others. Information on port forwarding can be found here:</para>
+
+    <para><ulink url="http://portforward.com/"></ulink></para>
+    
+      </refsect2>
+   </refsect1>
   <refsect1>
     <title>OPTIONS</title>
 
     <para>These programs follow the usual &gnu; command line syntax,
-      with short options starting with a single dash (`-'),
-      and long options starting with two dashes (`--').
+      with short options starting with a single dash ('-'),
+      and long options starting with two dashes ('--').
       A summary of options is included below.</para>
     
     <variablelist>
@@ -103,7 +126,7 @@
         <term><option>-l <replaceable>filename</replaceable>,</option> <option>--logfile=<replaceable>filename</replaceable></option></term>
          <listitem>
           <para>the <replaceable>filename</replaceable> to print log messages to,
-              or `-' to log to standard output, if not specified then
+              or '-' to log to standard output, if not specified then
               /var/log/apt-p2p.log will be used</para>
         </listitem>
       </varlistentry>
