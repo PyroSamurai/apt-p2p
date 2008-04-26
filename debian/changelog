@@ -1,26 +1,5 @@
-apt-p2p (0.0.1~2.gbpc98e84) UNRELEASED; urgency=low
-
-  ** SNAPSHOT build @c98e840e6f67e2971ffc26a698d76c09a919db91 **
-
-  * UNRELEASED
-  * Initial debian directory and packaging related changes.
-  * Fix up some errors in the packaging.
-  * Add the git-buildpackage config file.
-  * HTTPServer uses the hash to lookup the file in the DB (no more
-    directories).
-  * Download from peers using the hash instead of a directory location.
-  * Don't add files to the DHT if a hash could not be found for them.
-  * Use python-debian for parsing RFC 822 files (untested).
-  * Fix some minor bugs in the previous commits.
-  * Another new TODO item: better DHT lookups for multiple values per
-    key.
-  * Added 2 (commented) failed attempts to throttle the web server.
-  * Fixed some packaging issues with config file handling.
-
- -- Cameron Dale <camrdale@gmail.com>  Wed, 20 Feb 2008 11:35:14 -0800
-
-apt-p2p (0.0.0) unstable; urgency=low
+apt-p2p (0.1.0) unstable; urgency=low
 
   * Initial release.
 
- -- Cameron Dale <camrdale@gmail.com>  Sun, 17 Feb 2008 13:42:40 -0800
+ -- Cameron Dale <camrdale@gmail.com>  Fri, 25 Apr 2008 13:42:40 -0800
