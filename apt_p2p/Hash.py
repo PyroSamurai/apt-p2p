@@ -200,6 +200,7 @@ class HashObject:
         
     def verify(self):
         """Verify that the added file data hash matches the expected hash."""
+        self.digest()
         if self.result is None and self.fileHash is not None and self.expHash is not None:
             self.result = (self.fileHash == self.expHash and self.size == self.expSize)
         return self.result
