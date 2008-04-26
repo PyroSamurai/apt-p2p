@@ -34,8 +34,8 @@ class StatsLogger:
     def __init__(self, db):
         """Initialize the statistics.
         
-        @type store: L{db.DB}
-        @param store: the database for the Apt-P2P downloader
+        @type db: L{db.DB}
+        @param db: the database for the Apt-P2P downloader
         """
         # Database
         self.db = db

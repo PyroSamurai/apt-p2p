@@ -1,13 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
-# Load apt-p2p application
-#
-# There are two ways apt-p2p can be started:
-#  1. twistd -y apt-p2p
-#     - twistd will load this file and execute the app
-#       in 'application' variable
-#  2. from command line
-#     - __name__ will be '__main__'
+"""Load the apt-p2p application.
+
+There are two ways apt-p2p can be started:
+  1. twistd -y apt-p2p
+     - twistd will load this file and execute the app
+       in 'application' variable
+  2. from command line
+     - __name__ will be '__main__'
+"""
 
 import pwd,sys
 

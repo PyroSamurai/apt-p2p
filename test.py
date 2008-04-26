@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 """Automated tests of the apt-p2p functionality.
 
@@ -29,7 +29,8 @@ the apt-p2p program.
 @var CWD: the working directory the script was run from
 @type apt_conf_template: C{string}
 @var apt_conf_template: the template to use for the apt.conf file
-
+@type apt_p2p_conf_template: C{string}
+@var apt_p2p_conf_template: the template to use for the apt-p2p.conf file
 """
 
 from time import sleep, time

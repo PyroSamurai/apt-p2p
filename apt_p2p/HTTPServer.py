@@ -90,7 +90,7 @@ class FileDownloader(static.File):
 class PiecesUploader(static.Data):
     """Modified to identify it for peer requests.
     
-    Uses the modified L{Streams.PieceUploadStream} to stream the pieces for throttling.
+    Uses the modified L{Streams.PiecesUploadStream} to stream the pieces for throttling.
     """
 
     def render(self, req):

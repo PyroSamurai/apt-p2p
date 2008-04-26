@@ -179,8 +179,6 @@ class AptP2P(protocol.Factory):
         @param url: the URI of the actual mirror request
         @type orig_resp: L{twisted.web2.http.Response}
         @param orig_resp: the response from the cache to be sent to apt
-        @rtype: L{twisted.internet.defer.Deferred}
-        @return: a deferred that will be called back with the correct response
         """
         log.msg('Checking if %s is still fresh' % url)
         modtime = orig_resp.headers.getHeader('Last-Modified')
