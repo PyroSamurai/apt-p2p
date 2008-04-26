@@ -1,5 +1,3 @@
-## Copyright 2002-2004 Andrew Loewenstern, All Rights Reserved
-# see LICENSE.txt for license information
 
 """Details of how to perform actions on remote peers."""
 

@@ -1,7 +1,3 @@
-# -*- test-case-name: twisted.test.test_policies -*-
-# Copyright (c) 2001-2007 Twisted Matrix Laboratories.
-# See LICENSE for details.
-
 
 """
 Resource limiting policies.
