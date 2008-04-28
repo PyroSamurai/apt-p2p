@@ -1,3 +1,35 @@
+Use GPG signatures as a hash for files.
+
+A detached GPG signature, such as is found in Release.gpg, can be used
+as a hash for the file. This hash can be used to verify the file when
+it is downloaded, and a shortened version can be added to the DHT to
+look up peers for the file. To get the hash into a binary form from
+the ascii-armored detached file, use the command
+'gpg --no-options --no-default-keyring --output - --dearmor -'. The
+hash should be stored as the reverse of the resulting binary string,
+as the bytes at the beginning are headers that are the same for most
+signatures. That way the shortened hash stored in the DHT will have a
+better chance of being unique and being stored on different peers. To
+verify a file, first the binary hash must be re-reversed, armored, and
+written to a temporary file with the command
+'gpg --no-options --no-default-keyring --output $tempfile --enarmor -'.
+Then the incoming file can be verified with the command
+'gpg --no-options --no-default-keyring --keyring /etc/apt/trusted.gpg
+--verify $tempfile -'.
+
+All communication with the command-line gpg should be done using pipes
+and the python module python-gnupginterface. There needs to be a new
+module for GPG verification and hashing, which will make this easier.
+In particular, it would need to support hashlib-like functionality
+such as new(), update(), and digest(). Note that the verification
+would not involve signing the file again and comparing the signatures,
+as this is not possible. Instead, the verify() function would have to
+behave differently for GPG hashes, and check that the verification
+resulted in a VALIDSIG. CAUTION: the detached signature can have a
+variable length, though it seems to be usually 65 bytes, 64 bytes has
+also been observed.
+
+
 Consider what happens when multiple requests for a file are received.
 
 When another request comes in for a file already being downloaded,
