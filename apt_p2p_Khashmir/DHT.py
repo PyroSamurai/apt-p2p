@@ -115,7 +115,7 @@ class DHT:
                        'KRPC_TIMEOUT', 'KRPC_INITIAL_DELAY']:
                 self.config[k] = self.config_parser.gettime(section, k)
             # The booleans in the config file
-            elif k in ['SPEW']:
+            elif k in ['SPEW', 'LOCAL_OK']:
                 self.config[k] = self.config_parser.getboolean(section, k)
             # Everything else is a string
             else:
@@ -335,7 +335,7 @@ class TestSimpleDHT(unittest.TestCase):
     DHT_DEFAULTS = {'PORT': 9977,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 4,
                     'STORE_REDUNDANCY': 3, 'RETRIEVE_VALUES': -10000,
-                    'MAX_FAILURES': 3,
+                    'MAX_FAILURES': 3, 'LOCAL_OK': True,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
                     'KRPC_TIMEOUT': 14, 'KRPC_INITIAL_DELAY': 2,
                     'KEY_EXPIRE': 3600, 'SPEW': False, }
@@ -456,7 +456,7 @@ class TestMultiDHT(unittest.TestCase):
     DHT_DEFAULTS = {'PORT': 9977,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 4,
                     'STORE_REDUNDANCY': 3, 'RETRIEVE_VALUES': -10000,
-                    'MAX_FAILURES': 3,
+                    'MAX_FAILURES': 3, 'LOCAL_OK': True,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
                     'KRPC_TIMEOUT': 14, 'KRPC_INITIAL_DELAY': 2,
                     'KEY_EXPIRE': 3600, 'SPEW': False, }

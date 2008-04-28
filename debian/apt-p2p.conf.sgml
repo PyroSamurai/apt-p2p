@@ -129,7 +129,7 @@
 	  <varlistentry>
 	    <term><option>LOCAL_OK = <replaceable>boolean</replaceable></option></term>
 	     <listitem>
-	      <para>Whether it's OK to use an IP addres from a known local or private range.
+	      <para>Whether it's OK to use an IP address from a known local or private range.
 	        (Default is false)</para>
 	    </listitem>
 	  </varlistentry>
@@ -261,6 +261,14 @@
 	     <listitem>
 	      <para>The maximum <replaceable>time</replaceable> to wait before refreshing a bucket.
 	          (Default is 1 hour.)</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>LOCAL_OK = <replaceable>boolean</replaceable></option></term>
+	     <listitem>
+	      <para>Whether it's OK to add nodes to the routing table that use an IP address
+	        from a known local or private range.
+	        (Default is to use the value specified in the DEFAULT section.)</para>
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
