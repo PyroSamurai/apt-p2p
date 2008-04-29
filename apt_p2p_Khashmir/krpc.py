@@ -366,7 +366,8 @@ class KRPC:
                     ret = f(*(), **msg[ARG])
                 except KrpcError, e:
                     log.msg('Got a Krpc error while running: krpc_%s' % msg[REQ])
-                    log.err(e)
+                    if e[0] != KRPC_ERROR_INVALID_TOKEN:
+                        log.err(e)
                     self.stats.errorAction(msg[REQ])
                     olen = self._sendResponse(msg[REQ], addr, msg[TID], ERR,
                                               [e[0], e[1]])
