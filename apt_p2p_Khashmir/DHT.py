@@ -338,7 +338,7 @@ class TestSimpleDHT(unittest.TestCase):
                     'MAX_FAILURES': 3, 'LOCAL_OK': True,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
                     'KRPC_TIMEOUT': 14, 'KRPC_INITIAL_DELAY': 2,
-                    'KEY_EXPIRE': 3600, 'SPEW': False, }
+                    'KEY_EXPIRE': 3600, 'SPEW': True, }
 
     def setUp(self):
         self.a = DHT()
@@ -459,7 +459,7 @@ class TestMultiDHT(unittest.TestCase):
                     'MAX_FAILURES': 3, 'LOCAL_OK': True,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
                     'KRPC_TIMEOUT': 14, 'KRPC_INITIAL_DELAY': 2,
-                    'KEY_EXPIRE': 3600, 'SPEW': False, }
+                    'KEY_EXPIRE': 3600, 'SPEW': True, }
 
     def setUp(self):
         self.l = []

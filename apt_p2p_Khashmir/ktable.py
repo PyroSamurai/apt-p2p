@@ -173,6 +173,7 @@ class KTable:
             # Remove the stale node
             del(self.buckets[i].l[it])
             removed = True
+            log.msg('Removed node from routing table: %s/%s' % (stale.host, stale.port))
         
         # Insert the new node
         if new and self._bucketIndexForInt(new.num) == i and len(self.buckets[i].l) < K:
@@ -183,7 +184,8 @@ class KTable:
     def insertNode(self, node, contacted = True):
         """Try to insert a node in the routing table.
         
-        This inserts the node, returning None if successful, otherwise returns
+        This inserts the node, returning True if successful, False if the
+        node could have been added if it responds to a ping, otherwise returns
         the oldest node in the bucket if it's full. The caller is then
         responsible for pinging the returned node and calling replaceStaleNode
         if it doesn't respond. contacted means that yes, we contacted THEM and
@@ -194,11 +196,13 @@ class KTable:
         @type contacted: C{boolean}
         @param contacted: whether the new node is known to be good, i.e.
             responded to a request (optional, defaults to True)
-        @rtype: L{node.Node}
-        @return: None if successful (the bucket wasn't full), otherwise returns the oldest node in the bucket
+        @rtype: L{node.Node} or C{boolean}
+        @return: True if successful (the bucket wasn't full), False if the
+            node could have been added if it was contacted, otherwise
+            returns the oldest node in the bucket
         """
         assert node.id != NULL_ID
-        if node.id == self.node.id: return
+        if node.id == self.node.id: return True
 
         # Get the bucket for this node
         i = self._bucketIndexForInt(node.num)
@@ -219,16 +223,18 @@ class KTable:
                 # utilizing this nodes new contact info
                 self.buckets[i].l.append(node)
                 self.buckets[i].touch()
-            return
+            return True
         
         # We don't have this node, check to see if the bucket is full
         if len(self.buckets[i].l) < K:
             # Not full, append this node and return
             if contacted:
                 node.updateLastSeen()
-            self.buckets[i].l.append(node)
-            self.buckets[i].touch()
-            return
+                self.buckets[i].l.append(node)
+                self.buckets[i].touch()
+                log.msg('Added node to routing table: %s/%s' % (node.host, node.port))
+                return True
+            return False
             
         # Bucket is full, check to see if the local node is not in the bucket
         if not (self.buckets[i].min <= self.node < self.buckets[i].max):
