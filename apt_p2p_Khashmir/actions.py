@@ -184,7 +184,8 @@ class ActionBase:
 
     def gotResponse(self, dict, node, expected_results, df):
         """Receive a response from a remote node."""
-        reactor.callLater(0, self.caller.insertNode, node)
+        if node.id != self.caller.node.id:
+            reactor.callLater(0, self.caller.insertNode, node)
         if self.finished or self.answered.has_key(node.id):
             # a day late and a dollar short
             return
@@ -197,7 +198,8 @@ class ActionBase:
     def actionFailed(self, err, node, expected_results, df):
         """Receive an error from a remote node."""
         log.msg("action %s failed on %s/%s: %s" % (self.action, node.host, node.port, err.getErrorMessage()))
-        self.caller.table.nodeFailed(node)
+        if node.id != self.caller.node.id:
+            self.caller.table.nodeFailed(node)
         self.outstanding -= 1
         self.outstanding_results -= expected_results
         self.schedule()
