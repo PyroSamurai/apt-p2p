@@ -17,10 +17,10 @@ QuickBuild=LaTeX+DVItoPDF+ViewPDF
 
 [item:abstract.tex]
 archive=true
-column=62
+column=28
 encoding=UTF-8
 highlight=LaTeX
-line=14
+line=262
 open=true
 
 [item:all.bib]
