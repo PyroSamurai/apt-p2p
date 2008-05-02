@@ -12,78 +12,53 @@
 
 \begin{document}
 
-\title{Using Altruistic Peers to Help With Free Content Downloads}
+\title{Leveraging Altruistic Peers to Reduce the Bandwidth Costs of Free Content Downloads}
 \author{\IEEEauthorblockN{Cameron Dale}
-\IEEEauthorblockA{School of Computing Science\\
+\IEEEauthorblockA{School of Computing Science (student)\\
 Simon Fraser University\\
 Burnaby, British Columbia, Canada\\
 Email: camerond@cs.sfu.ca}
 \and
 \IEEEauthorblockN{Jiangchuan Liu}
-\IEEEauthorblockA{School of Computing Science\\
+\IEEEauthorblockA{School of Computing Science (faculty)\\
 Simon Fraser University\\
 Burnaby, British Columbia, Canada\\
 Email: jcliu@cs.sfu.ca}}
 
 \maketitle
 
-% \begin{abstract}
-% A large amount of free content is available over the Internet from
-% many different distributors. Most of this content uses the traditional
-% client-server model to handle requests from users. However, there is an
-% opportunity to use peer-to-peer techniques to reduce the cost of
-% much of this distribution, especially due to the altruistic nature
-% of many of these users. We present a general technique for
-% satisfying the needs of this P2P distribution, which is applicable
-% to many of these distributors systems. Our method makes use of a DHT
-% for storing the location of peers, using the cryptographic hash of
-% the file as a key. We then go further and implement a solution for
-% the distribution of Debian software packages.
-% 
-% We have designed a generally applicable peer-to-peer content
-% distribution model to be used by many of the free content
-% distributors operating today. It makes use of already existing
-% features of most package management systems, to create a
-% peer-to-peer distribution that should substantially reduce the costs
-% of hosting the content.
-% 
-% We have also implemented our design in software to be used in
-% conjuction with Debian-based distribution of Linux software
-% packages. It will soon be in use by many users of the Debian
-% project's distribution, and so serves as an example of the
-% opportunities that exist.
-% \end{abstract}
-
 \section{Introduction}
 \label{intro}
 
 There are a large number of free content distributors using custom
 package distribution systems over the Internet to distribute content
-to their users. These distributors have developed many different
+to their users: most Linux distributions (e.g. Debian, Red Hat,
+Gentoo), Cygwin, CPAN, etc.
+These distributors have developed many different
 methods for this distribution, but they almost exclusively use a
 client-server model to satisfy user requests. The contents' size,
 popularity and number of users results in a large number of
-requests, which usually requires a network of mirrors to handle. Due
+requests, which usually requires a complicated network of mirrors to handle. Due
 to the free nature of this content, many users are willing and able
 to contribute upload bandwidth to this distribution, but currently
 have no way to do this.
 
 There are many peer-to-peer implementations available today, but
 none is very well suited to this specific problem. Many distributors
-make their content available in some form using BitTorrent, but it
+make their content available in some form using BitTorrent \cite{COHEN03}, but it
 is not ideally suited to an application such as this one. BitTorrent
 is designed for large static collections of files, in which all
 peers are interested in most or all of the content. But the packages
 in this case are small, constantly being updated, and users are only
 interested in a small subset of them. Other proposed implementations
-suffer from some of the same, and other, problems, and so none has
+suffer from some of the same, and other, problems and so none has
 been well-used to address this problem.
 
 We present a new peer-to-peer distribution model to meet these
 demands. It is based on the lessons learned from many previous
-implementations of successful peer-to-peer protocols, and makes use
-of a distributed hash table (DHT) and borrows many ideas from
-BitTorrent. The model relies on the pre-existence of cryptographic
+implementations of successful peer-to-peer protocols, such as
+Distributed Hash Tables and BitTorrent.
+The model relies on the pre-existence of cryptographic
 hashes of the content, which uniquely identify it for a request from
 other peers. If the peer-to-peer download fails, then the original
 request to the server is used as a fallback to prevent dissatisfied
@@ -95,7 +70,7 @@ currently substantial bandwidth costs of hosting this content.
 We also present a sample implementation based on the Debian package
 distribution system. This implementation is simple, makes use of
 mostly well-known technologies, and so serves as an example for
-other free content distributors of the opportunity that can be met
+other free content distributors of the opportunity that can be easily met
 with such a system.
 
 \section{Problem}
@@ -104,8 +79,8 @@ There are a large number of groups using the Internet to distribute
 their free content. This content is made available from a free
 download site, which usually requires a network of mirrors to
 support the large number of requests. This content almost always
-supports some kind of file verification, using cryptographic hashes,
-to verify the completed downloads accuracy or authenticity.
+supports some kind of file verification using cryptographic hashes
+to verify the download's accuracy or authenticity.
 
 Most Linux distributions use a software package management system
 that fetches packages to be installed from a network of mirrors.
@@ -118,7 +93,7 @@ containing software packages for the PERL programming language,
 using SOAP RPC requests to find and download files; Cygwin provides
 many of the standard Unix/Linux tools in a Windows environment,
 using a package management tool that requests packages from
-websites; there are two software distribution systems for Mac OSX,
+websites; two software distribution systems exist for Mac OSX,
 fink and MacPorts, that also retrieve packages in this way. Also,
 some systems use direct web downloads, but with a hash verification
 file also available for download next to the desired file. These
@@ -134,7 +109,7 @@ for anyone to freely download, the content is divided into distinct
 units (packages), users are typically not interested in downloading
 all of the content available, and hashes of the content are
 available before the download is attempted. We also expect that
-there are a number of users of these systems that are motivated by
+there are many users of these systems that are motivated by
 altruism to want to help out with this distribution. This is common
 in these systems due to the free nature of the content being
 delivered.
@@ -155,43 +130,45 @@ delivered.
 
 \section{Solution}
 
-This situation presents a clear opportunity to use some form of
-peer-to-peer file-sharing protocol. The sparse interest in a large
+This situation presents a clear opportunity to use a new
+peer-to-peer file sharing protocol.
+A downloading peer can lookup the package hash using the protocol and, if it
+is found, download the file from those peers and verify the content.
+If the package hash can not be found, the peer will
+fallback to downloading from the original content location, and once
+complete will announce to other peers indicating that it now has
+the content. The original servers or mirrors thus act as \emph{seeds} for the
+P2P system without any modification to them.
+
+This functionality could be directly integrated into the
+package management software, although this would be
+difficult as the protocol should be running at all times, whereas the
+package software typically only runs until the download request is complete.
+Alternatively, since many of the package management software
+implementations use HTTP requests to download the files, it
+it possible to implement the P2P aspect as as HTTP caching
+proxy. The proxy will get uncached requests first from the P2P system,
+and then fallback to the normal HTTP request from a server. For
+methods that don't use HTTP requests, other types of proxies
+(possibly custom-made) may also be possible.
+
+The sparse interest in a large
 number of packages undergoing constant updating is well suited to
 the functionality provided by a Distributed Hash Table (DHT). DHTs
 require unique keys to store and retrieve strings of data, which the
-cryptographic hashes used by these package management systems are
+cryptographic hashes used by the package management systems are
 perfect for. The stored and retrieved strings can then be pointers
-to the peers that have the content package that hashes to that key.
-A downloading peer can lookup the package hash in the DHT and, if it
-is found, download the file from those peers and verify the content.
-If the package hash can not be found in the DHT, the peer will
-fallback to downloading from the original content location, and once
-complete will add a new entry to the DHT indicating that it now has
-the content. The servers or mirrors thus act as \emph{seeds} for the
-P2P system without any modification to them.
+to the peers that have the content package that hashes to that key,
+as well as any other information needed by the protocol to facilitate
+the download.
 
-This desired P2P functionality could be integrated into the existing
-package management software in 2 ways. The functionality can be
-directly integrated into the software, though this could be
-difficult as the DHT should be running at all times, whereas the
-tools typically only run until the download request is complete.
-Alternatively, since many of the package management software
-implementations use HTTP requests to download the files, this makes
-it possible to implement the P2P aspect as a standard HTTP caching
-proxy, which will get uncached requests first from the P2P system,
-and then fallback to the normal HTTP request from a server. For
-methods that don't use HTTP requests, other types of proxies may
-also be possible.
-
-Downloading a large file efficiently from a number of peers is where
-BitTorrent shines as a peer-to-peer application. Its method of
-breaking up larger files into pieces, each with its own hash, makes
-it very easy to parallelize the downloading process and maximize the
-download speed. Since the package management system only makes
+To download larger files efficiently from a number of peers,
+the file needs to be broken up into pieces, each with its own hash.
+This method, inspired by BitTorrent, makes it very easy to
+parallelize the downloading process and maximize the download speed.
+Since the package management systems only make
 available a hash of the entire content, the piece hashes will have
-to be found through the P2P protocol. These hashes can be added to
-the DHT, or requested from other peers.
+to be found through the P2P protocol.
 
 For files smaller than the piece size, no piece hashes are
 necessary. For medium size files of only a few pieces, the piece
@@ -218,33 +195,34 @@ information such as the hashes of the individual packages. Since all
 requests from \texttt{apt} are in the form of HTTP downloads from a
 server, the implementation takes the form of a caching HTTP proxy.
 
-The DHT used is based on Khashmir, which is an implementation of the
-Kademlia DHT \cite{kademlia} used by most of the existing BitTorrent
+The DHT used is based on Khashmir, which is an implementation of
+Kademlia \cite{kademlia} used by most of the existing BitTorrent
 clients to implement trackerless operation. It has been modified to
-better support the retrieval of multiple values per key, and to
+better support the retrieval of multiple values (peers) per key, and to
 improve the response time so as to satisfy users' demands for speed.
 The values stored in the DHT are all bencoded dictionaries similar
 to torrent files. Peers store their download location (IP address
 and TCP port), as well as the piece strings (or hashes of piece
 strings) as described in the previous section. Downloading is
-accomplished by simple HTTP requests to the peers' identified to
-have the desired file. All peers support HTTP/1.1, both in the
-server and the client, which allows for pipelining of multiple
+accomplished by simple HTTP requests for the hash of the file,
+which is sent to the peers identified from the DHT lookup to
+have the desired file. All peers support HTTP/1.1, both as
+servers and clients, which allows for pipelining of multiple
 requests to a peer, and the requesting of smaller pieces of a large
 file using the Range request header.
 
 We have chosen a piece size of 512 kB, which means that 17,515
-(79\%) of the almost 23 thousand packages will not require piece
+(79\%) of the almost 23,000 Debian packages will not require piece
 information as they are smaller than a single piece. There are 3054
 packages (13\%) that will require 2 to 4 pieces, for which the piece
 hashes are stored directly with the peer download information in the
 DHT. There are 1667 packages (7\%) that will require 5 to 70 pieces,
 and so use a separate lookup in the DHT for the piece hashes.
 Finally, there are only 62 packages (0.3\%) that require more than
-70 pieces, and so for them a separate request to a peer for the
-piece hashes is needed.
+70 pieces, and so need a separate request to a peer for the
+piece hashes.
 
-We have deployed the DHT from this implementation on PlanetLab to
+We have deployed the DHT part of this implementation on PlanetLab to
 test it's speed and effectiveness at delivering results. We find
 that, even on the overloaded PlanetLab network, the responses to
 lookups of keys take less than 10 seconds on average. Since each
