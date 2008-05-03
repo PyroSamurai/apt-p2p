@@ -124,14 +124,14 @@ DHT_DEFAULTS = {
     'KEY_EXPIRE': '3h', # 3 hours
     
     # Timeout KRPC requests to nodes after this time.
-    'KRPC_TIMEOUT': '14s',
+    'KRPC_TIMEOUT': '9s',
     
     # KRPC requests are resent using exponential backoff starting with this delay.
     # The request will first be resent after the delay set here.
     # The request will be resent again after twice the delay set here. etc.
-    # e.g. if TIMEOUT is 14 sec., and INITIAL_DELAY is 2 sec., then requests will
+    # e.g. if TIMEOUT is 9 sec., and INITIAL_DELAY is 2 sec., then requests will
     # be resent at times 0, 2 (2 sec. later), and 6 (4 sec. later), and then will
-    # timeout at 14.
+    # timeout at 9.
     'KRPC_INITIAL_DELAY': '2s',
 
     # whether to spew info about the requests/responses in the protocol

@@ -563,7 +563,7 @@ class SimpleTests(unittest.TestCase):
                     'STORE_REDUNDANCY': 3, 'RETRIEVE_VALUES': -10000,
                     'MAX_FAILURES': 3, 'LOCAL_OK': True,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
-                    'KRPC_TIMEOUT': 14, 'KRPC_INITIAL_DELAY': 2,
+                    'KRPC_TIMEOUT': 9, 'KRPC_INITIAL_DELAY': 2,
                     'KEY_EXPIRE': 3600, 'SPEW': True, }
 
     def setUp(self):
@@ -637,7 +637,7 @@ class MultiTest(unittest.TestCase):
                     'STORE_REDUNDANCY': 3, 'RETRIEVE_VALUES': -10000,
                     'MAX_FAILURES': 3, 'LOCAL_OK': True,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
-                    'KRPC_TIMEOUT': 14, 'KRPC_INITIAL_DELAY': 2,
+                    'KRPC_TIMEOUT': 9, 'KRPC_INITIAL_DELAY': 2,
                     'KEY_EXPIRE': 3600, 'SPEW': True, }
 
     def _done(self, val):

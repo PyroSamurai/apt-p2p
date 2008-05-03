@@ -253,7 +253,7 @@ class KrpcRequest(defer.Deferred):
         """Check for a unrecoverable timeout, otherwise resend."""
         self.later = None
         delay = datetime.now() - self.start
-        if delay > timedelta(seconds = self.config.get('KRPC_TIMEOUT', 14)):
+        if delay > timedelta(seconds = self.config.get('KRPC_TIMEOUT', 9)):
             log.msg('%r timed out after %0.2f sec' %
                     (self.tid, delay.seconds + delay.microseconds/1000000.0))
             self.protocol.timeOut(self.tid, self.method)
@@ -584,7 +584,7 @@ def make(port):
     from stats import StatsLogger
     af = Receiver()
     a = hostbroker(af, StatsLogger(None, None),
-                   {'KRPC_TIMEOUT': 14, 'KRPC_INITIAL_DELAY': 2, 'SPEW': False})
+                   {'KRPC_TIMEOUT': 9, 'KRPC_INITIAL_DELAY': 2, 'SPEW': False})
     a.protocol = KRPC
     p = reactor.listenUDP(port, a)
     return af, a, p
