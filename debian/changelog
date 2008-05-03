@@ -1,3 +1,17 @@
+apt-p2p (0.1.1) unstable; urgency=low
+
+  * Fix: no files were added to the DHT due to missing hashing results.
+  * Lower the timeout to 9 sec to reduce delays.
+  * Be more careful about which nodes get added to the routing table
+    - Only add nodes to the routing table that have responded to a request.
+    - Don't try and add ourself to the routing table during an action.
+    - Don't add local IP addresses to the routing table (with config
+      option to override).
+    - Fix the broken local IP regexes.
+  * Don't log KRPC errors for receiving an invalid store_value token.
+
+ -- Cameron Dale <camrdale@gmail.com>  Sat, 03 May 2008 10:24:35 -0700
+
 apt-p2p (0.1.0) unstable; urgency=low
 
   * Initial release.

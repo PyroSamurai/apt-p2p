@@ -23,7 +23,7 @@ class ConfigError(Exception):
     def __str__(self):
         return repr(self.message)
 
-version = versions.Version('apt-p2p', 0, 1, 0)
+version = versions.Version('apt-p2p', 0, 1, 1)
 
 # Set the home parameter
 home = os.path.expandvars('${HOME}')
