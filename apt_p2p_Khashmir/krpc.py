@@ -212,8 +212,10 @@ class KrpcRequest(defer.Deferred):
     @ivar delay: the last timeout delay sent
     @type start: C{datetime}
     @ivar start: the time to request was started at
-    @type later: L{twisted.internet.interfaces.IDelayedCall}
-    @ivar later: the pending call to timeout the last sent request
+    @type laterNextTimeout: L{twisted.internet.interfaces.IDelayedCall}
+    @ivar laterNextTimeout: the pending call to timeout the last sent request
+    @type laterFinalTimeout: L{twisted.internet.interfaces.IDelayedCall}
+    @ivar laterFinalTimeout: the pending call to timeout the entire request
     """
     
     def __init__(self, protocol, newTID, method, data, config):
@@ -237,32 +239,38 @@ class KrpcRequest(defer.Deferred):
         self.config = config
         self.delay = self.config.get('KRPC_INITIAL_DELAY', 2)
         self.start = datetime.now()
-        self.later = None
+        self.laterNextTimeout = None
+        self.laterFinalTimeout = reactor.callLater(self.config.get('KRPC_TIMEOUT', 9), self.finalTimeout)
         reactor.callLater(0, self.send)
         
     def send(self):
         """Send the request to the remote node."""
-        assert not self.later, 'There is already a pending request'
-        self.later = reactor.callLater(self.delay, self.timeOut)
+        assert not self.laterNextTimeout, 'There is already a pending request'
+        self.laterNextTimeout = reactor.callLater(self.delay, self.nextTimeout)
         try:
             self.protocol.sendData(self.method, self.data)
         except:
             log.err()
 
-    def timeOut(self):
+    def nextTimeout(self):
         """Check for a unrecoverable timeout, otherwise resend."""
-        self.later = None
-        delay = datetime.now() - self.start
-        if delay > timedelta(seconds = self.config.get('KRPC_TIMEOUT', 9)):
-            log.msg('%r timed out after %0.2f sec' %
-                    (self.tid, delay.seconds + delay.microseconds/1000000.0))
-            self.protocol.timeOut(self.tid, self.method)
+        self.laterNextTimeout = None
+        if datetime.now() - self.start > timedelta(seconds = self.config.get('KRPC_TIMEOUT', 9)):
+            self.finalTimeout()
         elif self.protocol.stopped:
             log.msg('Timeout but can not resend %r, protocol has been stopped' % self.tid)
         else:
             self.delay *= 2
             log.msg('Trying to resend %r now with delay %d sec' % (self.tid, self.delay))
             reactor.callLater(0, self.send)
+        
+    def finalTimeout(self):
+        """Timeout the request after an unrecoverable timeout."""
+        self.dropTimeOut()
+        delay = datetime.now() - self.start
+        log.msg('%r timed out after %0.2f sec' %
+                (self.tid, delay.seconds + delay.microseconds/1000000.0))
+        self.protocol.timeOut(self.tid, self.method)
         
     def callback(self, resp):
         self.dropTimeOut()
@@ -274,9 +282,12 @@ class KrpcRequest(defer.Deferred):
         
     def dropTimeOut(self):
         """Cancel the timeout call when a response is received."""
-        if self.later and self.later.active():
-            self.later.cancel()
-        self.later = None
+        if self.laterFinalTimeout and self.laterFinalTimeout.active():
+            self.laterFinalTimeout.cancel()
+        self.laterFinalTimeout = None
+        if self.laterNextTimeout and self.laterNextTimeout.active():
+            self.laterNextTimeout.cancel()
+        self.laterNextTimeout = None
 
 class KRPC:
     """The KRPC protocol implementation.
