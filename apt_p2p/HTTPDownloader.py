@@ -358,8 +358,9 @@ class Peer(ClientFactory):
     def _processLastResponse(self):
         """Save the download time of the last request for speed calculations."""
         if self._lastResponse is not None:
-            now = datetime.now()
-            self._downloadSpeeds.append((now, now - self._lastResponse[0], self._lastResponse[1]))
+            if self._lastResponse[1] is not None:
+                now = datetime.now()
+                self._downloadSpeeds.append((now, now - self._lastResponse[0], self._lastResponse[1]))
             self._lastResponse = None
             
     def downloadSpeed(self):
