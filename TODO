@@ -1,3 +1,13 @@
+Rotate DNS entries for mirrors more reliably.
+
+Currently the mirrors are accessed by DNS name, which can cause some
+issues when there are mirror differences and the DNS gets rotated.
+Instead, the HTTP Downloader should handle DNS lookups itself, store
+the resulting addresses, and send requests to IP addresses. If there
+is an error from the mirror (hash check or 404 response), the next IP
+address in the rotation should be used.
+
+
 Use GPG signatures as a hash for files.
 
 A detached GPG signature, such as is found in Release.gpg, can be used
