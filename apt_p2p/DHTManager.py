@@ -32,6 +32,10 @@ class DHT:
     @type my_contact: C{string}
     @ivar my_contact: the 6-byte compact peer representation of this peer's
         download information (IP address and port)
+    @type nextRefresh: L{twisted.internet.interfaces.IDelayedCall}
+    @ivar nextRefresh: the next delayed call to refreshFiles
+    @type refreshingHashes: C{list} of C{dictionary}
+    @ivar refreshingHashes: the list of hashes that still need to be refreshed
     """
     
     def __init__(self, dhtClass, db):
@@ -43,6 +47,8 @@ class DHT:
         self.dhtClass = dhtClass
         self.db = db
         self.my_contact = None
+        self.nextRefresh = None
+        self.refreshingHashes = []
         
     def start(self):
         self.dht = self.dhtClass()
@@ -63,7 +69,8 @@ class DHT:
         if not my_addr:
             raise RuntimeError, "IP address for this machine could not be found"
         self.my_contact = compact(my_addr, config.getint('DEFAULT', 'PORT'))
-        self.nextRefresh = reactor.callLater(60, self.refreshFiles)
+        if not self.nextRefresh or not self.nextRefresh.active():
+            self.nextRefresh = reactor.callLater(60, self.refreshFiles)
         return (my_addr, config.getint('DEFAULT', 'PORT'))
 
     def joinError(self, failure):
@@ -72,31 +79,30 @@ class DHT:
         log.err(failure)
         return failure
     
-    def refreshFiles(self, result = None, hashes = {}):
+    def refreshFiles(self, result = None):
         """Refresh any files in the DHT that are about to expire."""
         if result is not None:
             log.msg('Storage resulted in: %r' % result)
 
-        if not hashes:
+        if not self.refreshingHashes:
             expireAfter = config.gettime('DEFAULT', 'KEY_REFRESH')
-            hashes = self.db.expiredHashes(expireAfter)
-            if len(hashes.keys()) > 0:
-                log.msg('Refreshing the keys of %d DHT values' % len(hashes.keys()))
+            self.refreshingHashes = self.db.expiredHashes(expireAfter)
+            if len(self.refreshingHashes) > 0:
+                log.msg('Refreshing the keys of %d DHT values' % len(self.refreshingHashes))
 
         delay = 60
-        if hashes:
+        if self.refreshingHashes:
             delay = 3
-            raw_hash = hashes.keys()[0]
-            self.db.refreshHash(raw_hash)
-            hash = HashObject(raw_hash, pieces = hashes[raw_hash]['pieces'])
-            del hashes[raw_hash]
+            refresh = self.refreshingHashes.pop(0)
+            self.db.refreshHash(refresh['hash'])
+            hash = HashObject(refresh['hash'], pieces = refresh['pieces'])
             storeDefer = self.store(hash)
-            storeDefer.addBoth(self.refreshFiles, hashes)
+            storeDefer.addBoth(self.refreshFiles)
 
         if self.nextRefresh.active():
             self.nextRefresh.reset(delay)
         else:
-            self.nextRefresh = reactor.callLater(delay, self.refreshFiles, None, hashes)
+            self.nextRefresh = reactor.callLater(delay, self.refreshFiles)
     
     def getStats(self):
         """Retrieve the formatted statistics for the DHT.
