@@ -12,7 +12,7 @@ def bucket_stats(l):
     def count(buckets):
         c = 0
         for bucket in buckets:
-            c = c + len(bucket.l)
+            c = c + bucket.len()
         return c
     for node in l:
         c = count(node.table.buckets)

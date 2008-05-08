@@ -72,7 +72,7 @@ class StatsLogger:
         """
         if datetime.now() - self.lastTableUpdate > timedelta(seconds = 15):
             self.lastTableUpdate = datetime.now()
-            self.nodes = reduce(lambda a, b: a + len(b.l), self.table.buckets, 0)
+            self.nodes = reduce(lambda a, b: a + b.len(), self.table.buckets, 0)
             self.users = K * (2**(len(self.table.buckets) - 1))
         return (self.nodes, self.users)
     

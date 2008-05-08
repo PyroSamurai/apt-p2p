@@ -103,7 +103,7 @@ class DB:
         c = self.conn.cursor()
         c.execute("DELETE FROM nodes WHERE id NOT NULL")
         for bucket in buckets:
-            for node in bucket.l:
+            for node in bucket.nodes:
                 c.execute("INSERT INTO nodes VALUES (?, ?, ?)", (khash(node.id), node.host, node.port))
         self.conn.commit()
         
@@ -209,7 +209,7 @@ class TestDB(unittest.TestCase):
         dummy2.port = 12345
         class bl:
             def __init__(self):
-                self.l = []
+                self.nodes = []
         bl1 = bl()
         bl1.l.append(dummy())
         bl2 = bl()
