@@ -95,6 +95,18 @@ class KTable:
         nodes.sort(lambda a, b, num=num: cmp(num ^ a.num, num ^ b.num))
         return nodes[:K]
         
+    def touch(self, id):
+        """Mark a bucket as having been looked up.
+
+        @type id: C{string} or C{int} or L{node.Node}
+        @param id: the ID in the bucket that was accessed
+        """
+        # Get the bucket number from the input
+        num = self._nodeNum(id)
+        i = self._bucketIndexForInt(num)
+        
+        self.buckets[i].touch()
+
     def _mergeBucket(self, i):
         """Merge unneeded buckets after removing a node.
         
@@ -190,7 +202,6 @@ class KTable:
                 # note that we removed the original and replaced it with the new one
                 # utilizing this nodes new contact info
                 self.buckets[i].add(node)
-                self.buckets[i].touch()
             return True
         
         # We don't have this node, check to see if the bucket is full
@@ -199,7 +210,6 @@ class KTable:
             if contacted:
                 node.updateLastSeen()
                 self.buckets[i].add(node)
-                self.buckets[i].touch()
                 log.msg('Added node to routing table: %s/%s' % (node.host, node.port))
                 return True
             return False
@@ -242,7 +252,6 @@ class KTable:
         except ValueError:
             return None
         else:
-            self.buckets[i].touch()
             return tstamp
     
     def invalidateNode(self, n):

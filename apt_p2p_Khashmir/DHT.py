@@ -451,7 +451,7 @@ class TestSimpleDHT(unittest.TestCase):
 class TestMultiDHT(unittest.TestCase):
     """More complicated 20-node tests for the DHT."""
     
-    timeout = 100
+    timeout = 200
     num = 20
     DHT_DEFAULTS = {'PORT': 9977,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 8,

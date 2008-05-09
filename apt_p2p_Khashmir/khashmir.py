@@ -180,6 +180,9 @@ class KhashmirBase(protocol.Factory):
         @param callback: the method to call with the results, it must take 1
             parameter, the list of K closest nodes
         """
+        # Mark the bucket as having been accessed
+        self.table.touch(id)
+        
         # Start with our node
         nodes = [copy(self.node)]
 
@@ -405,6 +408,9 @@ class KhashmirRead(KhashmirBase):
         @param callback: the method to call with the results, it must take 1
             parameter, the list of nodes with values
         """
+        # Mark the bucket as having been accessed
+        self.table.touch(key)
+        
         # Start with ourself
         nodes = [copy(self.node)]
         

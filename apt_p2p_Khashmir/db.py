@@ -211,9 +211,9 @@ class TestDB(unittest.TestCase):
             def __init__(self):
                 self.nodes = []
         bl1 = bl()
-        bl1.l.append(dummy())
+        bl1.nodes.append(dummy())
         bl2 = bl()
-        bl2.l.append(dummy2)
+        bl2.nodes.append(dummy2)
         buckets = [bl1, bl2]
         self.store.dumpRoutingTable(buckets)
         rt = self.store.getRoutingTable()
