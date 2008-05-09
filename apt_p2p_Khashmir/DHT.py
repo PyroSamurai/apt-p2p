@@ -334,7 +334,7 @@ class TestSimpleDHT(unittest.TestCase):
     timeout = 50
     DHT_DEFAULTS = {'PORT': 9977,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 8,
-                    'STORE_REDUNDANCY': 3, 'RETRIEVE_VALUES': -10000,
+                    'STORE_REDUNDANCY': 6, 'RETRIEVE_VALUES': -10000,
                     'MAX_FAILURES': 3, 'LOCAL_OK': True,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
                     'KRPC_TIMEOUT': 9, 'KRPC_INITIAL_DELAY': 2,
@@ -455,7 +455,7 @@ class TestMultiDHT(unittest.TestCase):
     num = 20
     DHT_DEFAULTS = {'PORT': 9977,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 8,
-                    'STORE_REDUNDANCY': 3, 'RETRIEVE_VALUES': -10000,
+                    'STORE_REDUNDANCY': 6, 'RETRIEVE_VALUES': -10000,
                     'MAX_FAILURES': 3, 'LOCAL_OK': True,
                     'MIN_PING_INTERVAL': 900,'BUCKET_STALENESS': 3600,
                     'KRPC_TIMEOUT': 9, 'KRPC_INITIAL_DELAY': 2,

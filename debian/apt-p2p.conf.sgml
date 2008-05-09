@@ -227,7 +227,7 @@
 	    <term><option>STORE_REDUNDANCY = <replaceable>number</replaceable></option></term>
 	     <listitem>
 	      <para>The <replaceable>number</replaceable> of redundant copies of a value to store in the DHT.
-	          (Default is 3.)</para>
+	          (Default is 6.)</para>
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>

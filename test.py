@@ -494,7 +494,7 @@ CHECKPOINT_INTERVAL = 5m
 CONCURRENT_REQS = 8
 
 # how many hosts to post to
-STORE_REDUNDANCY = 3
+STORE_REDUNDANCY = 6
 
 # How many values to attempt to retrieve from the DHT.
 # Setting this to 0 will try and get all values (which could take a while if
