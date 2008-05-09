@@ -379,6 +379,8 @@ class KRPC:
                     log.msg('Got a Krpc error while running: krpc_%s' % msg[REQ])
                     if e[0] != KRPC_ERROR_INVALID_TOKEN:
                         log.err(e)
+                    else:
+                        log.msg('Node sent us an invalid token, not storing')
                     self.stats.errorAction(msg[REQ])
                     olen = self._sendResponse(msg[REQ], addr, msg[TID], ERR,
                                               [e[0], e[1]])
