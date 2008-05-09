@@ -589,6 +589,32 @@ class TestClientManager(unittest.TestCase):
         d.addCallback(lambda a: self.flushLoggedErrors(TimeoutError))
         return d
         
+    def test_dnserror(self):
+        """Tests a connection timeout."""
+        from twisted.internet.error import DNSLookupError
+        host = 'hureyfnvbfha.debian.net'
+        self.client = Peer(host, 80)
+        self.timeout = 10
+        
+        d = self.client.get('/rfc/rfc0013.txt')
+        d.addCallback(self.gotResp, 1, 1070)
+        d = self.failUnlessFailure(d, DNSLookupError)
+        d.addCallback(lambda a: self.flushLoggedErrors(DNSLookupError))
+        return d
+        
+    def test_noroute(self):
+        """Tests a connection timeout."""
+        from twisted.internet.error import NoRouteError
+        host = '1.2.3.4'
+        self.client = Peer(host, 80)
+        self.timeout = 60
+        
+        d = self.client.get('/rfc/rfc0013.txt')
+        d.addCallback(self.gotResp, 1, 1070)
+        d = self.failUnlessFailure(d, NoRouteError)
+        d.addCallback(lambda a: self.flushLoggedErrors(NoRouteError))
+        return d
+        
     def tearDown(self):
         for p in self.pending_calls:
             if p.active():
