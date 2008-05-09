@@ -163,7 +163,7 @@ class Peer(ClientFactory):
         log.msg('Connecting to (%s, %d)' % (self.host, self.port))
         self.connecting = True
         d = protocol.ClientCreator(reactor, LoggingHTTPClientProtocol, self,
-                                   stats = self.stats, mirror = self.mirror).connectTCP(self.host, self.port)
+                                   stats = self.stats, mirror = self.mirror).connectTCP(self.host, self.port, timeout = 10)
         d.addCallbacks(self.connected, self.connectionError)
 
     def connected(self, proto):
@@ -574,6 +574,19 @@ class TestClientManager(unittest.TestCase):
         
         d = self.client.getRange('/rfc/rfc0013.txt', 100, 199)
         d.addCallback(self.gotResp, 1, 100)
+        return d
+        
+    def test_timeout(self):
+        """Tests a connection timeout."""
+        from twisted.internet.error import TimeoutError
+        host = 'steveholt.hopto.org'
+        self.client = Peer(host, 80)
+        self.timeout = 60
+        
+        d = self.client.get('/rfc/rfc0013.txt')
+        d.addCallback(self.gotResp, 1, 1070)
+        d = self.failUnlessFailure(d, TimeoutError)
+        d.addCallback(lambda a: self.flushLoggedErrors(TimeoutError))
         return d
         
     def tearDown(self):
