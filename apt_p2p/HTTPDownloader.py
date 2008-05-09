@@ -377,7 +377,7 @@ class Peer(ClientFactory):
 
         # If there are none, then you get 0
         if not self._downloadSpeeds:
-            return 0.0
+            return 150000.0
         
         for download in self._downloadSpeeds:
             total_time += download[1].days*86400.0 + download[1].seconds + download[1].microseconds/1000000.0
@@ -400,7 +400,7 @@ class Peer(ClientFactory):
 
         # If there are none, give it the benefit of the doubt
         if not self._responseTimes:
-            return 0.0
+            return 0.1
 
         for response in self._responseTimes:
             total_response += response[1].days*86400.0 + response[1].seconds + response[1].microseconds/1000000.0
@@ -594,7 +594,7 @@ class TestClientManager(unittest.TestCase):
         from twisted.internet.error import DNSLookupError
         host = 'hureyfnvbfha.debian.net'
         self.client = Peer(host, 80)
-        self.timeout = 10
+        self.timeout = 5
         
         d = self.client.get('/rfc/rfc0013.txt')
         d.addCallback(self.gotResp, 1, 1070)
@@ -607,7 +607,7 @@ class TestClientManager(unittest.TestCase):
         from twisted.internet.error import NoRouteError
         host = '1.2.3.4'
         self.client = Peer(host, 80)
-        self.timeout = 60
+        self.timeout = 5
         
         d = self.client.get('/rfc/rfc0013.txt')
         d.addCallback(self.gotResp, 1, 1070)
