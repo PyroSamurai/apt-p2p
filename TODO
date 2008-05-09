@@ -57,6 +57,19 @@ distributions. They need to be dealt with properly by
 adding them to the tracking done by the AptPackages module.
 
 
+Improve the estimation of the total number of nodes
+
+The current total nodes estimation is based on the number of buckets.
+A better way is to look at the average inter-node spacing for the K
+closest nodes after a find_node/value completes. Be sure to measure
+the inter-node spacing in log2 space to dampen any ill effects. This
+can be used in the formula:
+        nodes = 2^160 / 2^(average of log2 spacing)
+The average should also be saved using an exponentially weighted
+moving average (of the log2 distance) over separate find_node/value
+actions to get a better calculation over time.
+
+
 Improve the downloaded and uploaded data measurements.
 
 There are 2 places that this data is measured: for statistics, and for
