@@ -491,7 +491,7 @@ BOOTSTRAP_NODE = %(BOOTSTRAP_NODE)s
 CHECKPOINT_INTERVAL = 5m
 
 # concurrent xmlrpc calls per find node/value request!
-CONCURRENT_REQS = 4
+CONCURRENT_REQS = 8
 
 # how many hosts to post to
 STORE_REDUNDANCY = 3

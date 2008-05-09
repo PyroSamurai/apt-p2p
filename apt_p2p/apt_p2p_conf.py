@@ -97,7 +97,7 @@ DHT_DEFAULTS = {
     
     ### SEARCHING/STORING
     # concurrent xmlrpc calls per find node/value request!
-    'CONCURRENT_REQS': '4',
+    'CONCURRENT_REQS': '8',
     
     # how many hosts to post to
     'STORE_REDUNDANCY': '3',

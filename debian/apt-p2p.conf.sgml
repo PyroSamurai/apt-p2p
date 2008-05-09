@@ -220,7 +220,7 @@
 	    <term><option>CONCURRENT_REQS = <replaceable>number</replaceable></option></term>
 	     <listitem>
 	      <para>The concurrent <replaceable>number</replaceable> of calls per find node/value request.
-	          (Default is 4.)</para>
+	          (Default is 8.)</para>
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
