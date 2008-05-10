@@ -12,7 +12,7 @@ XS-Dm-Upload-Allowed: yes
 
 Package: apt-p2p
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, python-twisted-web2 (>= 8.0), adduser, python-debian (>= 0.1.4), python-apt (>= 0.6.20), python-pysqlite2 (>= 2.1)
+Depends: ${python:Depends}, python-twisted-web2 (>= 8.0), adduser, python-debian (>= 0.1.4), python-apt (>= 0.6.20), python-pysqlite2 (>= 2.1)
 Provides: python-apt-p2p, python-apt-p2p-khashmir
 Description: apt helper for peer-to-peer downloads of Debian packages
  Apt-P2P is a helper for downloading Debian packages files with APT.
