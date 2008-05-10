@@ -5,7 +5,7 @@ Maintainer: Cameron Dale <camrdale@gmail.com>
 Homepage: http://www.camrdale.org/apt-p2p.html
 Standards-Version: 3.7.3
 Build-Depends: debhelper (>= 5.0.37.2)
-Build-Depends-Indep: python-dev, python-support (>= 0.5.4), po-debconf, docbook-to-man
+Build-Depends-Indep: python-dev, python-support (>= 0.5.4), docbook-to-man
 Vcs-Git: git://git.camrdale.org/git/apt-p2p.git
 Vcs-Browser: http://git.camrdale.org/?p=apt-p2p.git;a=summary
 XS-Dm-Upload-Allowed: yes

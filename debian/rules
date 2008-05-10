@@ -43,7 +43,6 @@ install: build-stamp
 binary-indep: install
 	dh_testdir
 	dh_testroot
-	dh_installdebconf
 	dh_installdocs
 	dh_installman
 	
