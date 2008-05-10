@@ -429,7 +429,7 @@ class KRPC:
             else:
                 # no tid, this transaction was finished already...
                 log.msg('received an error %r from %r for completed request: %r' %
-                        (msg[ERR], msg[RSP]['id'], msg[TID]))
+                        (msg[ERR], addr, msg[TID]))
         else:
             # Received an unknown message type
             if self.config.get('SPEW', False):
