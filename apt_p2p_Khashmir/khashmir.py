@@ -226,7 +226,13 @@ class KhashmirBase(protocol.Factory):
             df.addErrback(self._staleNodeHandler, old, node, contacted)
         elif not old and not contacted:
             # There's room, we just need to contact the node first
-            self.sendPing(node)
+            df = self.sendPing(node)
+            # Also schedule a future ping to make sure the node works
+            def rePing(newnode, self = self):
+                if newnode.id not in self.pinging:
+                    self.pinging[newnode.id] = reactor.callLater(self.config['MIN_PING_INTERVAL'],
+                                                                 self.sendPing, newnode)
+            df.addCallback(rePing)
 
     def _staleNodeHandler(self, err, old, node, contacted):
         """The pinged node never responded, so replace it."""
@@ -244,7 +250,7 @@ class KhashmirBase(protocol.Factory):
         
         # If in the table, schedule a ping, if one isn't already sent/scheduled
         if exists and node.id not in self.pinging:
-            self.pinging[node,id] = reactor.callLater(self.config['MIN_PING_INTERVAL'],
+            self.pinging[node.id] = reactor.callLater(self.config['MIN_PING_INTERVAL'],
                                                       self.sendPing, node)
     
     def sendPing(self, node):
