@@ -232,6 +232,7 @@ class KhashmirBase(protocol.Factory):
                 if newnode.id not in self.pinging:
                     self.pinging[newnode.id] = reactor.callLater(self.config['MIN_PING_INTERVAL'],
                                                                  self.sendPing, newnode)
+                return newnode
             df.addCallback(rePing)
 
     def _staleNodeHandler(self, err, old, node, contacted):
