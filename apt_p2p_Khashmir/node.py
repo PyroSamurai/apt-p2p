@@ -139,6 +139,8 @@ class Node:
         if type(a) == InstanceType:
             a = a.num
         return self.num != a
+    def __hash__(self):
+        return hash(self.num)
 
 
 class TestNode(unittest.TestCase):
