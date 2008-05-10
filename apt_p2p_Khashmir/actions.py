@@ -207,7 +207,7 @@ class ActionBase:
         """Receive an error from a remote node."""
         log.msg("action %s failed on %s/%s: %s" % (self.action, node.host, node.port, err.getErrorMessage()))
         if node.id != self.caller.node.id:
-            self.caller.table.nodeFailed(node)
+            self.caller.nodeFailed(node)
         self.failed[node.id] = 1
         if self.outstanding.has_key(node.id):
             self.outstanding_results -= self.outstanding[node.id]

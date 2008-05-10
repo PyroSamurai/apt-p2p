@@ -477,7 +477,7 @@ class TestMultiDHT(unittest.TestCase):
         if next_node + 1 < len(self.l):
             d.addCallback(self.node_join, next_node + 1)
         else:
-            d.addCallback(self.lastDefer.callback)
+            reactor.callLater(1, d.addCallback, self.lastDefer.callback)
     
     def test_join(self):
         self.timeout = 2

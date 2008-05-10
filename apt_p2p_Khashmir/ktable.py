@@ -262,7 +262,10 @@ class KTable:
         self.replaceStaleNode(n)
     
     def nodeFailed(self, node):
-        """Mark a node as having failed once, and remove it if it has failed too much."""
+        """Mark a node as having failed once, and remove it if it has failed too much.
+        
+        @return: whether the node is in the routing table
+        """
         # Get the bucket number
         num = self._nodeNum(node)
         i = self._bucketIndexForInt(num)
@@ -271,11 +274,13 @@ class KTable:
         try:
             n = self.buckets[i].node(num)
         except ValueError:
-            return None
+            return False
         else:
             # The node is in the bucket
             if n.msgFailed() >= self.config['MAX_FAILURES']:
                 self.invalidateNode(n)
+                return False
+            return True
                         
 class KBucket:
     """Single bucket of nodes in a kademlia-like routing table.
