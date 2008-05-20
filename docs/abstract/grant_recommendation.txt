@@ -1,0 +1,26 @@
+###  Applicant  ###
+
+Cameron Dale
+Master's Student
+Department of Computing Science
+Simon Fraser University
+Burnaby, BC, Canada
+camerond@cs.sfu.ca
+http://www.camrdale.org
+
+Senior Supervisor: Dr. Jiangchuan Liu
+
+I confirm that the student is a Master's candidate in good standing.
+
+###  Benefits of Attending  ###
+
+<Indicate why the student would benefit from attending the conference.>
+
+###  Strengths and Potential Contributions  ###
+
+<Elaborate on the strengths and potential contributions of the student.>
+
+###  Funding Status  ###
+
+<Indicate current funding status, or explain briefly why the student is
+ in need of a travel grant.>

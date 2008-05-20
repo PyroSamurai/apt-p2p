@@ -1,0 +1,115 @@
+###  Applicant  ###
+
+Cameron Dale
+Master's Student
+Department of Computing Science
+Simon Fraser University
+Burnaby, BC, Canada
+camerond@cs.sfu.ca
+http://www.camrdale.org
+
+Senior Supervisor: Dr. Jiangchuan Liu
+
+I am not eligible for US- or Euro-NF partner-based program or other
+travel funding.
+
+###  Research Interests  ###
+
+My current research is focussed mainly on BitTorrent. One aspect I have
+studied is the effectiveness of the rarest-first policy to evenly
+distribute pieces of the download throughout the peers. I have found
+that the policy is mostly effective at maintaining a near-optimal piece
+population distribution, though there are some areas for improvement.
+
+I have also examined the different network topologies formed between
+peers in a BitTorrent swarm. Some of the networks I have found to have
+scale-free behaviour, verifying the resilience of the swarm to the
+failures and departures that are common in all peer-to-peer networking
+scenarios. Others that were previously thought to have small-world
+characteristics, I have found to contain very little clustering. I have
+therefore designed an enhancement to the BitTorrent tracker to introduce
+clustering and create a small-world from the BitTorrent swarm, which
+should improve the effectiveness of the BitTorrent protocol at
+distributing the download to peers.
+
+In collaboration with another student, Xu Cheng, we have studied the
+video sharing site YouTube. This new type of video distribution has not
+seen much research yet, and we find some interesting differences between
+it and traditional video distribution. My work focussed mostly on the
+social networking aspect of YouTube, which is unique among video sharing
+sites. The results showed that YouTube videos form a small-world
+network, which suggests that videos are strongly correlated with each
+other. This feature can be used to develop interesting caching or
+peer-to-peer distribution strategies for videos.
+
+###  Accomplishments  ###
+
+Degrees:
+
+Bachelor of Science, major in Honors Applied Physics, minor in Computing
+Science, Simon Fraser University, 2000
+
+Awards:
+
+$17,500 NSERC Canada Graduate Scholarship M, 2007
+
+Publications:
+
+C. Dale, J. Liu, J. Peters, B. Li, "Evolution and Enhancement of
+BitTorrent Network Topologies", IEEE IWQoS, University of Twente,
+Netherlands, June 2-4, 2008.
+
+X. Cheng, C. Dale, J. Liu, "Understanding the Characteristics of
+Internet Short Video Sharing: YouTube as a Case Study", IEEE IWQoS,
+University of Twente, Netherlands, June 2-4, 2008.
+
+C. Dale, J. Liu, "A Measurement Study of Piece Population in
+BitTorrent", Proc. IEEE Globecom, Washington, DC, USA, November 26-30,
+2007.
+
+X.K. Chen, R. Wiersma, C.X. Wang, O.J. Pitts, C. Dale, C.R. Bolognesi,
+S.P. Watkins, "Local vibrational modes of carbon in GaSb and GaAsSb",
+Applied Physics Letters, 80, 1942 (2002).
+
+S.P. Watkins, O. Pitts, C. Dale, X.G.Xu, M. Dvorak, N. Matine, and C.R.
+Bolognesi, "Heavily carbon-doped GaAsSb grown on InP for HBT
+applications", Journal of Crystal Growth, 221, 59 (2000).
+
+###  Plans for Future Research  ###
+
+Using my previous work on BitTorrent as a foundation, I am currently
+working on a new peer-to-peer download system for distributors of free
+content (mostly software packages) over the web. The system uses a
+Distributed Hash Table to support downloading the individual content
+files from peers, which reduces the strain on the network of mirrors
+that is usually required to support the downloads. This work includes
+implementing a new download client for software packages of Debian-based
+systems called apt-p2p.
+
+My plans are to complete the work on the design of the system, and the
+implementation and deployment of the client. I will then be analyzing
+and improving both, to determine their effectiveness at solving this
+problem and to make them suitable for any free content distributors to
+use.
+
+Finally, I will be preparing and defending my thesis.
+
+###  Courses  ###
+
+Undergraduate GPA: 3.92
+
+Graduate Courses:
+CMPT 705: Design and Analysis of Computing Algorithms     A
+CMPT 740: Database Systems                                A-
+CMPT 765: Computer Networks                               A+
+CMPT 816: Theory of Communication Networks                A+
+CMPT 880: Special Topics: Multimedia & Sensor Networking  A+
+
+###  Expenses  ###
+
+Registration:       $350
+Travel (driving):   $ 60
+Lodging (4 nights): $414
+Meals:              $100
+------------------- ----
+Total               $924
