@@ -30,11 +30,18 @@ def distance(a, b):
     """Calculate the distance between two hashes expressed as strings."""
     return intify(a) ^ intify(b)
 
-def newID():
-    """Get a new pseudorandom globally unique hash string."""
+def newID(suffix = ''):
+    """Get a new pseudorandom globally unique hash string.
+    
+    @param suffix: an optional string to end the ID with
+    """
+    assert len(suffix) < 20, 'The suffix must be shorter than the SHA1 hash'
     h = sha()
     h.update(urandom(HASH_LENGTH))
-    return h.digest()
+    if suffix:
+        return h.digest()[:-len(suffix)] + suffix
+    else:
+        return h.digest()
 
 def newIDInRange(min, max):
     """Get a new pseudorandom globally unique hash string in the range."""
@@ -54,7 +61,11 @@ class TestNewID(unittest.TestCase):
         self.failUnlessEqual(len(newID()), HASH_LENGTH)
     def testHundreds(self):
         for x in xrange(100):
-            self.testLength
+            self.testLength()
+    def testSuffix(self):
+        id = newID('T012')
+        self.failUnlessEqual(len(id), HASH_LENGTH)
+        self.failUnlessEqual(id[-4:], 'T012')
 
 class TestIntify(unittest.TestCase):
     """Test the intify function."""
