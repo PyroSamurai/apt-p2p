@@ -2,8 +2,8 @@
 
 ### BEGIN INIT INFO
 # Provides:          apt-p2p
-# Required-Start:    $network
-# Required-Stop:
+# Required-Start:    $remote_fs $network
+# Required-Stop:     $remote_fs
 # Should-Start:      $named
 # Should-Stop:
 # Default-Start:     2 3 4 5
