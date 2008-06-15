@@ -16,7 +16,7 @@ from twisted.application import service, internet, app, strports
 from twisted.internet import reactor
 from twisted.python import usage, log
 
-from apt_p2p.apt_p2p_conf import config, version, DEFAULT_CONFIG_FILES
+from apt_p2p.apt_p2p_conf import config, version, versionID, DEFAULT_CONFIG_FILES
 from apt_p2p.interfaces import IDHT, IDHTStatsFactory
 
 config_file = ''
@@ -53,6 +53,7 @@ if __name__ == '__main__':
 
 log.msg("Loading config files: '%s'" % "', '".join(DEFAULT_CONFIG_FILES + [config_file]))
 config_read = config.read(DEFAULT_CONFIG_FILES + [config_file])
+config.set(config.get('DEFAULT', 'DHT'), 'VERSION', versionID)
 log.msg("Successfully loaded config files: '%s'" % "', '".join(config_read))
 try:
     uid,gid = pwd.getpwnam(config.get('DEFAULT', 'USERNAME'))[2:4]

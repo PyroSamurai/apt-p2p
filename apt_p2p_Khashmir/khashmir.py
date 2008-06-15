@@ -123,8 +123,8 @@ class KhashmirBase(protocol.Factory):
     def _loadSelfNode(self, host, port):
         """Create this node, loading any previously saved one."""
         id = self.store.getSelfNode()
-        if not id:
-            id = newID()
+        if not id or not id.endswith(self.config['VERSION']):
+            id = newID(self.config['VERSION'])
         return self._Node(id, host, port)
         
     def checkpoint(self):
@@ -368,9 +368,10 @@ class KhashmirBase(protocol.Factory):
             self.next_checkpoint.cancel()
         except:
             pass
-        for call in self.pinging:
-            if isinstance(call, DelayedCall) and call.active():
-                call.cancel()
+        for nodeid in self.pinging.keys():
+            if isinstance(self.pinging[nodeid], DelayedCall) and self.pinging[nodeid].active():
+                self.pinging[nodeid].cancel()
+                del self.pinging[nodeid]
         self.store.close()
     
     def getStats(self):
@@ -601,7 +602,7 @@ class Khashmir(KhashmirWrite):
 class SimpleTests(unittest.TestCase):
     
     timeout = 10
-    DHT_DEFAULTS = {'PORT': 9977,
+    DHT_DEFAULTS = {'VERSION': 'A000', 'PORT': 9977,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 8,
                     'STORE_REDUNDANCY': 6, 'RETRIEVE_VALUES': -10000,
                     'MAX_FAILURES': 3, 'LOCAL_OK': True,
@@ -693,7 +694,7 @@ class MultiTest(unittest.TestCase):
     
     timeout = 30
     num = 20
-    DHT_DEFAULTS = {'PORT': 9977,
+    DHT_DEFAULTS = {'VERSION': 'A000', 'PORT': 9977,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 8,
                     'STORE_REDUNDANCY': 6, 'RETRIEVE_VALUES': -10000,
                     'MAX_FAILURES': 3, 'LOCAL_OK': True,

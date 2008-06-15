@@ -25,6 +25,18 @@ class ConfigError(Exception):
 
 version = versions.Version('apt-p2p', 0, 1, 3)
 
+mapbase64 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-'
+versionID = 'A'
+for subver in version.base().split('.', 2):
+    while type(subver) != int and len(subver) > 0:
+        try:
+            subver = int(subver)
+        except:
+            subver = subver[:-1]
+    if type(subver) != int or subver >= 64:
+        subver = 0
+    versionID += mapbase64[subver]
+
 # Set the home parameter
 home = os.path.expandvars('${HOME}')
 if home == '${HOME}' or not os.path.isdir(home):

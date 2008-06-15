@@ -332,7 +332,7 @@ class TestSimpleDHT(unittest.TestCase):
     """Simple 2-node unit tests for the DHT."""
     
     timeout = 50
-    DHT_DEFAULTS = {'PORT': 9977,
+    DHT_DEFAULTS = {'VERSION': 'A000', 'PORT': 9977,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 8,
                     'STORE_REDUNDANCY': 6, 'RETRIEVE_VALUES': -10000,
                     'MAX_FAILURES': 3, 'LOCAL_OK': True,
@@ -453,7 +453,7 @@ class TestMultiDHT(unittest.TestCase):
     
     timeout = 200
     num = 20
-    DHT_DEFAULTS = {'PORT': 9977,
+    DHT_DEFAULTS = {'VERSION': 'A000', 'PORT': 9977,
                     'CHECKPOINT_INTERVAL': 300, 'CONCURRENT_REQS': 8,
                     'STORE_REDUNDANCY': 6, 'RETRIEVE_VALUES': -10000,
                     'MAX_FAILURES': 3, 'LOCAL_OK': True,
