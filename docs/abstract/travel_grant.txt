@@ -8,7 +8,7 @@ Burnaby, BC, Canada
 camerond@cs.sfu.ca
 http://www.camrdale.org
 
-Senior Supervisor: Dr. Jiangchuan Liu
+Senior Supervisor: Dr. Jiangchuan Liu  (jcliu@cs.sfu.ca)
 
 I am not eligible for US- or Euro-NF partner-based program or other
 travel funding.
@@ -42,6 +42,8 @@ network, which suggests that videos are strongly correlated with each
 other. This feature can be used to develop interesting caching or
 peer-to-peer distribution strategies for videos.
 
+The above works have been published in IEEE Globecom and IWQoS.
+
 ###  Accomplishments  ###
 
 Degrees:
@@ -54,6 +56,10 @@ Awards:
 $17,500 NSERC Canada Graduate Scholarship M, 2007
 
 Publications:
+
+C. Dale and J. Liu, "Leveraging Altruistic Peers to Reduce the
+Bandwidth Costs of Free Content Downloads" (poster), ACM SIGCOMM'08,
+Seattle, WA, August 17-22, 2008.
 
 C. Dale, J. Liu, J. Peters, B. Li, "Evolution and Enhancement of
 BitTorrent Network Topologies", IEEE IWQoS, University of Twente,
@@ -79,20 +85,25 @@ applications", Journal of Crystal Growth, 221, 59 (2000).
 
 Using my previous work on BitTorrent as a foundation, I am currently
 working on a new peer-to-peer download system for distributors of free
-content (mostly software packages) over the web. The system uses a
-Distributed Hash Table to support downloading the individual content
-files from peers, which reduces the strain on the network of mirrors
-that is usually required to support the downloads. This work includes
-implementing a new download client for software packages of Debian-based
-systems called apt-p2p.
+content over the web (mostly software packages, which have different
+characteristics as compared to other files downloaded by BitTorrent).
+The system uses a Distributed Hash Table to support downloading the
+individual content files from peers, which reduces the strain on the
+network of mirrors that is usually required to support the downloads.
+This work includes implementing a new download client for software
+packages of Debian-based systems called apt-p2p.
 
-My plans are to complete the work on the design of the system, and the
-implementation and deployment of the client. I will then be analyzing
-and improving both, to determine their effectiveness at solving this
-problem and to make them suitable for any free content distributors to
-use.
+The first version of this software was released last month, and has
+since attracted over 100 users. For more info, see:
 
-Finally, I will be preparing and defending my thesis.
+    http://www.camrdale.org/apt-p2p.html
+
+    http://packages.debian.org/sid/apt-p2p
+
+A poster about the design of this new system has been accepted by
+SIGCOMM'08, and I plan to attend it to present my work, and more
+importantly, to get feedback from the audience of this top
+networking conference.
 
 ###  Courses  ###
 
