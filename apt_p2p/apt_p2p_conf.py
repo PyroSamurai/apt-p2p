@@ -23,7 +23,7 @@ class ConfigError(Exception):
     def __str__(self):
         return repr(self.message)
 
-version = versions.Version('apt-p2p', 0, 1, 3)
+version = versions.Version('apt-p2p', 0, 1, 4)
 
 mapbase64 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-'
 versionID = 'A'

@@ -1,3 +1,10 @@
+apt-p2p (0.1.4) unstable; urgency=low
+
+  * Add remote_fs dependency in init.d LSB header (Closes: #480645)
+  * Use the version number in the Khashmir node ID.
+
+ -- Cameron Dale <camrdale@gmail.com>  Sun, 15 Jun 2008 23:20:28 -0700
+
 apt-p2p (0.1.3) unstable; urgency=low
 
   * Speed up downloading from peers
