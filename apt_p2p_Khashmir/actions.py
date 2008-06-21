@@ -196,8 +196,16 @@ class ActionBase:
         if self.finished or self.answered.has_key(node.id):
             # a day late and a dollar short
             return
-        self.answered[node.id] = 1
-        self.processResponse(dict)
+        try:
+            # Process the response
+            self.processResponse(dict)
+            self.answered[node.id] = 1
+        except Exception, e:
+            # Unexpected error with the response
+            log.msg("action %s failed on %s/%s: %r" % (self.action, node.host, node.port, e))
+            if node.id != self.caller.node.id:
+                self.caller.nodeFailed(node)
+            self.failed[node.id] = 1
         if self.outstanding.has_key(node.id):
             self.outstanding_results -= self.outstanding[node.id]
             del self.outstanding[node.id]
@@ -220,6 +228,8 @@ class ActionBase:
         Not called by default, but suitable for being called by
         L{processResponse} in a recursive node search.
         """
+        if nodes and type(nodes) != list:
+            raise ValueError, "got a malformed response, from bittorrent perhaps"
         for compact_node in nodes:
             node_contact = uncompact(compact_node)
             node = self.caller.Node(node_contact)

@@ -36,7 +36,7 @@ def uncompact(s):
     @raise ValueError: if the compact representation doesn't exist
     """
     if (len(s) != HASH_LENGTH+6):
-        raise ValueError
+        raise ValueError, "not compact node info: %r" % (s, )
     id = s[:HASH_LENGTH]
     host = '.'.join([str(ord(i)) for i in s[HASH_LENGTH:(HASH_LENGTH+4)]])
     port = (ord(s[HASH_LENGTH+4]) << 8) | ord(s[HASH_LENGTH+5])

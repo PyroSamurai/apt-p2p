@@ -100,6 +100,8 @@ def verifyMessage(msg):
             raise KrpcError, (KRPC_ERROR_MALFORMED_PACKET, "response not specified")
         if type(msg[RSP]) != dict:
             raise KrpcError, (KRPC_ERROR_MALFORMED_PACKET, "response is not a dictionary")
+#        if 'nodes' in msg[RSP] and type(msg[RSP]['nodes']) != list:
+#            raise KrpcError, (KRPC_ERROR_MALFORMED_PACKET, "wrong type of node, this is not bittorrent")
     elif msg[TYP] == ERR:
         if ERR not in msg:
             raise KrpcError, (KRPC_ERROR_MALFORMED_PACKET, "error not specified")
@@ -117,6 +119,8 @@ def verifyMessage(msg):
         raise KrpcError, (KRPC_ERROR_MALFORMED_PACKET, "no transaction ID specified")
     if type(msg[TID]) != str:
         raise KrpcError, (KRPC_ERROR_MALFORMED_PACKET, "transaction id is not a string")
+    if len(msg[TID]) != 20:
+        raise KrpcError, (KRPC_ERROR_MALFORMED_PACKET, "wrong type of node, this is not bittorrent")
 
 class hostbroker(protocol.DatagramProtocol):
     """The factory for the KRPC protocol.
@@ -349,7 +353,7 @@ class KRPC:
             msg = bdecode(data)
         except Exception, e:
             if self.config.get('SPEW', False):
-                log.msg("krpc bdecode error: ")
+                log.msg("krpc bdecode error from %r: " % (addr, ))
                 log.err(e)
             return
 
@@ -357,8 +361,7 @@ class KRPC:
         try:
             verifyMessage(msg)
         except Exception, e:
-            log.msg("krpc message verification error: ")
-            log.err(e)
+            log.msg("krpc message verification error from %r: %r" % (addr, e))
             return
 
         if self.config.get('SPEW', False):
