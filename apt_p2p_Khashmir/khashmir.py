@@ -288,7 +288,11 @@ class KhashmirBase(protocol.Factory):
         """Error occurred, fail node."""
         log.msg("action ping failed on %s/%s: %s" % (node.host, node.port, err.getErrorMessage()))
         self.stats.completedAction('ping', start)
+        
+        # Consume unhandled errors
+        self.pinging[node.id].addErrback(lambda ping_err: None)
         del self.pinging[node.id]
+        
         self.nodeFailed(node)
         return err
         
