@@ -1,0 +1,14 @@
+/var/log/apt-p2p.log {
+        weekly
+        rotate 8
+        missingok
+        notifempty
+        nocompress
+        start 1
+        prerotate
+            rm -f /var/log/apt-p2p.log.[0-9][0-9]
+        endscript
+        postrotate
+            invoke-rc.d --quiet apt-p2p restart > /dev/null
+        endscript
+}

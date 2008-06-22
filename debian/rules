@@ -45,6 +45,7 @@ binary-indep: install
 	dh_testroot
 	dh_installdocs
 	dh_installman
+	dh_installlogrotate
 	
 	# Remove the .py from the end of each of these
 	mv debian/apt-p2p/usr/sbin/apt-p2p.py debian/apt-p2p/usr/sbin/apt-p2p
