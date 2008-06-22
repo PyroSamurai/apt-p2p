@@ -191,21 +191,22 @@ class ActionBase:
 
     def gotResponse(self, dict, node):
         """Receive a response from a remote node."""
-        if node.id != self.caller.node.id:
-            reactor.callLater(0, self.caller.insertNode, node)
-        if self.finished or self.answered.has_key(node.id):
+        if self.finished or self.answered.has_key(node.id) or self.failed.has_key(node.id):
             # a day late and a dollar short
             return
         try:
             # Process the response
             self.processResponse(dict)
-            self.answered[node.id] = 1
         except Exception, e:
             # Unexpected error with the response
             log.msg("action %s failed on %s/%s: %r" % (self.action, node.host, node.port, e))
             if node.id != self.caller.node.id:
                 self.caller.nodeFailed(node)
             self.failed[node.id] = 1
+        else:
+            self.answered[node.id] = 1
+            if node.id != self.caller.node.id:
+                reactor.callLater(0, self.caller.insertNode, node)
         if self.outstanding.has_key(node.id):
             self.outstanding_results -= self.outstanding[node.id]
             del self.outstanding[node.id]
