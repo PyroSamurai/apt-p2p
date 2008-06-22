@@ -1,3 +1,11 @@
+apt-p2p (0.1.5) unstable; urgency=low
+
+  * Prevent BitTorrent nodes from infiltrating the DHT.
+  * Consume ping errors so they aren't printed in the log.
+  * Add a logrotate file that should work with the twistd log rotation.
+
+ -- Cameron Dale <camrdale@gmail.com>  Sat, 21 Jun 2008 23:26:42 -0700
+
 apt-p2p (0.1.4) unstable; urgency=low
 
   * Add remote_fs dependency in init.d LSB header (Closes: #480645)
