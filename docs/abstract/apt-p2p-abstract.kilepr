@@ -17,18 +17,18 @@ QuickBuild=LaTeX+DVItoPDF+ViewPDF
 
 [item:abstract.tex]
 archive=true
-column=33
+column=38
 encoding=UTF-8
 highlight=LaTeX
-line=21
+line=38
 open=true
 
 [item:all.bib]
 archive=true
-column=19
+column=112
 encoding=UTF-8
 highlight=BibTeX
-line=424
+line=223
 open=false
 
 [item:apt-p2p-abstract.kilepr]

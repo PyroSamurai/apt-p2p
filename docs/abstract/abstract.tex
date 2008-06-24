@@ -1,31 +1,51 @@
-\documentclass[conference]{IEEEtran}
+\documentclass{sig-alt-release2}
 
 \usepackage[noadjust]{cite}
-
-\usepackage[dvips]{graphicx}
-
 \usepackage{url}
-\usepackage[cmex10]{amsmath}
-\interdisplaylinepenalty=2500
-\usepackage{threeparttable}
-\usepackage{multirow}
+\hyphenation{dis-tri-bu-ted}
 
 \begin{document}
 
+\conferenceinfo{SIGCOMM'08,} {August 17--22, 2008, Seattle, Washington, USA.} 
+\CopyrightYear{2008}
+\crdata{978-1-60558-175-0/08/08} 
+
 \title{Leveraging Altruistic Peers to Reduce the Bandwidth Costs of Free Content Downloads}
-\author{\IEEEauthorblockN{Cameron Dale}
-\IEEEauthorblockA{School of Computing Science (student)\\
-Simon Fraser University\\
-Burnaby, British Columbia, Canada\\
-Email: camerond@cs.sfu.ca}
-\and
-\IEEEauthorblockN{Jiangchuan Liu}
-\IEEEauthorblockA{School of Computing Science (faculty)\\
-Simon Fraser University\\
-Burnaby, British Columbia, Canada\\
-Email: jcliu@cs.sfu.ca}}
+\numberofauthors{2}
+\author{
+\alignauthor Cameron Dale\\
+	\affaddr{School of Computing Science (student)}\\
+	\affaddr{Simon Fraser University}\\
+	\affaddr{Burnaby, British Columbia, Canada}\\
+	\email{Email: camerond@cs.sfu.ca}
+%\and
+\alignauthor Jiangchuan Liu\\
+	\affaddr{School of Computing Science (faculty)}\\
+	\affaddr{Simon Fraser University}\\
+	\affaddr{Burnaby, British Columbia, Canada}\\
+	\email{Email: jcliu@cs.sfu.ca}
+}
 
 \maketitle
+
+\begin{abstract}
+We introduce the opportunity many free content distributors have to
+reduce their bandwidth costs using a peer-to-peer download
+mechanism. Our model for this peer-to-peer distribution is simple to
+implement, backwards-compatible with the existing infrastructure,
+and can be deployed incrementally. It makes wide use of a customized
+distributed hash table (DHT) to facilitate the finding of peers and
+the efficient downloading of files. We also present the example
+solution we created for one of these distributors, the Debian
+project, which is already in use by some users.
+\end{abstract}
+
+% A category with the (minimum) three required fields
+%\category{H.4}{Information Systems Applications}{Miscellaneous}
+%A category including the fourth, optional field follows...
+\category{C.2.4}{Computer-Communication Networks}{Distributed Systems}[Distributed applications]
+\terms{Design, Performance, Reliability}
+\keywords{BitTorrent, P2P}
 
 \section{Introduction}
 \label{intro}
@@ -55,8 +75,7 @@ suffer from some of the same, and other, problems and so none has
 been well-used to address this problem.
 
 We present a new peer-to-peer distribution model to meet these
-demands. It is based on the lessons learned from many previous
-implementations of successful peer-to-peer protocols, such as
+demands, based on other successful peer-to-peer protocols such as
 Distributed Hash Tables and BitTorrent.
 The model relies on the pre-existence of cryptographic
 hashes of the content, which uniquely identify it for a request from
@@ -92,11 +111,11 @@ distributors also use a similar system: CPAN distributes files
 containing software packages for the PERL programming language,
 using SOAP RPC requests to find and download files; Cygwin provides
 many of the standard Unix/Linux tools in a Windows environment,
-using a package management tool that requests packages from
+using a package management tool that requests \texttt{tar} files from
 websites; two software distribution systems exist for Mac OSX,
 fink and MacPorts, that also retrieve packages in this way. Also,
 some systems use direct web downloads, but with a hash verification
-file also available for download next to the desired file. These
+file also available. These
 hash files usually have the same file name, but with an added
 extension identifying the hash used (e.g. \texttt{.md5} for the MD5
 hash). Finally, there are other programs that make use of
@@ -138,19 +157,17 @@ If the package hash can not be found, the peer will
 fallback to downloading from the original content location, and once
 complete will announce to other peers indicating that it now has
 the content. The original servers or mirrors thus act as \emph{seeds} for the
-P2P system without any modification to them.
+P2P system without any modification to them, and users are satisfied even when
+there are no peers which allows the system to be deployed incrementally.
 
 This functionality could be directly integrated into the
 package management software, although this would be
 difficult as the protocol should be running at all times, whereas the
 package software typically only runs until the download request is complete.
-Alternatively, since many of the package management software
-implementations use HTTP requests to download the files, it
-it possible to implement the P2P aspect as as HTTP caching
+Alternatively, it
+it possible to implement the P2P aspect as a caching
 proxy. The proxy will get uncached requests first from the P2P system,
-and then fallback to the normal HTTP request from a server. For
-methods that don't use HTTP requests, other types of proxies
-(possibly custom-made) may also be possible.
+and then fallback to the normal request from a server.
 
 The sparse interest in a large
 number of packages undergoing constant updating is well suited to
@@ -190,7 +207,7 @@ To demonstrate the ease and effectiveness of this solution we have
 created a sample implementation called \texttt{apt-p2p} which
 interacts with the \texttt{apt} tool found in most Debian-based
 Linux distributions. \texttt{apt} uses SHA1 hashes to verify most
-downloaded files, including the large index files that contain
+downloaded files, including the large index files that contains detailed
 information such as the hashes of the individual packages. Since all
 requests from \texttt{apt} are in the form of HTTP downloads from a
 server, the implementation takes the form of a caching HTTP proxy.
@@ -205,7 +222,7 @@ to torrent files. Peers store their download location (IP address
 and TCP port), as well as the piece strings (or hashes of piece
 strings) as described in the previous section. Downloading is
 accomplished by simple HTTP requests for the hash of the file,
-which is sent to the peers identified from the DHT lookup to
+which is sent to the peers identified in a DHT lookup to
 have the desired file. All peers support HTTP/1.1, both as
 servers and clients, which allows for pipelining of multiple
 requests to a peer, and the requesting of smaller pieces of a large
@@ -238,7 +255,7 @@ Debian users as an installable software package. Once it becomes
 more widely used, we plan to collect more usage information on the
 system through crawls and data analysis.
 
-\bibliographystyle{IEEEtran}
-\bibliography{./IEEEabrv,./all}
+\bibliographystyle{abbrv}
+\bibliography{./all}
 
 \end{document}
