@@ -14,13 +14,13 @@
 \numberofauthors{2}
 \author{
 \alignauthor Cameron Dale\\
-	\affaddr{School of Computing Science (student)}\\
+	\affaddr{School of Computing Science}\\
 	\affaddr{Simon Fraser University}\\
 	\affaddr{Burnaby, British Columbia, Canada}\\
 	\email{Email: camerond@cs.sfu.ca}
 %\and
 \alignauthor Jiangchuan Liu\\
-	\affaddr{School of Computing Science (faculty)}\\
+	\affaddr{School of Computing Science}\\
 	\affaddr{Simon Fraser University}\\
 	\affaddr{Burnaby, British Columbia, Canada}\\
 	\email{Email: jcliu@cs.sfu.ca}
@@ -37,7 +37,7 @@ and can be deployed incrementally. It makes wide use of a customized
 distributed hash table (DHT) to facilitate the finding of peers and
 the efficient downloading of files. We also present the example
 solution we created for one of these distributors, the Debian
-project, which is already in use by some users.
+project, which is already seeing some use.
 \end{abstract}
 
 % A category with the (minimum) three required fields
@@ -52,14 +52,14 @@ project, which is already in use by some users.
 
 There are a large number of free content distributors using custom
 package distribution systems over the Internet to distribute content
-to their users: most Linux distributions (e.g. Debian, Red Hat,
+to their users: e.g. most Linux distributions (Debian, Red Hat,
 Gentoo), Cygwin, CPAN, etc.
 These distributors have developed many different
 methods for this distribution, but they almost exclusively use a
 client-server model to satisfy user requests. The contents' size,
-popularity and number of users results in a large number of
+popularity and the number of users results in a large number of
 requests, which usually requires a complicated network of mirrors to handle. Due
-to the free nature of this content, many users are willing and able
+to the free nature of this content, many users are willing
 to contribute upload bandwidth to this distribution, but currently
 have no way to do this.
 
@@ -87,8 +87,8 @@ a large number of users, and should significantly reduce the
 currently substantial bandwidth costs of hosting this content.
 
 We also present a sample implementation based on the Debian package
-distribution system. This implementation is simple, makes use of
-mostly well-known technologies, and so serves as an example for
+distribution system. This implementation is simple and makes use of
+well-known technologies, and so serves as an example for
 other free content distributors of the opportunity that can be easily met
 with such a system.
 
@@ -102,8 +102,8 @@ supports some kind of file verification using cryptographic hashes
 to verify the download's accuracy or authenticity.
 
 Most Linux distributions use a software package management system
-that fetches packages to be installed from a network of mirrors.
-Debian-based distributions uses the \texttt{apt} program, which
+that fetches packages from a network of mirrors.
+Debian-based distributions use the \texttt{apt} program, which
 downloads Debian packages from one of many mirrors. RPM-based
 distributions use \texttt{yum}, and Gentoo uses \texttt{portage},
 which both operate in a similar way. Other free software
@@ -157,8 +157,8 @@ If the package hash can not be found, the peer will
 fallback to downloading from the original content location, and once
 complete will announce to other peers indicating that it now has
 the content. The original servers or mirrors thus act as \emph{seeds} for the
-P2P system without any modification to them, and users are satisfied even when
-there are no peers which allows the system to be deployed incrementally.
+P2P system, without any modification to them. Users are satisfied even when
+there are no peers, allowing the system to be deployed incrementally.
 
 This functionality could be directly integrated into the
 package management software, although this would be
