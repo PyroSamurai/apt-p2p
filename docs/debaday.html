@@ -20,6 +20,15 @@ mirror so your download will not fail.<p>
 
 <h4>How it works</h4>
 
+<p>Apt-P2P is a daemon that runs in the background, responding to any
+requests from apt for files to download, and sharing any downloaded
+files with other users. The sharing is all done using HTTP, so it
+operates as both a server for the requests from apt and other peers, and
+as a client to download from other peers and mirrors. Also, if you go to
+<a href="http://localhost:9977/">http://localhost:9977/</a> in your
+browser on the machine Apt-P2P is running on, you will get a nice
+statistical display of what it is doing.</p>
+
 <p>The main operation of Apt-P2P is the maintenance of a
 <a href="http://en.wikipedia.org/wiki/Distributed_hash_table">Distributed
 Hash Table (DHT)</a> used to find and store peers to download from for
@@ -39,29 +48,6 @@ downloaders to break up large files among several peers to get better
 download speeds (similar to BitTorrent). For more information, you can
 go to the Apt-P2P home page:
 <a href="http://www.camrdale.org/apt-p2p/">http://www.camrdale.org/apt-p2p/</a>.</p>
-
-<h4>Statistics</h4>
-
-<p>Since Apt-P2P is a daemon, it doesn't have any user interface for a
-nice screenshot. However, if you go to
-<a href="http://localhost:9977/">http://localhost:9977/</a> in your
-browser on the machine Apt-P2P is running on, you will get a nice
-display of various statistics. These include:</p>
-
-<ul>
-<li>Total amount downloaded and uploaded this session.</li>
-<li>Total amount downloaded and uploaded for all time.</li>
-<li>Amount downloaded broken up into mirrors and other users.</li>
-<li>Number of files being shared.</li>
-<li>Number of DHT keys and values being stored for other peers.</li>
-<li>Amount downloaded and uploaded in DHT messages.</li>
-<li>Number of DHT peers in contact and an estimated total number.</li>
-</ul>
-
-<p>Don't be discouraged if you don't upload much to, or download much
-from, other peers yet. Apt-P2P is still young and needs more people to
-use it to increase the chances of finding peers for files. Tell your
-friends!</p>
 
 <h4>Comparison with other P2P programs</h4>
 
@@ -89,6 +75,13 @@ technologies (e.g. <a href="http://twistedmatrix.com">twisted<a>).</li>
 <p>Apt-P2P is available in testing (lenny) and unstable (sid), and will
 be available in Intrepid for Ubuntu. It can be installed by
 <kbd>aptitude install apt-p2p</kbd>.</p>
+
+<p>First, it is <strong>VERY</strong> important to set up port
+forwarding if your machine is behind a firewall or router/NAT. The
+default port you need to forward is 9977, both UDP and TCP. More
+information on how to determine if you are connectable can be
+<a href="http://www.camrdale.org/blog/posts/May-10-2008/">found
+here</a>.</p>
 
 <p>Setting up apt to use Apt-P2P as a proxy is easy, especially if you
 have used other proxy software (e.g. apt-proxy, apt-cacher, approx) in
@@ -134,11 +127,5 @@ deb-src http://localhost:9977/www.backports.org/debian etch-backports main contr
 
 <p>Then, run an <kbd>apt-get update</kbd> and start installing
 packages.</p>
-
-<p>It's also <strong>VERY</strong> important to set up port forwarding
-if your machine is behind a firewall or router/NAT. More information on
-how to determine if you are connectable can be
-<a href="http://www.camrdale.org/blog/posts/May-10-2008/">found
-here</a>.</p>
 
 </div>
