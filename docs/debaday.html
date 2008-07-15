@@ -1,0 +1,144 @@
+<div class="entry">
+
+<p><strong>Article submitted by Cameron Dale. Guess what? We still need
+you to <a href="http://debaday.debian.net/contribute/">submit good
+articles about software you like</a>!</strong></p>
+
+<p>Do you want to help out the Debian (or Ubuntu) project with some
+mirror bandwidth but don't know how? Do you want to contribute somehow
+to Debian's infrastructure, but you're not a coder? Tired of getting
+slow download speeds when the mirrors are overloaded after a new
+release? Then Apt-P2P is for you.</p>
+
+<p>After installing the apt-p2p package and making some minor changes to
+apt's sources, all the files you download with apt (or aptitude,
+synaptic, gnome-apt, etc...) will be shared with other users, and any
+files you download will use other users (peers) to download from.
+However, if no other users have the file you want there's no need to
+worry, Apt-P2P will happily fall back to downloading directly from the
+mirror so your download will not fail.<p>
+
+<h4>How it works</h4>
+
+<p>The main operation of Apt-P2P is the maintenance of a
+<a href="http://en.wikipedia.org/wiki/Distributed_hash_table">Distributed
+Hash Table (DHT)</a> used to find and store peers to download from for
+each file. Whenever you download a file, apt-2p will first lookup the
+SHA1 hash of the file in the DHT. If it is found and has peers listed,
+then the downloading will occur from the peers (if there are only 1 or 2
+peers, the mirror is used as well to speed up the download). If it is
+not found then the file is requested directly from the mirror. Once the
+download is complete, a new value is added to the DHT using the SHA1
+hash of the file as the key, and including your contact info, so that
+other peers can then find you to download the file from.</p>
+
+<p>That's just a brief overview, but there are many hidden details that
+make things go smoother. For example, for larger files the SHA1 hashes
+of pieces of the file are stored in the DHT as well, which allows
+downloaders to break up large files among several peers to get better
+download speeds (similar to BitTorrent). For more information, you can
+go to the Apt-P2P home page:
+<a href="http://www.camrdale.org/apt-p2p/">http://www.camrdale.org/apt-p2p/</a>.</p>
+
+<h4>Statistics</h4>
+
+<p>Since Apt-P2P is a daemon, it doesn't have any user interface for a
+nice screenshot. However, if you go to
+<a href="http://localhost:9977/">http://localhost:9977/</a> in your
+browser on the machine Apt-P2P is running on, you will get a nice
+display of various statistics. These include:</p>
+
+<ul>
+<li>Total amount downloaded and uploaded this session.</li>
+<li>Total amount downloaded and uploaded for all time.</li>
+<li>Amount downloaded broken up into mirrors and other users.</li>
+<li>Number of files being shared.</li>
+<li>Number of DHT keys and values being stored for other peers.</li>
+<li>Amount downloaded and uploaded in DHT messages.</li>
+<li>Number of DHT peers in contact and an estimated total number.</li>
+</ul>
+
+<p>Don't be discouraged if you don't upload much to, or download much
+from, other peers yet. Apt-P2P is still young and needs more people to
+use it to increase the chances of finding peers for files. Tell your
+friends!</p>
+
+<h4>Comparison with other P2P programs</h4>
+
+Other than <a href="http://debtorrent.alioth.debian.org/">DebTorrent<a>,
+there aren't any other peer-to-peer downloaders available for apt. There
+was <a href="http://sianka.free.fr/">apt-torrent<a>, but it was never
+packaged in Debian, and now seems to be dead (no updates in 18 months).
+Comparing Apt-P2P with DebTorrent, Apt-P2P:
+
+<ul>
+<li>Is faster at downloading from mirrors.</li>
+<li>Uses much less memory and a little less CPU.</li>
+<li>Can download almost all files (source files,
+<kbd>Packages.bz2</kbd>, etc...) from peers, not just <kbd>.deb</kbd>
+packages.</li>
+<li>Works with only the information apt has, no need for other
+files.</li>
+<li>Doesn't require a new apt transport for communicating with apt.</li>
+<li>Is more modular and easier to understand as it is based on existing
+technologies (e.g. <a href="http://twistedmatrix.com">twisted<a>).</li>
+</ul>
+
+<h4>Setup</h4>
+
+<p>Apt-P2P is available in testing (lenny) and unstable (sid), and will
+be available in Intrepid for Ubuntu. It can be installed by
+<kbd>aptitude install apt-p2p</kbd>.</p>
+
+<p>Setting up apt to use Apt-P2P as a proxy is easy, especially if you
+have used other proxy software (e.g. apt-proxy, apt-cacher, approx) in
+the past. The configuration change is the same, simply adding a
+<kbd>localhost:9977/</kbd> to the front of the entries in your
+<kbd>/etc/apt/sources.list</kbd> file. For example, if you previously
+had this:
+
+<pre class="terminal"># Official
+deb http://ftp.us.debian.org/debian etch main contrib non-free
+deb-src http://ftp.us.debian.org/debian etch main contrib non-free
+
+# Security Updates
+deb http://security.debian.org/ etch/updates main contrib non-free
+deb-src http://security.debian.org/ etch/updates main contrib non-free
+
+# Unofficial
+deb http://ftp.debian-unofficial.org/debian etch main contrib non-free restricted
+deb-src http://ftp.debian-unofficial.org/debian etch main contrib non-free restricted
+
+# Backports
+deb http://www.backports.org/debian etch-backports main contrib non-free
+deb-src http://www.backports.org/debian etch-backports main contrib non-free</pre>
+
+<p>Then, if you only want to share the official and backported packages,
+you would change it to this:</p>
+
+<pre class="terminal"># Official
+deb http://localhost:9977/ftp.us.debian.org/debian etch main contrib non-free
+deb-src http://localhost:9977/ftp.us.debian.org/debian etch main contrib non-free
+
+# Security Updates
+deb http://security.debian.org/ etch/updates main contrib non-free
+deb-src http://security.debian.org/ etch/updates main contrib non-free
+
+# Unofficial
+deb http://ftp.debian-unofficial.org/debian etch main contrib non-free restricted
+deb-src http://ftp.debian-unofficial.org/debian etch main contrib non-free restricted
+
+# Backports
+deb http://localhost:9977/www.backports.org/debian etch-backports main contrib non-free
+deb-src http://localhost:9977/www.backports.org/debian etch-backports main contrib non-free</pre>
+
+<p>Then, run an <kbd>apt-get update</kbd> and start installing
+packages.</p>
+
+<p>It's also <strong>VERY</strong> important to set up port forwarding
+if your machine is behind a firewall or router/NAT. More information on
+how to determine if you are connectable can be
+<a href="http://www.camrdale.org/blog/posts/May-10-2008/">found
+here</a>.</p>
+
+</div>
