@@ -88,12 +88,12 @@ distribution system. This implementation will be used by a large
 number of users, and serves as an example for other free software
 distributors of the opportunity that can be met with such a system.
 
-The rest of this paper is organized as follows. The background and motivation are presented in Section \ref{situation}, together with related works in  Section \ref{related}. We propose
-our solution in Section \ref{opportunity}. We then detail our sample
-implementation for Debian-based distributions in Section
-\ref{implementation}, including an in-depth look at our DHT
-customizations in Section \ref{custom_dht}. Its performance is evaluated in Section \ref{analysis}. Finally, 
-Section \ref{conclusions} concludes the paper and offers some future directions.
+The rest of this paper is organized as follows. The background and motivation are presented in Section~\ref{situation}, and we analyze BitTorrent's use for this purpose in Section~\ref{bittorrent}. We propose
+our solution in Section~\ref{opportunity}. We then detail our sample
+implementation for Debian-based distributions in Section~\ref{implementation},
+including an in-depth look at our DHT
+customizations in Section~\ref{custom_dht}. Its performance is evaluated in Section~\ref{analysis}. We examine some related work in Section~\ref{related}, and then
+Section~\ref{conclusions} concludes the paper and offers some future directions.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -248,7 +248,7 @@ users.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Why BitTorrent Doesn't Work Well}
-\label{related}
+\label{bittorrent}
 
 Recently, many distributors make their software available using
 BitTorrent \cite{COHEN03}, in particular, for the distribution of CD
@@ -296,7 +296,7 @@ can serve in that capacity.
 \section{Peer-to-Peer Assisted Distributor: An Overview}
 \label{opportunity}
 
-The situation described in section \ref{situation} presents a clear
+The situation described in Section~\ref{situation} presents a clear
 opportunity to use some form of peer-to-peer file-sharing protocol
 to allow willing users to contribute upload bandwidth. This sparse
 interest in a large number of packages undergoing constant updating
@@ -424,8 +424,8 @@ are all \emph{bencoded} in the same way as BitTorrent's
 \texttt{.torrent} files. Khashmir uses the high-level Twisted
 event-driven networking engine \cite{twisted}, so we also use
 Twisted in our sample implementation for all other networking needs.
-More details of this customized DHT can be found below in section
-\ref{custom_dht}.
+More details of this customized DHT can be found below in
+Section~\ref{custom_dht}.
 
 Downloading is accomplished by sending simple HTTP requests to the
 peers identified by lookups in the DHT to have the desired file.
@@ -479,7 +479,7 @@ it has one for that key, instead of a list of nodes.
 Hashes of pieces of the larger package files are needed to support
 their efficient downloading from multiple peers.
 For large files (5 or more pieces), the torrent strings described in
-section \ref{downloading}
+Section~\ref{downloading}
 are too long to store with the peer's download info in the DHT. This
 is due to the limitation that a single UDP packet should be less
 than 1472 bytes to avoid fragmentation.
@@ -515,7 +515,7 @@ require a separate request to a peer for the torrent string.
 \subsection{Response Time}
 \label{response_time}
 
-Most of our customizations to the DHT have been to try and improve
+Many of our customizations to the DHT have been to try and improve
 the time of the recursive \texttt{find\_value} requests, as this can
 cause long delays for the user waiting for a package download to
 begin. The one problem that slows down such requests is waiting for
@@ -557,6 +557,33 @@ sure it is still reachable after the NATs delay has hopefully
 elapsed. We also schedule future pings of nodes that fail once to
 respond to a request, as it takes multiple failures (currently 3)
 before a node is removed from the routing table.
+
+\begin{figure}
+\centering
+\includegraphics[width=\columnwidth]{apt_p2p_improvements-find_value.eps}
+\caption{The distribution of average response times PlanetLab nodes
+experience for \texttt{find\_value} queries. The original DHT
+implementation results are shown, as well as the successive
+improvements that we made to reduce the response time.}
+\label{improvements}
+\end{figure}
+
+To test our changes during development, we ran the customized DHT
+for several hours after each major change on 300 PlanetLab nodes
+\cite{planetlab}. Though the nodes are not expected to be firewalled
+or NATted, some can be quite overloaded and so consistently fail to
+respond within a timeout period, similar to NATted peers. The
+resulting distribution of the nodes' average response times is shown
+in Figure~\ref{improvements}. Each improvement successfully reduced
+the response time, for a total reduction of more than half. The
+final distribution is also narrower, as the improvements make the
+system more predictable. However, there are still a large number of
+outliers with higher average response times, which are the
+overloaded nodes on PlanetLab. This was confirmed by examining the
+average time it took for a timeout to occur, which should be
+constant as it is a configuration option, but can be much larger if
+the node is too overloaded for the program to be able to check for a
+timeout very often.
 
 \subsection{Multiple Values}
 \label{multiple_values}
@@ -828,17 +855,21 @@ small enough to not affect any other network services the peer would
 be running.
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Related Work}
-\label{others}
+\label{related}
 
 There have also been preliminary attempts to implement peer-to-peer distributors for
 software packages. apt-torrent \cite{apttorrent} creates torrents
 for some of the larger packages available, but it ignores the
 smaller packages, which are often the most popular. DebTorrent
 \cite{debtorrent} makes widespread modifications to a traditional
-BitTorrent client, to try and fix the drawbacks mentioned in section
-\ref{bittorrent}. However, these changes also require some
-modifications to the distribution system to support it.
+BitTorrent client, to try and fix the drawbacks mentioned in
+Section~\ref{bittorrent}. However, these changes also require some
+modifications to the distribution system to support it. Our system
+considers all the files available to users to download, and makes
+use of the existing infrastructure unmodified.
 
 Others have also used DHTs to support this type of functionality.
 Kenosis \cite{kenosis} is a P2P Remote Procedure Call
@@ -849,9 +880,47 @@ replacement for the tracker in a BitTorrent system
 \cite{bittorrent-dht, azureus-dht}, but such systems only use the
 DHT to find peers for the same torrent, so the file sharing uses
 traditional BitTorrent and so is not ideal for the reasons listed
-above.
+in Section~\ref{bittorrent}.
 
-Our solution differs from them in that ...
+% \cite{deltacast}
+
+There are a number of works dedicated to developing a collaborative
+content distribution network (CDN) using peer-to-peer techniques.
+Freedman et. al. developed Coral \cite{coral} using a distrbitued
+\emph{sloppy} hash table to speed request times. Pierre and van
+Steen developed Globule \cite{globule} which uses typical DNS and
+HTTP redirection techniques to serve requests from a network of
+replica servers, which in turn draw their content from the original
+location (or a backup). Shah et. al. \cite{shah08} analyze an
+existing software delivery system and use the results to design a
+peer-to-peer content distribution network that makes use of
+volunteer servers to help with the load. None of these systems meets
+our goal of an even distribution of load amongst the users of the
+system. Not all users of the systems become peers, and so are not
+able to contribute back to the system after downloading. The
+volunteers that do contribute as servers are required to contribute
+larger amounts of bandwidth, both for uploading to others, and in
+downloading content they are not in need of in order to share them
+with other users. Our system treats all users equally, requiring all
+to become peers in the system, sharing the uploading load equally
+amongst all, but doesn't require any user to download files they
+would not otherwise need.
+
+The most similar works to ours are by Shah et. al. \cite{shah08} and
+Shark by Annapureddy et. al. \cite{shark}.
+Shah's system, in addition to the drawbacks mentioned previously,
+is not focused on the interactivity of downloads, as
+half of all requests were required ``to wait between 8 and 15
+minutes.'' In contrast, lookups in our system take only seconds to
+complete, and all requests can be completed in under a minute.
+Shark makes use of Coral's distributed sloppy hash table to speed
+the lookup time, but their system is more suited to its intended use
+as a distributed file server. It doesn't make use of authoritative
+copies of the original files, allowing instead any users in the
+system to update files and propagate those changes to others. Our
+system is well-tailored to the application of disseminating the
+unchanging software packages from the authoritative sources to all
+users unchanged.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
