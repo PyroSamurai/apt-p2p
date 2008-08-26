@@ -21,7 +21,7 @@ column=42
 encoding=UTF-8
 highlight=LaTeX
 line=39
-open=true
+open=false
 
 [item:all.bib]
 archive=true
