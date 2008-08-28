@@ -18,7 +18,7 @@
 
 \begin{document}
 
-\title{\texttt{apt-p2p}: A Peer-to-Peer Distributor for Free Software Package Release and Update}
+\title{\texttt{apt-p2p}: A Peer-to-Peer Distribution System for Software Package Releases and Updates}
 \author{\IEEEauthorblockN{Cameron Dale}
 \IEEEauthorblockA{School of Computing Science\\
 Simon Fraser University\\
@@ -40,14 +40,14 @@ distributors use the traditional client-server model to handle
 requests from users. However, there is an excellent opportunity to
 use peer-to-peer techniques to reduce the cost of much of this
 distribution, especially due to the altruistic nature of many of
-these users. There are no existing solution suitable for this
+these users. There are no existing solutions suitable for this
 situation, so we present a new technique for satisfying the needs of
-this P2P distribution, which is generally applicable to many of
+this P2P distribution which is generally applicable to many of
 these distributors' systems. Our method makes use of a DHT for
 storing the location of peers, using the cryptographic hash of the
-package as a key. To show the simplicity and functionality, we
+package as a key. To show the simplicity and functionality of our model, we
 implement a solution for the distribution of Debian software
-packages, including the many DHT customizations needed. Finally, we
+packages, including details on the DHT customizations and system optimizations needed. Finally, we
 analyze our system to determine how it is performing and what effect
 it is having.
 \end{abstract}
@@ -72,7 +72,7 @@ We present a new peer-to-peer distribution model to meet these
 demands. It is based on many previous implementations of successful
 peer-to-peer protocols, especially distributed hash tables (DHT) and
 BitTorrent. The model relies on the pre-existence of cryptographic
-hashes of the packages, which should uniquely identify it for a
+hashes of the packages, which uniquely identify it for a
 request from other peers. If the peer-to-peer download fails, then
 the original request to the server is used as a fallback to prevent
 any dissatisfaction from users. The peer can then share this new
@@ -87,12 +87,15 @@ present an example implementation based on the Debian package
 distribution system. This implementation will be used by a large
 number of users, and serves as an example for other free software
 distributors of the opportunity that can be met with such a system.
+Finally, we analyze our currently deployed implementation to
+determine how effective it is at meeting our goals, and to see what
+effect it is having on the Debian package distribution system.
 
-The rest of this paper is organized as follows. The background and motivation are presented in Section~\ref{situation}, and we analyze BitTorrent's use for this purpose in Section~\ref{bittorrent}. We propose
+The rest of this paper is organized as follows. The background and motivation are presented in Section~\ref{situation}, including an analysis of BitTorrent's use for this purpose in Section~\ref{bittorrent}. We propose
 our solution in Section~\ref{opportunity}. We then detail our sample
 implementation for Debian-based distributions in Section~\ref{implementation},
 including an in-depth look at our DHT
-customizations in Section~\ref{custom_dht}. Its performance is evaluated in Section~\ref{analysis}. We examine some related work in Section~\ref{related}, and then
+customizations in Section~\ref{custom_dht}. The performance of our implementation is evaluated in Section~\ref{analysis}. We examine some related work in Section~\ref{related}, and then
 Section~\ref{conclusions} concludes the paper and offers some future directions.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -102,14 +105,13 @@ Section~\ref{conclusions} concludes the paper and offers some future directions.
 
 In the free software society, there are a large number of groups using the Internet to 
 collaboratively develop and release their software. The ever increasing power of
-modern programming languages and operating systems has made these software, like commercial software, extremely large and complex, which often
-consists of many small units (packages). Together with their popularity among users, 
-an efficient and reliable management and distribution of these packages over the Internet has become an daunting task. In this section, we offer concrete examples illustrating the 
+modern programming languages and operating systems has made this software, like commercial software, extremely large and complex, though it is often
+distributed in many small units (packages). Together with their popularity among users, 
+an efficient and reliable management and distribution of these packages over the Internet has become a daunting task. In this section, we offer concrete examples illustrating the 
 unique challenges in this context. 
 
-\subsection{Free Software Package Distributor: Examples}
+\subsection{Free Software Package Distributors}
 \label{examples}
-
 
 Most Linux distributions use a software package management system
 that fetches packages to be installed from an archive of packages
@@ -139,25 +141,24 @@ programming language, using SOAP RPC requests to find and download
 files. Cygwin provides many of the
 standard Unix/Linux tools in a Windows environment, using a
 package management tool that requests packages from websites. There
-are two software distribution systems for Mac OSX, fink and
+are two software distribution systems for software that runs on the Macintosh OS, fink and
 MacPorts, that also retrieve packages in this way.
 
 Direct web downloading is also a common way, often coupled with a hash
 verification file to be downloaded next to the desired
-file. The hash file usually have the same file name, but with an
+file. The hash file usually has the same file name, but with an
 added extension identifying the hash used (e.g. \texttt{.md5} for
 the MD5 hash). This type of file downloading and verification is
 typical of free software hosting facilities that are open to anyone
 to use, such as SourceForge.
 
 
-Given the free nature of these software, there are often a number of users 
-motivated by altruism to want to help out with their distribution. 
-This is particularly true considering that many of these software are used by
+Given the free nature of this software, there are often a number of users 
+motivated by altruism to want to help out with the distribution.
+This is particularly true considering that many of this software is used by
 groups that are staffed mostly, or sometimes completely, by
 volunteers. They are thus motivated to contribute their network resources, so as to promote the healthy development 
-of the volunteer community that released the software. As a matter of fact,
-we have see many free mirror sites hosting these software packages for downloading. 
+of the volunteer community that released the software.
 We also naturally expect that peer-to-peer distribution can be implementation in 
 this context, which scale well with large user bases and can easily explore the network resources made available by
 the volunteers. 
@@ -193,7 +194,7 @@ current Debian distribution. While 80\% of the packages are less than
 512~KB, some of the packages are hundreds of megabytes. The entire
 archive consists of 22,298 packages and is approximately 119,000 MB
 in size. Most of the packages are to be installed in any computer environment, but there are 
-also OS- or architecture-specific packages, as shown by the adjusted sizes based on popularity of the packages. ((((more words on how the size is adjusted by popularity))))
+also OS- or architecture-specific packages.
 
 \subsubsection{Package Updates}
 
@@ -209,18 +210,18 @@ released for security issues or serious bugs.
 \begin{figure}
 \centering
 \includegraphics[width=\columnwidth]{size-quarter.eps}
-\caption{The amount of data in the Debian archive that is updated
-each day, broken down by architecture.}
+\caption{The amount of data in the 119,000 MB Debian archive that is
+updated each day, broken down by architecture.}
 \label{update_size}
 \end{figure}
 
 For example, Figure~\ref{update_size} shows the amount of data in
 the Debian archive that was updated each day over a period of 3
-months. In every single day, approximately 1.5\% of the 119,000 MB archive is
-updated with new versions of packages. Note that this frequency is much higher than
-that of most commercial software, mainly because many free software are
-developed in a loosely management environment with developers working
-asynchronously from worldwide. 
+months. Every single day, approximately 1.5\% of the 119,000 MB archive is
+updated with new versions of packages. This frequency is much higher than
+that of most commercial software, mainly because much of free software is
+developed in a loosely managed environment of developers working
+asynchronously on a worldwide scale.
 
 \subsubsection{Limited Interest}
 
@@ -244,23 +245,29 @@ users who install each package. Though some packages are installed
 by everyone, 80\% of the packages are installed by less than 1\% of
 users.
 
+\subsubsection{Interactive Users}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The package management software that downloads packages displays
+some kind of indication of speed and completeness for users to
+watch. Since previous client-server downloads occurred in a sequential
+fashion, the package management software also measures the speed
+based on sequential downloading. This requires the peer-to-peer
+solution to be reasonably responsive at retrieving packages
+sequentially.
 
 \subsection{Why BitTorrent Doesn't Work Well}
 \label{bittorrent}
 
-Recently, many distributors make their software available using
-BitTorrent \cite{COHEN03}, in particular, for the distribution of CD
-images. This straightforward use however is far ineffective, as it requires the
+Many distributors make their software available using
+BitTorrent \cite{COHEN03}, in particular for the distribution of CD
+images. This straightforward use however can be very ineffective, as it requires the
 peers to download large numbers of packages that they are not
 interested in, and prevents them from updating to new packages
 without downloading another image containing a lot of the same
 packages they already have. 
 
-An alternative is to create torrents tracking individual packages. Unfortunately, we find that this enhancement can be
+An alternative is to create torrents tracking smaller groups of packages. Unfortunately, we find that this enhancement can be
 quite difficult given the unique characteristic of free software packages. 
-
 First, there is no obvious way to divide the packages into torrents.
 Most of the packages are too small, and there are too many packages
 in the entire archive to create individual torrents for each one.
@@ -277,28 +284,73 @@ new torrent may share 99\% of the packages in common with peers in the
 old torrent.
 
 Other issues also prevent BitTorrent from being a good solution to
-this problem. In particular, BitTorrent's fixed piece sizes (?KB) that disregard file
+this problem. In particular, BitTorrent's fixed piece sizes (usually 512 KB) that disregard file
 boundaries are bigger than many of the packages in the archive. This
 will waste peers' downloading bandwidth as they will end up
 downloading parts of other packages just to get the piece that
 contains the package they do want. 
-
 Finally, note that BitTorrent downloads files
 randomly, which does not work well with the interactive package
-management tools expectation of sequential downloads. On the other hand, with altruistic peers, incentives to share (upload) 
-become a less important issue, and the availability of seeds are not critical, either, as the mirror sites 
-can serve in that capacity.
+management tools expectation of sequential downloads.
 
-
+On the other hand, there are aspects of BitTorrent that are no
+longer needed in a system such as this one. With altruistic peers
+and all files being available without uploading, incentives to share
+become a less important issue. Also, the availability of seeds are
+not critical either, as the mirror sites serve in that capacity
+already.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Peer-to-Peer Assisted Distributor: An Overview}
 \label{opportunity}
 
-The situation described in Section~\ref{situation} presents a clear
-opportunity to use some form of peer-to-peer file-sharing protocol
-to allow willing users to contribute upload bandwidth. This sparse
+We assume that the user is attempting to download packages from a
+server, using package management software to find and retrieve the
+packages. Further, we assume that the requests from the user to the
+server are able to be proxied by our peer-to-peer program, and that
+the server is always available and has all of the package files.
+Finally, the cryptographic hash of the packages must be available
+separately from the package itself, and is usually contained in an
+\emph{index} file which also contains all the packages' names,
+locations and sizes.
+
+\begin{figure}
+\centering
+\includegraphics[width=\columnwidth]{model_simple.eps}
+\caption{The different phases of functionality of our peer-to-peer distribution model.}
+\label{model}
+\end{figure}
+
+Our model for using P2P to enhance such a system is shown in
+Figure~\ref{model}. As shown in Phase~1, our program will act as a
+proxy (1,2), downloading (3) and caching all files communicated
+between the user and the server (4). It will therefore also have
+available the index files containing the cryptographic hashes all
+packages. Later, in Phase~2, upon receiving a request from the user
+to download a package (5), our program will search the index files
+for the package being requested and find its hash (6). This hash can
+then be looked up recursively in the DHT (7), which will return a
+list of peers that have the package already (8). The package can
+then be downloaded from the peers (11,12), it can be verified using
+the hash (13), and if valid can be returned to the user (14). The
+current nodes location is also added to the DHT for that hash (15),
+as it is now a source for others to download from.
+
+In steps (11,12), the fact that this package is also available to download for free
+from a server is very important to our proposed model. If the package hash
+can not be found in the DHT, the peer can then fallback to
+downloading from the original location (i.e. the network of
+mirrors). The mirrors thus, with no modification to their
+functionality, serve as seeds for the packages in the peer-to-peer
+system. Any packages that have just been updated, or that are very
+rare, and so don't have any peers available, can always be found on
+the mirror. Once the peer has completed the download from the mirror
+and verified the package, it can then add itself to the DHT as the
+first peer for the new package, so that future requests for the package
+will not need the mirror.
+
+This sparse
 interest in a large number of packages undergoing constant updating
 is well suited to the functionality provided by a Distributed Hash
 Table (DHT). DHTs require unique keys to store and retrieve strings
@@ -311,23 +363,11 @@ verify the package with the hash. Once the download is complete, the
 peer will add its entry to the DHT indicating that it now has the
 package.
 
-The fact that this package is also available to download for free
-from a server is very important to our proposal. If the package hash
-can not be found in the DHT, the peer can then fallback to
-downloading from the original location (i.e. the network of
-mirrors). The mirrors thus, with no modification to their
-functionality, serve as seeds for the packages in the peer-to-peer
-system. Any packages that have just been updated, or that are very
-rare, and so don't have any peers available can always be found on
-the mirror. Once the peer has completed the download from the mirror
-and verified the package, it can then add itself to the DHT as the
-first peer for the new package, so that future requests from peers
-will not need the mirror.
-
-The trust of the package is also always guaranteed through the use
+Note that, despite downloading the package from untrustworthy peers,
+the trust of the package is always guaranteed through the use
 of the cryptographic hashes. Nothing can be downloaded from a peer
 until the hash is looked up in the DHT, so a hash must first come
-from a trusted source (i.e. a mirror). Most distributors use index
+from a trusted source (i.e. the distributors server). Most distributors use index
 files that contain hashes for a large number of the packages in
 their archive, and which are also hashed. After retrieving the
 index's hash from the mirror, the index file can be downloaded from
@@ -353,8 +393,9 @@ requests from web servers to download the packages, which makes it
 possible to implement the P2P aspect as an almost standard HTTP
 caching proxy. This proxy will run as a daemon in the background,
 listening for requests from the package management tool for package
-files. It will get uncached requests first from the P2P system, or
-falling back to the normal HTTP request from a server should it not
+files, as well as serving (uploading) cached package to other peers.
+It will get uncached requests first from the P2P system, or
+fall back to the normal HTTP request from a server should it not
 be found. For methods that don't use HTTP requests, other types of
 proxies may also be possible.
 
@@ -385,7 +426,7 @@ to store and retrieve these piece hashes using the P2P protocol. In
 addition to storing the file download location in the DHT (which
 would still be used for small files), a peer will store a
 \emph{torrent string} containing the peer's hashes of the pieces of
-the larger files. These piece hashes could be compared ahead of time
+the larger files. These piece hashes are compared ahead of time
 to determine which peers have the same piece hashes (they all
 should), and then used during the download to verify the pieces of
 the downloaded package.
@@ -398,7 +439,7 @@ the downloaded package.
 We have created a sample implementation that functions as described
 in section \ref{opportunity}, and is freely available for other
 distributors to download and modify \cite{apt-p2p}. This software,
-called \texttt{apt-p2p}, interacts with the \texttt{apt} tool, which
+called \texttt{apt-p2p}, interacts with the \texttt{apt} tool which
 is found in most Debian-based Linux distributions. \texttt{apt} uses
 SHA1 hashes to verify most downloaded files, including the large
 index files that contain the hashes of the individual packages. We
@@ -407,12 +448,12 @@ software contributions, and there are interesting statistics
 available for analyzing the popularity of the software packages
 \cite{popcon}.
 
-Since all requests from apt are in the form of HTTP downloads from a
+Since all requests from \texttt{apt} are in the form of HTTP downloads from a
 server, the implementation takes the form of a caching HTTP proxy.
 Making a standard \texttt{apt} implementation use the proxy is then
 as simple as prepending the proxy location and port to the front of
 the mirror name in \texttt{apt}'s configuration file (i.e.
-``localhost:9977/mirrorname.debian.org/\ldots'').
+``http://localhost:9977/mirrorname.debian.org/\ldots'').
 
 We created a customized DHT based on Khashmir \cite{khashmir}, which
 is an implementation of Kademlia \cite{kademlia} using methods
@@ -435,11 +476,11 @@ for the proxy also doubles as the server listening for requests for
 downloads from other peers. All peers support HTTP/1.1, both in the
 server and the client, which allows for pipelining of multiple
 requests to a peer, and the requesting of smaller pieces of a large
-file using the Range request header.
+file using the HTTP Range request header.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Customized DHT}
+\section{Customized DHT / System Optimization}
 \label{custom_dht}
 
 A large contribution of our work is in the customization and use of
@@ -451,8 +492,18 @@ up queries, allowed the storage of multiple values for each key, and
 incorporated some improvements from BitTorrent's tracker-less DHT
 implementation.
 
-\subsection{Kademlia Background}
-\label{kademlia}
+\subsection{DHT Background}
+\label{dht}
+
+DHT's operate by storing (\emph{key}, \emph{value}) pairs in a
+distributed fashion such that no node will, on average, store more
+than any other node. They support two primitive operations:
+\emph{put}, which takes a key and a value and stores it in the DHT;
+and \emph{get}, which takes a key and returns a value (or values)
+that was previously stored with that key. These operations are
+recursive, as each node does not know about all the other nodes in a
+DHT, and so must recursively search for the correct node to put to
+or get from.
 
 The Kademlia DHT, like most other DHTs, assigns IDs to peers from
 the same space that is used for keys. The peers with IDs closest to
@@ -469,7 +520,7 @@ important primitives are \texttt{find\_node} and
 close to a key. The queried nodes will return a list of the nodes
 they know about that are closest to the key, allowing the querying
 node to quickly traverse the DHT to find the nodes close to the
-desired key. The only difference between them is that the
+desired key. The only difference between \texttt{find\_node} and \texttt{find\_value} is that the
 \texttt{find\_value} query will cause a node to return a value, if
 it has one for that key, instead of a list of nodes.
 
@@ -499,7 +550,7 @@ request to the peer for the hash (using the same method as file
 downloads, i.e. HTTP), will cause the peer to return the torrent
 string.
 
-Figure \ref{size_CDF} shows the package size of the 22,298 packages
+Figure \ref{size_CDF} shows the size of the 22,298 packages
 available in Debian in January 2008. We can see that most of the
 packages are quite small, and so most will therefore not require
 piece hash information to download. We have chosen a piece
@@ -569,7 +620,7 @@ improvements that we made to reduce the response time.}
 \end{figure}
 
 To test our changes during development, we ran the customized DHT
-for several hours after each major change on 300 PlanetLab nodes
+for several hours after each major change on over 300 PlanetLab nodes
 \cite{planetlab}. Though the nodes are not expected to be firewalled
 or NATted, some can be quite overloaded and so consistently fail to
 respond within a timeout period, similar to NATted peers. The
@@ -588,7 +639,7 @@ timeout very often.
 \subsection{Multiple Values}
 \label{multiple_values}
 
-The original design of Kademlia specified that each keywould have
+The original design of Kademlia specified that each key would have
 only a single value associated with it. The RPC to find this value
 was called \texttt{find\_value} and worked similarly to
 \texttt{find\_node}, iteratively finding nodes with ID's closer to
@@ -599,13 +650,13 @@ value instead of the list of nodes it knows about that are closer.
 While this works well for single values, it can cause a problem when
 there are multiple values. If the responding node is no longer one
 of the closest to the key being searched for, then the values it is
-returning will probably be the staler ones in the system, and it
+returning will probably be the staler ones in the system, as it
 will not have the latest stored values. However, the search for
-closer nodes will stop here, as the queried node only returned the
+closer nodes will stop here, as the queried node only returned
 values and not a list of nodes to recursively query. We could have
 the request return both the values and the list of nodes, but that
 would severely limit the size and number of the values that could be
-returned.
+returned in a single UDP packet.
 
 Instead, we have broken up the original \texttt{find\_value}
 operation into two parts. The new \texttt{find\_value} request
@@ -620,11 +671,11 @@ abort the search once it has found enough values in some nodes, or
 it could choose to only request values from the nodes that are
 closest to the key being searched for.
 
-\subsection{BitTorrent's Improvements}
+\subsection{\textbf{OPTIONAL}: BitTorrent's Improvements}
 \label{bittorrent_dht}
 
-In the many years that some BitTorrent clients have been using a
-Kademlia based DHT for tracker-less operation, the developers have
+In the several years that some BitTorrent clients have been using a
+Kademlia-based DHT for tracker-less operation, the developers have
 made many enhancements which we can take advantage of. One of the
 most important is a security feature added to stop malicious nodes
 from subscribing other nodes as downloaders. When a node issues a
@@ -643,11 +694,12 @@ periods of time, we reduced Kademlia's \emph{k} value from 20 to 8.
 The value is supposed to be large enough such that any given
 \emph{k} nodes are unlikely to fail within an hour of each other,
 which is very unlikely in our system given the long uptimes of
-nodes. We also increased the number of concurrent outstanding
+nodes (see Figure~\ref{duration_online_1} in Section~\ref{analysis}.
+We also increased the number of concurrent outstanding
 requests allowed from 3 to 6 to speed up the recursive key finding
 processes.
 
-\subsection{Other Changes}
+\subsection{\textbf{OPTIONAL}: Other Changes}
 \label{other_changes}
 
 We added one other new RPC request that nodes can make:
@@ -704,12 +756,14 @@ shows the number of peers we have seen in the DHT during this time.
 The peer population is very steady, with just over 50 regular users
 participating in the DHT at any time. We also note that we find 100
 users who connect regularly (weekly), and we have found 186 unique
-users in the 2 months of our analysis. We determined which users are
+users in the 2 months of our analysis.
+
+We also determined which users are
 behind a firewall or NAT, which is one of the main problems of
 implementing a peer-to-peer network. These peers will be
 unresponsive to DHT requests from peers they have not contacted
 recently, which will cause the peer to wait for a timeout to occur
-(currently set at 9 seconds) before moving on. They will also be
+(currently 9 seconds) before moving on. They will also be
 unable to contribute any upload bandwidth to other peers, as all
 requests for packages from them will also timeout. From
 Figure~\ref{walker_peers}, we see that approximately half of all
@@ -726,7 +780,8 @@ Figure~\ref{duration_peers} shows the cumulative distribution of how
 long a connection from a peer can be expected to last. Due to our
 software being installed as a daemon that is started by default
 every time their computer boots up, peers are expected to stay for a
-long period in the system. 50\% of connections last longer than 5
+long period in the system.
+Indeed, we find that 50\% of connections last longer than 5
 hours, and 20\% last longer than 10 hours. These connections are
 much longer than those reported by Saroiu et. al. \cite{saroiu2001}
 for other P2P systems, which had 50\% of Napster and Gnutella
@@ -735,12 +790,12 @@ sessions lasting only 1 hour.
 \begin{figure}
 \centering
 \includegraphics[width=\columnwidth]{AptP2PDuration-ind_peers.eps}
-\caption{The CDF of the average time individual peers stay in the
+\caption{\textbf{OPTIONAL}: The CDF of the average time individual peers stay in the
 system.}
 \label{duration_ind_peers}
 \end{figure}
 
-We also examined the average time each individual peer spends in the
+\textbf{OPTIONAL}: We also examined the average time each individual peer spends in the
 system. Figure~\ref{duration_peers} shows the cumulative
 distribution of how long each individual peer remains in the system.
 Here we see that 50\% of peers have average stays in the system
@@ -757,7 +812,7 @@ the system, will stay online for another hour.}
 Since our DHT is based on Kademlia, which was designed based on the
 probability that a node will remain up another hour, we also
 analyzed our system for this parameter.
-Figure~\ref{duration_online_1} shows the fraction of peers will
+Figure~\ref{duration_online_1} shows the fraction of peers that will
 remain online for another hour, as a function of how long they have
 been online so far. Maymounkov and Mazieres found that the longer a
 node has been online, the higher the probability that it will stay
@@ -771,12 +826,12 @@ Gnutella.
 \begin{figure}
 \centering
 \includegraphics[width=\columnwidth]{AptP2PDuration-online_6.eps}
-\caption{The fraction of peers that, given their current duration in
+\caption{\textbf{OPTIONAL}: The fraction of peers that, given their current duration in
 the system, will stay online for another 6 hours.}
 \label{duration_online_6}
 \end{figure}
 
-Since our peers are much longer-lived than other P2P systems, we
+\textbf{OPTIONAL}: Since our peers are much longer-lived than other P2P systems, we
 also looked at the fraction of peers that stay online for another 6
 hours. Figure~\ref{duration_online_6} shows that over 60\% of peers
 that are online for 10 hours will stay online for another 6.
@@ -795,7 +850,7 @@ and uploading, and their measured response times for DHT queries.
 Our walker can extract this information if the peer is not
 firewalled or NATted, it has not disabled this functionality, and if
 it uses the same port for both its DHT (UDP) requests and download
-(TCP) requests (which is also a configuration parameter).
+(TCP) requests (which is also the default configuration parameter).
 
 \begin{figure}
 \centering
@@ -814,7 +869,7 @@ system during this time.
 \begin{figure}
 \centering
 \includegraphics[width=\columnwidth]{AptP2PDownloaded-bw.eps}
-\caption{The bandwidth of data that the contacted peers have
+\caption{\textbf{OPTIONAL}: The bandwidth of data that the contacted peers have
 downloaded and uploaded.}
 \label{down_bw}
 \end{figure}
@@ -844,7 +899,7 @@ that were behind firewalls or NATs, which was much higher than we
 anticipated. We do have plans to improve this through better
 informing of users of their NATted status, the use of STUN
 \cite{STUN} to circumvent the NATs, and by better exclusion of
-NATted peers from the DHT (which will not prevent them from using
+NATted peers from the DHT (which does not prevent them from using
 the system).
 
 We were also concerned that the constant DHT requests and responses,
@@ -860,7 +915,7 @@ be running.
 \section{Related Work}
 \label{related}
 
-There have also been preliminary attempts to implement peer-to-peer distributors for
+There have been other preliminary attempts to implement peer-to-peer distributors for
 software packages. apt-torrent \cite{apttorrent} creates torrents
 for some of the larger packages available, but it ignores the
 smaller packages, which are often the most popular. DebTorrent
@@ -871,7 +926,7 @@ modifications to the distribution system to support it. Our system
 considers all the files available to users to download, and makes
 use of the existing infrastructure unmodified.
 
-Others have also used DHTs to support this type of functionality.
+\textbf{OPTIONAL}: Others have also used DHTs to support this type of functionality.
 Kenosis \cite{kenosis} is a P2P Remote Procedure Call
 client also based on the Kademlia DHT, but it is meant as a P2P
 primitive system on which other tools can be built, and so it has no
@@ -886,7 +941,7 @@ in Section~\ref{bittorrent}.
 
 There are a number of works dedicated to developing a collaborative
 content distribution network (CDN) using peer-to-peer techniques.
-Freedman et. al. developed Coral \cite{coral} using a distrbitued
+Freedman et. al. developed Coral \cite{coral} using a distributed
 \emph{sloppy} hash table to speed request times. Pierre and van
 Steen developed Globule \cite{globule} which uses typical DNS and
 HTTP redirection techniques to serve requests from a network of
@@ -908,7 +963,7 @@ would not otherwise need.
 
 The most similar works to ours are by Shah et. al. \cite{shah08} and
 Shark by Annapureddy et. al. \cite{shark}.
-Shah's system, in addition to the drawbacks mentioned previously,
+Shah's system, in addition to the drawbacks mentioned above,
 is not focused on the interactivity of downloads, as
 half of all requests were required ``to wait between 8 and 15
 minutes.'' In contrast, lookups in our system take only seconds to
@@ -920,7 +975,7 @@ copies of the original files, allowing instead any users in the
 system to update files and propagate those changes to others. Our
 system is well-tailored to the application of disseminating the
 unchanging software packages from the authoritative sources to all
-users unchanged.
+users.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -947,7 +1002,7 @@ to convince them to adopt such a model in their distribution, or we
 may port our existing system to some of the other groups for them to
 try.
 
-One aspect missing from our model is the removal of old packages
+\textbf{OPTIONAL}: One aspect missing from our model is the removal of old packages
 from the cache. Since our implementation is still relatively young,
 we have not had to deal with the problems of a growing cache of
 obsolete packages consuming all of a user's hard drive. We plan to
