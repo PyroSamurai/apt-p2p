@@ -33,8 +33,8 @@ open=false
 
 [item:paper.tex]
 archive=true
-column=0
+column=39
 encoding=UTF-8
 highlight=LaTeX
-line=927
+line=198
 open=true
