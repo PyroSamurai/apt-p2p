@@ -1,15 +1,15 @@
 [General]
 img_extIsRegExp=false
-img_extensions=.eps .pdf .dvi .ps .fig .gif .jpg .jpeg .png
-kileprversion=1
-kileversion=1.9.2
+img_extensions=.eps .jpg .jpeg .png .pdf .ps .fig .gif .dvi
+kileprversion=2
+kileversion=2.0
 lastDocument=paper.tex
 masterDocument=
 name=apt-p2p-paper
 pkg_extIsRegExp=false
-pkg_extensions=.cls .sty .dtx
+pkg_extensions=.cls .sty
 src_extIsRegExp=false
-src_extensions=.tex .ltx .bib .mp
+src_extensions=.tex .ltx .latex .dtx .ins .bib .mp
 
 [Tools]
 MakeIndex=
@@ -17,11 +17,12 @@ QuickBuild=LaTeX+ViewDVI
 
 [item:all.bib]
 archive=true
-column=1
+column=0
 encoding=UTF-8
 highlight=BibTeX
-line=249
+line=288
 open=true
+order=0
 
 [item:apt-p2p-paper.kilepr]
 archive=true
@@ -30,11 +31,13 @@ encoding=
 highlight=
 line=0
 open=false
+order=-1
 
 [item:paper.tex]
 archive=true
-column=39
+column=19
 encoding=UTF-8
 highlight=LaTeX
-line=198
+line=989
 open=true
+order=1
