@@ -1,14 +1,14 @@
 \documentclass[conference]{IEEEtran}
 
 %% INFOCOM addition:
-\makeatletter
-\def\ps@headings{%
-\def\@oddhead{\mbox{}\scriptsize\rightmark \hfil \thepage}%
-\def\@evenhead{\scriptsize\thepage \hfil\leftmark\mbox{}}%
-\def\@oddfoot{}%
-\def\@evenfoot{}}
-\makeatother
-\pagestyle{headings}
+% \makeatletter
+% \def\ps@headings{%
+% \def\@oddhead{\mbox{}\scriptsize\rightmark \hfil \thepage}%
+% \def\@evenhead{\scriptsize\thepage \hfil\leftmark\mbox{}}%
+% \def\@oddfoot{}%
+% \def\@evenfoot{}}
+% \makeatother
+% \pagestyle{headings}
 
 \usepackage[noadjust]{cite}
 
@@ -308,8 +308,8 @@ management tools expectation of sequential downloads.
 On the other hand, there are aspects of BitTorrent that are no
 longer critical. Specifically, with altruistic peers
 and all files being available to download without uploading, incentives to share
-become a less important issue. Also, the availability of seeds are
-not critical either, as the serves are already available to serve in
+become a less important issue. Also, the availability of seeders is
+not critical either, as the servers are already available to serve in
 that capacity.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -788,7 +788,7 @@ every time their computer boots up, peers are expected to stay for a
 long period in the system.
 Indeed, we find that 50\% of connections last longer than 5
 hours, and 20\% last longer than 10 hours. These connections are
-much longer than those reported by Saroiu et. al. \cite{saroiu2001}
+much longer than those reported by Saroiu et al. \cite{saroiu2001}
 for other peer-to-peer systems, which had 50\% of Napster and Gnutella
 sessions lasting only 1 hour.
 
@@ -874,7 +874,7 @@ system during this time.
 \begin{figure}
 \centering
 \includegraphics[width=0.80\columnwidth]{AptP2PDownloaded-bw.eps}
-\caption{The bandwidth of data that the contacted peers have
+\caption{The bandwidth of data (total number of bytes) that the contacted peers have
 downloaded and uploaded.}
 \label{down_bw}
 \end{figure}
@@ -948,12 +948,12 @@ use of the existing infrastructure unmodified.
 
 There are a number of works dedicated to developing a collaborative
 content distribution network (CDN) using peer-to-peer techniques.
-Freedman et. al. developed Coral \cite{coral} using a distributed
+Freedman et al. developed Coral \cite{coral} using a distributed
 \emph{sloppy} hash table to speed request times. Pierre and van
 Steen developed Globule \cite{globule} which uses typical DNS and
 HTTP redirection techniques to serve requests from a network of
 replica servers, which in turn draw their content from the original
-location (or a backup). Shah et. al. \cite{shah08} analyze an
+location (or a backup). Shah et al. \cite{shah08} analyze an
 existing software delivery system and use the results to design a
 peer-to-peer content distribution network that makes use of
 volunteer servers to help with the load. None of these systems meets
@@ -968,8 +968,8 @@ to become peers in the system, sharing the uploading load equally
 amongst all, but does not require any user to download files they
 would not otherwise need.
 
-The most similar works to ours are by Shah et. al. \cite{shah08} and
-Shark by Annapureddy et. al. \cite{shark}.
+The most similar works to ours are by Shah et al. \cite{shah08} and
+Shark by Annapureddy et al. \cite{shark}.
 Shah's system, in addition to the drawbacks mentioned above,
 is not focused on the interactivity of downloads, as
 half of all requests were required ``to wait between 8 and 15

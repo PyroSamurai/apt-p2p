@@ -21,7 +21,7 @@ column=0
 encoding=UTF-8
 highlight=BibTeX
 line=288
-open=true
+open=false
 order=0
 
 [item:apt-p2p-paper.kilepr]
@@ -35,9 +35,9 @@ order=-1
 
 [item:paper.tex]
 archive=true
-column=19
+column=0
 encoding=UTF-8
 highlight=LaTeX
-line=989
+line=43
 open=true
-order=1
+order=0
