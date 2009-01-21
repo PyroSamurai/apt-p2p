@@ -35,9 +35,9 @@ order=-1
 
 [item:paper.tex]
 archive=true
-column=0
+column=67
 encoding=UTF-8
 highlight=LaTeX
-line=43
+line=768
 open=true
 order=0

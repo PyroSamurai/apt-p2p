@@ -36,26 +36,26 @@ Email: jcliu@cs.sfu.ca}}
 \begin{abstract}
 The Internet has become a cost-effective
 vehicle for software development and release, particular in the free software community.
-Given the free nature of these software, there are often a number of users
+Given the free nature of this software, there are often a number of users
 motivated by altruism to help out with the distribution, so as to promote the healthy development
-of this voluntary society. It is thus naturally expected that peer-to-peer distribution can be implemented,
-which scale well with large user bases and can easily explore the network resources made available by
+of this voluntary society. It is thus naturally expected that a peer-to-peer distribution can be implemented,
+which will scale well with large user bases, and can easily explore the network resources made available by
 the volunteers.
 
 Unfortunately, this application scenario has many unique characteristics, which
-make a straightforward adoption of existing peer-to-peer systems for file sharing such as BitTorrent suboptimal. In particular,
-a software release often consists of a large number of packages, which are difficult to be distributed individually, but the archive is
+make a straightforward adoption of existing peer-to-peer systems for file sharing (such as BitTorrent) suboptimal. In particular,
+a software release often consists of a large number of packages, which are difficult to distribute individually, but the archive is
 too large to be distributed in its entirety. The packages are also being constantly
 updated by the loosely-managed developers, and the interest in a particular version of a package can be very
 limited depending on the computer platforms and operating systems used.
 
 In this paper, we propose a novel peer-to-peer assisted distribution system design that
 addresses the above challenges. It enhances the existing distribution systems by providing compatible and yet more efficient downloading and updating services
-for software packages. Our design leads to \texttt{apt-p2p}, a practical implementation that extends the popular \texttt{apt} distributor.  \texttt{apt-p2p}  has been used in conjuction with Debian-based distribution of Linux
-software packages and will also be available in the next release of Ubuntu. We have addressed the key design issues in \texttt{apt-p2p}, including indexing table customization,
+for software packages. Our design leads to \texttt{apt-p2p}, a practical implementation that extends the popular \texttt{apt} distributor.  \texttt{apt-p2p}  has been used in conjunction with Debian-based distribution of Linux
+software packages and is also available in the latest release of Ubuntu. We have addressed the key design issues in \texttt{apt-p2p}, including indexing table customization,
 response time reduction, and multi-value extension. They together ensure
 that the altruistic users' resources are effectively utilized and thus significantly reduces the currently
-large bandwidth requirements of hosting the software, as confirmed by our existing real user statistics over the Internet.
+large bandwidth requirements of hosting the software, as confirmed by our existing real user statistics gathered over the Internet.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -73,7 +73,7 @@ an efficient and reliable management and distribution of these software packages
 
 The existing distribution for free software is mostly based on the client/server model, e.g.,
 the Advanced Package Tool (\texttt{apt}) for Linux \cite{apt}, which suffers from the well-known bottleneck problem.
-Given the free nature of these software, there are often a number of users
+Given the free nature of this software, there are often a number of users
 motivated by altruism to help out with the distribution, so as to promote the healthy development
 of this voluntary society.
 We thus naturally expect that peer-to-peer distribution can be implemented in
@@ -81,24 +81,24 @@ this context, which will scale well with the currently large user bases and can 
 the volunteers.
 
 Unfortunately, this application scenario has many unique characteristics, which
-make a straightforward adoption of existing peer-to-peer systems for file sharing such as BitTorrent suboptimal. In particular,
+make a straightforward adoption of existing peer-to-peer systems for file sharing (such as BitTorrent) suboptimal. In particular,
 there are too many packages to distribute each individually, but the archive is
 too large to distribute in its entirety. The packages are also being constantly
 updated by the loosely-managed developers, and the interest in a particular version of a package can be very
-limited. They together make it very difficult to efficiently create and manage torrents/trackers. The random downloading nature of BitTorrent-like systems is also different from the
-sequential order used in existing software package distributions. This in turn suppresses interaction with users
+limited. They together make it very difficult to efficiently create and manage torrents and trackers. The random downloading nature of BitTorrent-like systems is also different from the
+sequential order used in existing software package distributors. This in turn suppresses interaction with users
 given the difficulty in tracking speed and downloading progress.
 
 In this paper, we propose a novel peer-to-peer assisted distribution system design that
 addresses the above challenges. It enhances the existing distribution systems by providing compatible and yet more efficient downloading and updating services
-for software packages. Our design leads to the development of \texttt{apt-p2p}, a practical implementation based on the Debian \footnote{Debian - The Universal Operating System: {\it http://www.debian.org/}} package
+for software packages. Our design leads to the development of \texttt{apt-p2p}, a practical implementation based on the Debian\footnote{Debian - The Universal Operating System: {\it http://www.debian.org/}} package
 distribution system.  We have addressed the key design issues in \texttt{apt-p2p}, including indexing table customization,
 response time reduction, and multi-value extension. They together ensure
 that the altruistic users' resources are effectively utilized and thus significantly reduces the currently
 large bandwidth requirements of hosting the software.
 
-\texttt{apt-p2p}  has been used in conjuction with Debian-based distribution of Linux
-software packages and will also be available in the next release of Ubuntu. We have evaluated our current deployment  to
+\texttt{apt-p2p}  has been used in conjunction with the Debian-based distribution of Linux
+software packages and is also available in the latest release of Ubuntu. We have evaluated our current deployment  to
 determine how effective it is at meeting our goals, and to see what
 effect it is having on the Debian package distribution system. In particular, our existing real user statistics
 have suggested that it responsively interacts with clients and substantially reduces server cost.
@@ -113,7 +113,7 @@ Section~\ref{conclusions} concludes the paper and offers some future directions.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%  Section  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Background and Motivations}
+\section{Background and Motivation}
 \label{situation}
 
 In the free software community, there are a large number of groups using the Internet to
@@ -155,7 +155,7 @@ package management tool that requests packages from websites. There
 are two software distribution systems for software that runs on the Macintosh OS, fink and
 MacPorts, that also retrieve packages in this way.
 
-Direct web downloading is also a common way, often coupled with a hash
+Direct web downloading by users is also common, often coupled with a hash
 verification file to be downloaded next to the desired
 file. The hash file usually has the same file name, but with an
 added extension identifying the hash used (e.g. \texttt{.md5} for
@@ -181,7 +181,7 @@ the volunteers.
 \label{problems}
 
 While it seems straightforward to use an existing peer-to-peer file sharing tool like BitTorrent for
-free software package distribution, there are indeed a series of new challenges in this unique scenario:
+this free software package distribution, there are indeed a series of new challenges in this unique scenario:
 
 \subsubsection{Archive Dimensions}
 
@@ -340,15 +340,15 @@ Our model for using peer-to-peer to enhance package distribution is shown in
 Figure~\ref{model}. As shown in Phase~1, our program will act as a
 proxy (1,2), downloading (3) and caching all files communicated
 between the user and the server (4). It will therefore also have
-available the index files containing the cryptographic hashes all
+available the index files containing the cryptographic hashes of all
 packages. Later, in Phase~2, upon receiving a request from the user
 to download a package (5), our program will search the index files
 for the package being requested and find its hash (6). This hash can
 then be looked up recursively in an indexing structure (a Distributed Hash Table, or DHT \cite{kademlia}, in our implementation) (7), which will return a
-list of peers that have the package already (8). The package can
-then be downloaded from the peers (11,12), it can be verified using
+list of peers that have the package already (8). Then, in Phase~3, the package
+can be downloaded from the peers (11,12), it can be verified using
 the hash (13), and if valid can be returned to the user (14). The
-current nodes location is also added to the DHT for that hash (15),
+current node's location is also added to the DHT for that hash (15),
 as it is now a source for others to download from.
 
 In steps (11,12), the fact that this package is also available to download for free
@@ -357,12 +357,12 @@ can not be found in the DHT, the peer can then fallback to
 downloading from the original location (i.e. the server).
 The server thus, with no modification to its
 functionality, serves as a seed for the packages in the peer-to-peer
-system. Any packages that have just been updated, or that are very
-rare, and so do not have any peers available, can always be found on
+system. Any packages that have just been updated or that are very
+rare, and so do not yet have any peers available, can always be found on
 the server. Once the peer has completed the download from the server
 and verified the package, it can then add itself to the DHT as the
 first peer for the new package, so that future requests for the package
-will not need the server.
+will not need to use the server.
 
 This sparse
 interest in a large number of packages undergoing constant updating
@@ -376,10 +376,10 @@ Note that, despite downloading the package from untrustworthy peers,
 the trust of the package is always guaranteed through the use
 of the cryptographic hashes. Nothing can be downloaded from a peer
 until the hash is looked up in the DHT, so a hash must first come
-from a trusted source (i.e. the distributors server). Most distributors use index
+from a trusted source (i.e. the distributor's server). Most distributors use index
 files that contain hashes for a large number of the packages in
 their archive, and which are also hashed. After retrieving the
-index's hash from the server, the index file can be downloaded from
+index file's hash from the server, the index file can also be downloaded from
 peers and verified. Then the program has access to all the hashes of
 the packages it will be downloading, all of which can be verified
 with a \emph{chain of trust} that stretches back to the original
@@ -466,7 +466,7 @@ We created a customized DHT based on Khashmir \cite{khashmir}, which
 is an implementation of Kademlia \cite{kademlia}. Khashmir is also the same DHT
 implementation used by most of the existing BitTorrent clients to
 implement trackerless operation. The communication is all handled by
-UDP messages, and RPC (remote procedure call) requests and responses
+UDP messages, and RPC (remote procedure call) requests and responses between nodes
 are all \emph{bencoded} in the same way as BitTorrent's
 \texttt{.torrent} files.
 % Khashmir uses the high-level Twisted
@@ -477,8 +477,8 @@ Section~\ref{custom_dht}.
 
 Downloading is accomplished by sending simple HTTP requests to the
 peers identified by lookups in the DHT to have the desired file.
-Requests for a package are made using the package's hash, properly
-encoded, as the URL to request from the peer. The HTTP server used
+Requests for a package are made using the package's hash (properly
+encoded) as the URL to request from the peer. The HTTP server used
 for the proxy also doubles as the server listening for requests for
 downloads from other peers. All peers support HTTP/1.1, both in the
 server and the client, which allows for pipelining of multiple
@@ -514,8 +514,8 @@ recursive, as each node does not know about all the other nodes in the
 DHT, and so must recursively search for the correct node to put to
 or get from.
 
-The Kademlia DHT, like most other DHTs, assigns IDs to peers randomly from
-the same space that is used for keys. The peers with IDs closest to
+The Kademlia DHT, like most other DHTs, assigns Ids to peers randomly from
+the same space that is used for keys. The peers with Ids closest to
 the desired key will then store the values for that key.
 Nodes support four primitive requests.
 \texttt{ping} will cause a peer to return nothing, and is only used
@@ -549,7 +549,7 @@ Instead, the peers will store the torrent string for large files
 separately in the DHT, and only contain a reference to it in their
 stored value for the hash of the file. The reference is an SHA1 hash
 of the entire concatenated length of the torrent string. If the
-torrent string is short enough to store in the DHT (i.e. less than
+torrent string is short enough to store separately in the DHT (i.e. less than
 1472 bytes, or about 70 pieces for the SHA1 hash), then a lookup of
 that hash in the DHT will return the torrent string. Otherwise, a
 request to the peer for the hash (using the same method as file
@@ -565,7 +565,7 @@ not require this information. There are 3054 packages that will
 require 2 to 4 pieces, for which the torrent string can be stored
 directly with the package hash in the DHT. There are 1667 packages
 that will require a separate lookup in the DHT for the longer
-torrent string as they require 5 to 70 pieces. Finally, there are
+torrent string, as they require 5 to 70 pieces. Finally, there are
 only 62 packages that require more than 70 pieces, and so will
 require a separate request to a peer for the torrent string.
 
@@ -595,7 +595,7 @@ current query such that there are many new nodes to query that are
 closer to the desired key, then a stalled request to a node further
 away will be dropped in favor of a new request to a closer node.
 This has the effect of leap-frogging unresponsive nodes and
-focussing attention on the nodes that do respond. We will also
+focussing attention on the closer nodes that do respond. We will also
 prematurely abort a query while there are still oustanding requests,
 if enough of the closest nodes have responded and there are no
 closer nodes found. This prevents a far away unresponsive node from
@@ -648,7 +648,7 @@ timeout very often.
 The original design of Kademlia specified that each key would have
 only a single value associated with it. The RPC to find this value
 was called \texttt{find\_value} and worked similarly to
-\texttt{find\_node}, iteratively finding nodes with ID's closer to
+\texttt{find\_node}, iteratively finding nodes with Id's closer to
 the desired key. However, if a node had a value stored associated
 with the searched for key, it would respond to the request with that
 value instead of the list of nodes it knows about that are closer.
@@ -699,7 +699,7 @@ closest to the key being searched for.
 % periods of time, we reduced Kademlia's \emph{k} value from 20 to 8.
 % The value is supposed to be large enough such that any given
 % \emph{k} nodes are unlikely to fail within an hour of each other,
-% which is very unlikely in our system given the long uptimes of
+% which is very unlikely in our system given the long uptime of
 % nodes (see Figure~\ref{duration_online_1} in Section~\ref{analysis}.
 % We also increased the number of concurrent outstanding
 % requests allowed from 3 to 6 to speed up the recursive key finding
@@ -729,8 +729,8 @@ closest to the key being searched for.
 
 Our \texttt{apt-p2p} implementation supporting the Debian package
 distribution system has been available to all Debian users since May
-3rd, 2008 \cite{apt-p2p-debian}, and will also be available in the
-next release of Ubuntu \cite{apt-p2p-ubuntu}. We have since created
+3rd, 2008 \cite{apt-p2p-debian}, and is also available in the
+latest release of Ubuntu \cite{apt-p2p-ubuntu}. We created
 a \emph{walker} that will navigate the DHT and find all the peers
 currently connected to it. This allows us to analyze many aspects of
 our implementation in the real Internet environment.
@@ -746,8 +746,8 @@ behind a firewall or NAT.}
 \label{walker_peers}
 \end{figure}
 
-We first began analyzing the DHT on June 24th, and continue to this
-day, giving us 2 months of data so far. Figure~\ref{walker_peers}
+We first began analyzing the DHT on June 24th, 2008, and continued
+until we had gathered almost 2 months of data. Figure~\ref{walker_peers}
 shows the number of peers we have seen in the DHT during this time.
 The peer population is very steady, with just over 50 regular users
 participating in the DHT at any time. We also note that we find 100
@@ -768,7 +768,7 @@ peers suffered from this restriction. To address this problem, we added one othe
 and is usually only sent to the bootstrap nodes that are listed for
 the DHT. These bootstrap nodes will respond to the request with the
 requesting peer's IP and port, so that the peer can determine what
-its oustide IP address is and whether port translation is being
+its outside IP address is and whether port translation is being
 used. In the future, we hope to add functionality similar to STUN
 \cite{STUN}, so that nodes can detect whether they are NATted and
 take appropriate steps to circumvent it.
@@ -855,7 +855,7 @@ and uploading, and their measured response times for DHT queries.
 Our walker can extract this information if the peer is not
 firewalled or NATted, it has not disabled this functionality, and if
 it uses the same port for both its DHT (UDP) requests and download
-(TCP) requests (which is also the default configuration parameter).
+(TCP) requests (which is also the default configuration behavior).
 
 \begin{figure}
 \centering
@@ -993,11 +993,11 @@ users.
 In this paper, we have provided strong evidence that free software package distribution
 and update exhibit many distinct characteristics, which call for new designs other
 than the existing peer-to-peer systems for file sharing. To this end, we have
-present \texttt{apt-p2p}, a novel peer-to-peer distributor that sits between
+presented \texttt{apt-p2p}, a novel peer-to-peer distributor that sits between
 client and server, providing efficient and transparent downloading and updating services
 for software packages. We have addressed the key design issues in \texttt{apt-p2p}, including DHT customization,
-response time reduction, and multi-value extension. \texttt{apt-p2p}  has been used in conjuction with Debian-based distribution of Linux
-software packages and will also be available in the next release of Ubuntu. Existing real user statistics
+response time reduction, and multi-value extension. \texttt{apt-p2p}  has been used in conjunction with Debian-based distribution of Linux
+software packages and is also available in the latest release of Ubuntu. Existing real user statistics
 have suggested that it interacts well with clients and substantially reduces server cost.
 
 There are many future avenues toward improving our implementation. Besides
