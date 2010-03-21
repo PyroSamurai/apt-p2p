@@ -1,3 +1,10 @@
+apt-p2p (0.1.6) unstable; urgency=low
+
+  * Fix a lot of lintian warnings and errors
+    - Update standards version to 3.8.4 (no changes)
+
+ -- Cameron Dale <camrdale@gmail.com>  Sat, 20 Mar 2010 22:48:07 -0700
+
 apt-p2p (0.1.5) unstable; urgency=low
 
   * Prevent BitTorrent nodes from infiltrating the DHT.
