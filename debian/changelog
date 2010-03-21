@@ -6,8 +6,9 @@ apt-p2p (0.1.6) unstable; urgency=low
   * Fix various documentation issues
     (Closes: #518590, #518549, #518548, 518550)
   * Add an enable variable to the /etc/default file (Closes: #518594)
+  * Use python-debian's new debian package instead of debian_bundle
 
- -- Cameron Dale <camrdale@gmail.com>  Sun, 21 Mar 2010 00:25:08 -0700
+ -- Cameron Dale <camrdale@gmail.com>  Sun, 21 Mar 2010 00:30:52 -0700
 
 apt-p2p (0.1.5) unstable; urgency=low
 
