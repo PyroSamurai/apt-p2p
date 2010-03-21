@@ -47,7 +47,7 @@
   <refsynopsisdiv>
     <para>Normally &dhpackage; is run from init.d using <command>twistd</command>, in which case no &dhpackage;
         options can be specified on the command-line, and all configuration variables are
-        read from the default config file locations of ${HOME}/.apt-p2p/apt-p2p.conf and /etc/apt-p2p/apt-p2p.conf.
+        read from the default config file locations of $HOME/.apt-p2p/apt-p2p.conf and /etc/apt-p2p/apt-p2p.conf.
         The command is then:</para>
     <cmdsynopsis>
       <command>twistd</command> <arg choice="Req">-y /path/to/&dhpackage;</arg> <arg rep="Repeat"><option>twistd options</option></arg>
@@ -104,6 +104,17 @@
     <para><ulink url="http://portforward.com/"></ulink></para>
     
       </refsect2>
+      <refsect2>
+	<title>PRIVATE NETWORKS</title>
+
+    <para>Apt-P2P is not designed to function as a downloader for multiple
+        clients on a private network. Apt-P2P checks the source of incoming
+        requests and only responds to those from the localhost. For more
+        information:</para>
+
+    <para><ulink url="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=481243"></ulink></para>
+    
+      </refsect2>
    </refsect1>
   <refsect1>
     <title>OPTIONS</title>
@@ -118,7 +129,7 @@
         <term><option>-c <replaceable>filename</replaceable>,</option> <option>--configfile=<replaceable>filename</replaceable></option></term>
          <listitem>
           <para>the <replaceable>filename</replaceable> to use for the configuration file, options found in this
-              file are combined with those in ${HOME}/.apt-p2p/apt-p2p.conf and /etc/apt-p2p/apt-p2p.conf
+              file are combined with those in $HOME/.apt-p2p/apt-p2p.conf and /etc/apt-p2p/apt-p2p.conf
               (see <citerefentry><refentrytitle>apt-p2p.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry> for the format of the file)</para>
         </listitem>
       </varlistentry>

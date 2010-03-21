@@ -52,7 +52,7 @@
       entries overriding former ones:
       <OrderedList>
         <ListItem><para>/etc/apt-p2p/apt-p2p.conf</para></ListItem>
-        <ListItem><para>${HOME}/.apt-p2p/apt-p2p.conf</para></ListItem>
+        <ListItem><para>$HOME/.apt-p2p/apt-p2p.conf</para></ListItem>
         <ListItem><para>the location specified by the config-file parameter</para></ListItem>
       </OrderedList>
     </para>
@@ -115,7 +115,7 @@
 	    <term><option>CACHE_DIR = <replaceable>directory</replaceable></option></term>
 	     <listitem>
 	      <para>The <replaceable>directory</replaceable> to store the downloaded files in.
-	        (Default is ${HOME}/.apt-p2p/cache.)</para>
+	        (Default is $HOME/.apt-p2p/cache.)</para>
 	    </listitem>
 	  </varlistentry>
 	  <varlistentry>
@@ -129,7 +129,9 @@
 	  <varlistentry>
 	    <term><option>LOCAL_OK = <replaceable>boolean</replaceable></option></term>
 	     <listitem>
-	      <para>Whether it's OK to use an IP address from a known local or private range.
+	      <para>Whether it's OK for the application to use for sharing files an IP address from a
+            known local or private range (RFC 1918). This should only be set true if you are running
+            your own private apt-p2p network that no one else will be connecting to.
 	        (Default is false)</para>
 	    </listitem>
 	  </varlistentry>
@@ -266,8 +268,9 @@
 	  <varlistentry>
 	    <term><option>LOCAL_OK = <replaceable>boolean</replaceable></option></term>
 	     <listitem>
-	      <para>Whether it's OK to add nodes to the routing table that use an IP address
-	        from a known local or private range.
+	      <para>Whether it's OK to add nodes to the routing table that use an IP address from a
+            known local or private range (RFC 1918). This should only be set true if you are running
+            your own private apt-p2p network that no one else will be connecting to.
 	        (Default is to use the value specified in the DEFAULT section.)</para>
 	    </listitem>
 	  </varlistentry>
