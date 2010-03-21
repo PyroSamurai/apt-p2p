@@ -1,12 +1,13 @@
 apt-p2p (0.1.6) unstable; urgency=low
 
+  * Update for python-apt 0.8 API transition (Closes: #572078)
   * Fix a lot of lintian warnings and errors
     - Update standards version to 3.8.4 (no changes)
   * Fix various documentation issues
     (Closes: #518590, #518549, #518548, 518550)
   * Add an enable variable to the /etc/default file (Closes: #518594)
 
- -- Cameron Dale <camrdale@gmail.com>  Sun, 21 Mar 2010 00:15:20 -0700
+ -- Cameron Dale <camrdale@gmail.com>  Sun, 21 Mar 2010 00:25:08 -0700
 
 apt-p2p (0.1.5) unstable; urgency=low
 

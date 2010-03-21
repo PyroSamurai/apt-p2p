@@ -282,7 +282,7 @@ class AptPackages:
         if self.loaded: return True
         
         # Modify the default configuration to create the fake one.
-        apt_pkg.InitSystem()
+        apt_pkg.init_system()
         self.cache_dir.preauthChild(self.apt_config['Dir::State']
                      ).preauthChild(self.apt_config['Dir::State::Lists']).remove()
         self.cache_dir.preauthChild(self.apt_config['Dir::State']
@@ -312,7 +312,7 @@ class AptPackages:
                 source_line='deb '+fake_dirname+'/ /'
             listpath = self.cache_dir.preauthChild(self.apt_config['Dir::State']
                                     ).preauthChild(self.apt_config['Dir::State::Lists']
-                                    ).child(apt_pkg.URItoFileName(fake_uri))
+                                    ).child(apt_pkg.uri_to_filename(fake_uri))
             sources.write(source_line+'\n')
             log.msg("Sources line: " + source_line)
             sources_count = sources_count + 1
@@ -329,12 +329,12 @@ class AptPackages:
 
         log.msg("Loading Packages database for "+self.cache_dir.path)
         for key, value in self.apt_config.items():
-            apt_pkg.Config[key] = value
+            apt_pkg.config[key] = value
 
-        self.cache = apt_pkg.GetCache(OpProgress())
-        self.records = apt_pkg.GetPkgRecords(self.cache)
+        self.cache = apt_pkg.Cache(OpProgress())
+        self.records = apt_pkg.PackageRecords(self.cache)
         if deb_src_added:
-            self.srcrecords = apt_pkg.GetPkgSrcRecords()
+            self.srcrecords = apt_pkg.SourceRecords()
         else:
             self.srcrecords = None
 
@@ -416,11 +416,11 @@ class AptPackages:
 
         # Check the binary packages
         try:
-            for version in self.cache[package].VersionList:
-                size = version.Size
-                for verFile in version.FileList:
-                    if self.records.Lookup(verFile):
-                        if '/' + self.records.FileName == path:
+            for version in self.cache[package].version_list:
+                size = version.size
+                for verFile in version.file_list:
+                    if self.records.lookup(verFile):
+                        if '/' + self.records.filename == path:
                             h.setFromPkgRecord(self.records, size)
                             d.callback(h)
                             return loadResult
@@ -429,9 +429,9 @@ class AptPackages:
 
         # Check the source packages' files
         if self.srcrecords:
-            self.srcrecords.Restart()
-            if self.srcrecords.Lookup(package):
-                for f in self.srcrecords.Files:
+            self.srcrecords.restart()
+            if self.srcrecords.lookup(package):
+                for f in self.srcrecords.files:
                     if path == '/' + f[2]:
                         h.setFromSrcRecord(f)
                         d.callback(h)
@@ -478,28 +478,28 @@ class TestAptPackages(unittest.TestCase):
         """Tests loading the binary package records cache."""
         self.client._load()
 
-        self.client.records.Lookup(self.client.cache['dpkg'].VersionList[0].FileList[0])
+        self.client.records.lookup(self.client.cache['dpkg'].version_list[0].file_list[0])
         
         pkg_hash = os.popen('grep -A 30 -E "^Package: dpkg$" ' + 
                             '/var/lib/apt/lists/' + self.packagesFile + 
                             ' | grep -E "^SHA1:" | head -n 1' + 
                             ' | cut -d\  -f 2').read().rstrip('\n')
 
-        self.failUnless(self.client.records.SHA1Hash == pkg_hash, 
-                        "Hashes don't match: %s != %s" % (self.client.records.SHA1Hash, pkg_hash))
+        self.failUnless(self.client.records.sha1_hash == pkg_hash, 
+                        "Hashes don't match: %s != %s" % (self.client.records.sha1_hash, pkg_hash))
 
     def test_src_hash(self):
         """Tests loading the source package records cache."""
         self.client._load()
 
-        self.client.srcrecords.Lookup('dpkg')
+        self.client.srcrecords.lookup('dpkg')
 
         src_hashes = os.popen('grep -A 20 -E "^Package: dpkg$" ' + 
                             '/var/lib/apt/lists/' + self.sourcesFile + 
                             ' | grep -A 4 -E "^Files:" | grep -E "^ " ' + 
                             ' | cut -d\  -f 2').read().split('\n')[:-1]
 
-        for f in self.client.srcrecords.Files:
+        for f in self.client.srcrecords.files:
             self.failUnless(f[0] in src_hashes, "Couldn't find %s in: %r" % (f[0], src_hashes))
 
     def test_index_hash(self):
