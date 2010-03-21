@@ -26,11 +26,20 @@ application=/usr/sbin/apt-p2p
 twistd=/usr/bin/twistd
 user=apt-p2p
 group=nogroup
+enable=true
 
 [ -r /etc/default/apt-p2p ] && . /etc/default/apt-p2p
 
 test -x $twistd || exit 0
 test -r $application || exit 0
+
+case "x$enable" in
+    xtrue|xfalse)   ;;
+    *)              echo -n "Value of 'enable' in /etc/default/apt-p2p must be either 'true' or 'false'; "
+                    echo "not starting apt-p2p daemon."
+                    exit 1
+                    ;;
+esac
 
 # return true if at least one pid is alive
 alive()
@@ -50,17 +59,21 @@ alive()
 
 case "$1" in
     start)
-        echo -n "Starting apt-p2p"
-        [ ! -d $rundir ] && mkdir $rundir
-        [ ! -f $logfile ] && touch $logfile
-        chown $user $rundir $logfile 
-        [ -f $pidfile ] && chown $user $pidfile
-        # Make cache files readable
-        umask 022
-        start-stop-daemon --start --quiet --exec $twistd -- \
-            --pidfile=$pidfile --rundir=$rundir --python=$application \
-            --logfile=$logfile --no_save
-        echo "."        
+        if "$enable"; then
+            echo -n "Starting apt-p2p"
+            [ ! -d $rundir ] && mkdir $rundir
+            [ ! -f $logfile ] && touch $logfile
+            chown $user $rundir $logfile 
+            [ -f $pidfile ] && chown $user $pidfile
+            # Make cache files readable
+            umask 022
+            start-stop-daemon --start --quiet --exec $twistd -- \
+                --pidfile=$pidfile --rundir=$rundir --python=$application \
+                --logfile=$logfile --no_save
+            echo "."        
+        else
+            echo "apt-p2p daemon not enabled in /etc/default/apt-p2p, not starting..."
+        fi
     ;;
 
     stop)

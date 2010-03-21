@@ -1,5 +1,8 @@
 # apt-p2p configuration
 
+## Whether to start apt-p2p or not, must be either 'true' or 'false'
+#enable=true
+
 ## Filename to store pid of process
 #pidfile=/var/run/apt-p2p/apt-p2p.pid 
 
