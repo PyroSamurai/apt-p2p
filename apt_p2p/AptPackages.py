@@ -37,7 +37,7 @@ from twisted.python.filepath import FilePath
 from twisted.trial import unittest
 
 import apt_pkg, apt_inst
-from apt import OpProgress
+from apt.progress.base import OpProgress
 from debian import deb822
 
 from apt_p2p_conf import config

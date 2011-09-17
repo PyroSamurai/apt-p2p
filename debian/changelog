@@ -1,3 +1,9 @@
+apt-p2p (0.1.7) unstable; urgency=low
+
+  * Change the module location of the apt OpProgress class (Closes: #641732)
+
+ -- Cameron Dale <camrdale@gmail.com>  Sat, 17 Sep 2011 16:03:32 -0700
+
 apt-p2p (0.1.6) unstable; urgency=low
 
   * Update for python-apt 0.8 API transition (Closes: #572078)
