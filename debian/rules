@@ -5,6 +5,9 @@
 
 PYTHON_VERSION=$(shell /usr/bin/python -V 2>&1 | /usr/bin/perl -le 'print "$$1.$$2" if <> =~m/^Python\s+(\d+)\.(\d+)(\.\d+)*/')
 
+build: build-arch build-indep
+build-arch: build-stamp
+build-indep: build-stamp
 
 build-stamp: apt-p2p.8 apt-p2p.conf.5
 	dh_testdir
