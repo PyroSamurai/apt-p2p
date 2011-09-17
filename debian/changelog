@@ -2,8 +2,9 @@ apt-p2p (0.1.7) unstable; urgency=low
 
   * Change the module location of the apt OpProgress class (Closes: #641732)
   * Fix some Lintian warnings
+  * Update the standards version to 3.9.2 (no changes)
 
- -- Cameron Dale <camrdale@gmail.com>  Sat, 17 Sep 2011 16:05:31 -0700
+ -- Cameron Dale <camrdale@gmail.com>  Sat, 17 Sep 2011 16:10:43 -0700
 
 apt-p2p (0.1.6) unstable; urgency=low
 

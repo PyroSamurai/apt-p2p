@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Cameron Dale <camrdale@gmail.com>
 Homepage: http://www.camrdale.org/apt-p2p/
-Standards-Version: 3.8.4
+Standards-Version: 3.9.2
 Build-Depends: debhelper (>= 5.0.37.2)
 Build-Depends-Indep: python, python-support (>= 0.5.4), docbook-to-man
 Vcs-Git: git://git.camrdale.org/git/apt-p2p.git
@@ -12,7 +12,7 @@ XS-Dm-Upload-Allowed: yes
 
 Package: apt-p2p
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python-twisted-web2 (>= 8.0), adduser, python-debian (>= 0.1.15), python-apt (>= 0.7.93), python-pysqlite2 (>= 2.1)
+Depends: ${misc:Depends}, ${python:Depends}, python-twisted-web2 (>= 8.0), adduser, python-debian (>= 0.1.15), python-apt (>= 0.8), python-pysqlite2 (>= 2.1)
 Provides: python-apt-p2p, python-apt-p2p-khashmir
 Description: apt helper for peer-to-peer downloads of Debian packages
  Apt-P2P is a helper for downloading Debian packages files with APT.
