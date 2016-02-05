@@ -1,5 +1,4 @@
-Rotate DNS entries for mirrors more reliably.
-
+###Rotate DNS entries for mirrors more reliably.
 Currently the mirrors are accessed by DNS name, which can cause some
 issues when there are mirror differences and the DNS gets rotated.
 Instead, the HTTP Downloader should handle DNS lookups itself, store
@@ -8,8 +7,7 @@ is an error from the mirror (hash check or 404 response), the next IP
 address in the rotation should be used.
 
 
-Use GPG signatures as a hash for files.
-
+###Use GPG signatures as a hash for files.
 A detached GPG signature, such as is found in Release.gpg, can be used
 as a hash for the file. This hash can be used to verify the file when
 it is downloaded, and a shortened version can be added to the DHT to
@@ -40,16 +38,14 @@ variable length, though it seems to be usually 65 bytes, 64 bytes has
 also been observed.
 
 
-Consider what happens when multiple requests for a file are received.
-
+###Consider what happens when multiple requests for a file are received.
 When another request comes in for a file already being downloaded,
 the new request should wait for the old one to finish. This should
 also be done for multiple requests for peer downloads of files with
 the same hash.
 
 
-Packages.diff files need to be considered.
-
+###Packages.diff files need to be considered.
 The Packages.diff/Index files contain hashes of Packages.diff/rred.gz 
 files, which themselves contain diffs to the Packages files previously 
 downloaded. Apt will request these files for the testing/unstable 
@@ -57,8 +53,7 @@ distributions. They need to be dealt with properly by
 adding them to the tracking done by the AptPackages module.
 
 
-Improve the estimation of the total number of nodes
-
+###Improve the estimation of the total number of nodes
 The current total nodes estimation is based on the number of buckets.
 A better way is to look at the average inter-node spacing for the K
 closest nodes after a find_node/value completes. Be sure to measure
@@ -70,8 +65,7 @@ moving average (of the log2 distance) over separate find_node/value
 actions to get a better calculation over time.
 
 
-Improve the downloaded and uploaded data measurements.
-
+###Improve the downloaded and uploaded data measurements.
 There are 2 places that this data is measured: for statistics, and for
 limiting the upload bandwidth. They both have deficiencies as they
 sometimes miss the headers or the requests sent out. The upload
@@ -85,16 +79,14 @@ and not the headers, and also misses the requests for downloads sent to
 other peers.
 
 
-Rehash changed files instead of removing them.
-
+###Rehash changed files instead of removing them.
 When the modification time of a file changes but the size does not,
 the file could be rehased to verify it is the same instead of
 automatically removing it. The DB would have to be modified to return
 deferred's for a lot of its functions.
 
 
-Consider storing deltas of packages.
-
+###Consider storing deltas of packages.
 Instead of downloading full package files when a previous version of
 the same package is available, peers could request a delta of the
 package to the previous version. This would only be done if the delta
@@ -108,8 +100,7 @@ the hash of the delta. Alternatively, very small deltas could be
 stored directly in the DHT.
 
 
-Consider tracking security issues with packages.
-
+###Consider tracking security issues with packages.
 Since sharing information with others about what packages you have
 downloaded (and probably installed) is a possible security
 vulnerability, it would be advantageous to not share that information
@@ -118,16 +109,14 @@ require some way of obtaining a list of which packages (and versions)
 are vulnerable, which is not currently available.
 
 
-Consider adding peer characteristics to the DHT.
-
+###Consider adding peer characteristics to the DHT.
 Bad peers could be indicated in the DHT by adding a new value that is
 the NOT of their ID (so they are guaranteed not to store it) indicating
 information about the peer. This could be bad votes on the peer, as
 otherwise a peer could add good info about itself.
 
 
-Consider adding pieces to the DHT instead of files.
-
+###Consider adding pieces to the DHT instead of files.
 Instead of adding file hashes to the DHT, only piece hashes could be
 added. This would allow a peer to upload to other peers while it is
 still downloading the rest of the file. It is not clear that this is
