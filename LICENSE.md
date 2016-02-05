@@ -1,7 +1,7 @@
 Unless otherwise noted, all files are released under the GNU General
 Public License, version 2 or later, exceptions are noted below.
 
-Apt-p2p is Copyright (C) 2008 Cameron Dale <camrdale@gmail.com>
+    Apt-p2p is Copyright (C) 2008 Cameron Dale <camrdale@gmail.com>
 
 Apt-p2p is licensed under the terms of the GNU General Public License (GPL),
 version 2 or later, as published by the Free Software Foundation.  See
